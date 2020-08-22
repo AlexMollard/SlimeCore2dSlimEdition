@@ -20,5 +20,6 @@ private:
 	Camera* camera = nullptr;
 	GameObject* testObject = nullptr;
 
+
 	float timer = 0.0f;
 };

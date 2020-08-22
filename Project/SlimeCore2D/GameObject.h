@@ -53,7 +53,8 @@ public:
 
 	bool GetRender();
 	void SetRender(bool value);
-
+	
+	bool GetMouseColliding();
 
 protected:
 	glm::vec3 color = glm::vec3(1);

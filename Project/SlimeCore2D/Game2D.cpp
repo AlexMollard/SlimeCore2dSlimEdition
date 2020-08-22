@@ -4,20 +4,7 @@ Game2D::Game2D()
 {
 	Init();
 
-	GameObject* lastSquare = nullptr;
-
-	for (int x = 0; x < 10; x++)
-	{
-		for (int y = 0; y < 10; y++)
-		{
-			lastSquare = objectManager->CreateQuad(glm::vec3(x - 5,y - 5,0),glm::vec2(1),glm::vec3(x / 10.0f,y / 10.0f,0.5f));
-			physicsScene->addActor(lastSquare,"Square: " + x);
-		}
-	}
-
-	lastSquare = objectManager->CreateQuad(glm::vec3(0, -8, 0), glm::vec2(15,1), glm::vec3(0.5f));
-	physicsScene->addActor(lastSquare, "PlatForm",true);
-
+	testObject = objectManager->CreateQuad(glm::vec3(1,1,0), glm::vec2(2), glm::vec3(0.3f, 0.8f, 0.34f));
 }
 
 Game2D::~Game2D()
@@ -43,6 +30,19 @@ void Game2D::Update(float deltaTime)
 	camera->Update(deltaTime);
 	physicsScene->update(deltaTime);
 	objectManager->UpdateFrames(deltaTime);
+
+	if (testObject->GetMouseColliding())
+	{
+		testObject->SetColor(glm::vec3(0.1f, 0.5f, 0.14f));
+		if (inputManager->GetMouseDown(0))
+		{
+			testObject->SetPos(glm::vec3(inputManager->GetMousePos(),0));
+		}
+	}
+	else
+	{
+		testObject->SetColor(glm::vec3(0.3f, 0.8f, 0.34f));
+	}
 }
 
 void Game2D::Draw()

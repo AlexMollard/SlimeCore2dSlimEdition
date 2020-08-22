@@ -207,3 +207,9 @@ void GameObject::SetRender(bool value)
 {
 	render = value;
 }
+
+bool GameObject::GetMouseColliding()
+{
+	return (Input::GetMousePos().x > GetPos().x - (GetScale().x / 2) && Input::GetMousePos().x < GetPos().x + (GetScale().x / 2)
+		&& Input::GetMousePos().y > GetPos().y - (GetScale().y / 2) && Input::GetMousePos().y < GetPos().y + (GetScale().y / 2));
+}
