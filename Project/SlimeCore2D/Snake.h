@@ -22,7 +22,8 @@ public:
 	void Update(float deltaTime);
 	void Draw();
 
-
+	void Death();
+	void Restart();
 private:
 	Renderer2D* _renderer = nullptr;
 	ObjectManager* _objManager = nullptr;
@@ -35,10 +36,20 @@ private:
 	glm::vec2 _foodPos; 
 
 	int _tailLength = 0; 
-	glm::vec2 _bodyPos[50]; 
+	std::vector<glm::vec2> _bodyPos; 
 
-	glm::vec2 _direction = glm::vec2(0.0f, 1.0f); 
+	glm::vec2 _direction = glm::vec2(0);
+	glm::vec2 spawnPos;
+	float updateLength = 0;
 
 	float _timer; 
+
+
+	bool isDead = false;
+
+	//Colours
+	glm::vec3 gridColor = glm::vec3(0.25f);
+	glm::vec3 snakeColor = glm::vec3(0.1f,0.75f,0.15f);
+	glm::vec3 foodColor = glm::vec3(0.75f,0.15f,0.2f);
 };
 

@@ -1,8 +1,8 @@
 #include "Snake.h"
 #include <iostream> 
 
-#define GRIDX 10
-#define GRIDY 5
+#define GRIDX 25
+#define GRIDY 20
 
 Snake::Snake()
 {
@@ -15,12 +15,17 @@ Snake::Snake()
 		_grid[i] = new Cell[GRIDY];
 	}
 
+	spawnPos = glm::vec2(GRIDX/2 - 1, GRIDY/2 - 1);
+
+	float cellSize = 0.5f;
+	float cellspacing = cellSize + 0.1f;
+
 	for (size_t x = 0; x < GRIDX; x++)
 	{
 		for (size_t y = 0; y < GRIDY; y++)
 		{
 			_grid[x][y].SetState(Cell::STATE::EMPTY);
-			_grid[x][y]._cell = _objManager->CreateQuad(glm::vec3(x - (GRIDX * 0.5f), y - (GRIDY * 0.5f), 0.0f), glm::vec2(0.9f), glm::vec3(0.5f));
+			_grid[x][y]._cell = _objManager->CreateQuad(glm::vec3((x - (GRIDX * 0.5f)) * cellspacing, (y - (GRIDY * 0.5f)) * cellspacing, 0.0f), glm::vec2(cellSize), gridColor);
 		}
 	}
 
@@ -45,51 +50,47 @@ Snake::~Snake()
 
 void Snake::SpawnFood()
 {
-	int x = rand() % GRIDX;
-	int y = rand() % GRIDY;
+	int x, y;
+	do
+	{
+		x = rand() % GRIDX;
+		y = rand() % GRIDY;
 
-	if (_grid[x][y].GetState() == Cell::STATE::TAIL)
-		SpawnFood();
+	} while (std::find(_bodyPos.begin(), _bodyPos.end(), glm::vec2(x,y)) != _bodyPos.end());
 
 	_foodPos = glm::vec2(x, y);
 
 	_grid[x][y].SetState(Cell::STATE::FOOD);
-	_grid[x][y]._cell->SetColor(glm::vec3(0.75f, 0.0f, 0.0f));
-}
-
-void Snake::SpawnHead()
-{
-	int x = rand() % GRIDX;
-	int y = rand() % GRIDY;
-
-	if (_grid[x][y].GetState() == Cell::STATE::HEAD)
-		SpawnHead();
-
-	//_headPos = glm::vec2(x, y); 
-
-	_grid[x][y].SetState(Cell::STATE::HEAD);
-	_grid[x][y]._cell->SetColor(glm::vec3(0.0f, 0.75f, 0.0f));
+	_grid[x][y]._cell->SetColor(foodColor);
 }
 
 void Snake::UpdatePosition()
 {
-	int tailIndex = _tailLength - 1; 
-	glm::vec2 endOfTailPosFromPrevTic = _bodyPos[tailIndex]; 
+	int tailEnd = _tailLength - 1; 
+	glm::vec2 endOfTailPosFromPrevTic = _bodyPos.back();
 
 	_grid[(int)endOfTailPosFromPrevTic.x][(int)endOfTailPosFromPrevTic.y].SetState(Cell::STATE::EMPTY);
-	_grid[(int)endOfTailPosFromPrevTic.x][(int)endOfTailPosFromPrevTic.y]._cell->SetColor(glm::vec3(0.5f));
+	_grid[(int)endOfTailPosFromPrevTic.x][(int)endOfTailPosFromPrevTic.y]._cell->SetColor(gridColor);
 
-	for (int i = tailIndex; i > 0; i--)
+	for (int i = tailEnd; i > 0; i--)
 	{
 		_bodyPos[i] = _bodyPos[i - 1];
 
 		_grid[(int)_bodyPos[i].x][(int)_bodyPos[i].y].SetState(Cell::STATE::TAIL);
-		_grid[(int)_bodyPos[i].x][(int)_bodyPos[i].y]._cell->SetColor(0.0f, 0.0f, 0.75f);
+		_grid[(int)_bodyPos[i].x][(int)_bodyPos[i].y]._cell->SetColor(snakeColor);
 	}
 
 	_bodyPos[0] += _direction; 
+
+
+	if (_bodyPos[0].x >= GRIDX || _bodyPos[0].x < 0 || _bodyPos[0].y >= GRIDY || _bodyPos[0].y < 0)
+	{
+		Death();
+		return; 
+	}
+
 	_grid[(int)_bodyPos[0].x][(int)_bodyPos[0].y].SetState(Cell::STATE::TAIL);
-	_grid[(int)_bodyPos[0].x][(int)_bodyPos[0].y]._cell->SetColor(0.0f, 0.0f, 0.75f);
+	_grid[(int)_bodyPos[0].x][(int)_bodyPos[0].y]._cell->SetColor(snakeColor * glm::vec3(1.2f));
 
 	if (_bodyPos[0] == _foodPos)
 	{
@@ -101,54 +102,88 @@ void Snake::UpdatePosition()
 void Snake::SpawnTail()
 {
 	++_tailLength;
-	int tailIndex = _tailLength - 1;
-
-	if (tailIndex == 0)
+	if (_bodyPos.size() == 0)
 	{
-		_bodyPos[tailIndex] = glm::vec2(5.0f, 0.0f);
+		_bodyPos.push_back(spawnPos);
 	}
 	else
 	{
-		_bodyPos[tailIndex] = (_bodyPos[tailIndex - 1] - _direction);
+		_bodyPos.push_back(_bodyPos.back() - (_bodyPos[_bodyPos.size() - 1]));
 	}
 
-	_grid[(int)_bodyPos[tailIndex].x][(int)_bodyPos[tailIndex].y].SetState(Cell::STATE::TAIL);
-	_grid[(int)_bodyPos[tailIndex].x][(int)_bodyPos[tailIndex].y]._cell->SetColor(glm::vec3(0.0f, 0.0f, 0.75f));
+	_grid[(int)_bodyPos.back().x][(int)_bodyPos.back().y].SetState(Cell::STATE::TAIL);
+	_grid[(int)_bodyPos.back().x][(int)_bodyPos.back().y]._cell->SetColor(gridColor);
 }
+
 
 void Snake::Update(float deltaTime)
 {
+	static bool directionChangedThisUpdate = false;
+	
 	_camera->Update(deltaTime);
 	_objManager->UpdateFrames(deltaTime);
 
 	_timer += deltaTime;
 
-	if (_inputManager->GetKeyPress(Keycode::LEFT) && _direction != glm::vec2(1.0f, 0.0f))
+	if (!directionChangedThisUpdate)
 	{
-		_direction = glm::vec2(-1.0f, 0.0f);
-	}
-	else if (_inputManager->GetKeyPress(Keycode::UP) && _direction != glm::vec2(0.0f, -1.0f))
-	{
-		_direction = glm::vec2(0.0f, 1.0f);
-	}
-	else if (_inputManager->GetKeyPress(Keycode::RIGHT) && _direction != glm::vec2(-1.0f, 0.0f))
-	{
-		_direction = glm::vec2(1.0f, 0.0f);
-	}
-	else if (_inputManager->GetKeyPress(Keycode::DOWN) && _direction != glm::vec2(0.0f, 1.0f))
-	{
-		_direction = glm::vec2(0.0f, -1.0f);
+		if (_inputManager->GetKeyPress(Keycode::LEFT) && _direction != glm::vec2(1.0f, 0.0f))
+		{
+			_direction = glm::vec2(-1.0f, 0.0f);
+			directionChangedThisUpdate = true;
+		}
+		else if (_inputManager->GetKeyPress(Keycode::UP) && _direction != glm::vec2(0.0f, -1.0f))
+		{
+			_direction = glm::vec2(0.0f, 1.0f);
+			directionChangedThisUpdate = true;
+		}
+		else if (_inputManager->GetKeyPress(Keycode::RIGHT) && _direction != glm::vec2(-1.0f, 0.0f))
+		{
+			_direction = glm::vec2(1.0f, 0.0f);
+			directionChangedThisUpdate = true;
+		}
+		else if (_inputManager->GetKeyPress(Keycode::DOWN) && _direction != glm::vec2(0.0f, 1.0f))
+		{
+			_direction = glm::vec2(0.0f, -1.0f);
+			directionChangedThisUpdate = true;
+		}
 	}
 
-	if (_timer > 0.5f)
+	if (_timer > (0.25f - (_tailLength * 0.02f)))
 	{
-		_timer = 0;
+		directionChangedThisUpdate = false;
 		UpdatePosition();
+		_timer = 0;
 	}
 }
 void Snake::Draw()
 {
 	_renderer->Draw();
+}
+
+void Snake::Death()
+{
+	std::cout << "GAMEOVER \nYour score: " << _tailLength - 1 << std::endl;
+	Restart();
+}
+
+void Snake::Restart()
+{
+	_tailLength = 0;
+	_bodyPos.clear();
+	_direction = glm::vec2(0);
+	for (size_t x = 0; x < GRIDX; x++)
+	{
+		for (size_t y = 0; y < GRIDY; y++)
+		{
+			_grid[x][y].SetState(Cell::STATE::EMPTY);
+			_grid[x][y]._cell->SetColor(gridColor);
+		}
+	}
+
+
+	SpawnTail();
+	SpawnFood();
 }
 
 void Snake::Init()
