@@ -1,12 +1,12 @@
 #include "Window.h"
-#include "Snake.h"
+#include "Game2D.h"
 
 Input* Input::instance = 0;
 
 int main()
 {
 	Window* app = new Window(1536, 852, (char*)"SlimeCore2D");
-	Snake* game = new Snake();
+	Game2D* game = new Game2D();
 	Input* inputManager = Input::GetInstance();
 
 	while (!app->Window_shouldClose())
@@ -16,7 +16,6 @@ int main()
 
 		game->Update(app->GetDeltaTime());
 		game->Draw();
-		//std::cout << "DeltaTime: " << app->GetDeltaTime() << "ms" << std::endl;
 	}
 
 	delete app;

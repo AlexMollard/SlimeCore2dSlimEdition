@@ -1,11 +1,11 @@
 #pragma once
 #include "ObjectManager.h"
 #include "PhysicsScene.h"
+#include "Snake.h"
+
 class Game2D
 {
 public:
-
-
 	Game2D();
 	~Game2D();
 
@@ -21,7 +21,7 @@ private:
 	PhysicsScene* physicsScene = nullptr;
 	Camera* camera = nullptr;
 	GameObject* testObject = nullptr;
-
+	Snake* snakeGame = nullptr;
 
 
 

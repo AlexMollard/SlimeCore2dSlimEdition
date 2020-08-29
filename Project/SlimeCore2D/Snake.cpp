@@ -4,10 +4,14 @@
 #define GRIDX 25
 #define GRIDY 20
 
-Snake::Snake()
+Snake::Snake(Camera* cam, Renderer2D* rend, ObjectManager* objMan)
 {
-	srand(3245); 
-	Init();
+	_camera = cam;
+	_renderer = rend;
+	_objManager = objMan;
+	Input::GetInstance()->SetCamera(_camera);
+
+	srand(time_t(0)); 
 
 	_grid = new Cell * [GRIDX];
 	for (size_t i = 0; i < GRIDX; i++)
@@ -43,9 +47,6 @@ Snake::~Snake()
 
 	delete[] _grid;
 	_grid = nullptr;
-
-	delete _objManager;
-	_objManager = nullptr;
 }
 
 void Snake::SpawnFood()
@@ -118,47 +119,31 @@ void Snake::SpawnTail()
 
 void Snake::Update(float deltaTime)
 {
-	static bool directionChangedThisUpdate = false;
-	
-	_camera->Update(deltaTime);
-	_objManager->UpdateFrames(deltaTime);
-
 	_timer += deltaTime;
-
-	if (!directionChangedThisUpdate)
+	
+	if (_inputManager->GetKeyPress(Keycode::LEFT) && _lastDirection != glm::vec2(1.0f, 0.0f))
 	{
-		if (_inputManager->GetKeyPress(Keycode::LEFT) && _direction != glm::vec2(1.0f, 0.0f))
-		{
-			_direction = glm::vec2(-1.0f, 0.0f);
-			directionChangedThisUpdate = true;
-		}
-		else if (_inputManager->GetKeyPress(Keycode::UP) && _direction != glm::vec2(0.0f, -1.0f))
-		{
-			_direction = glm::vec2(0.0f, 1.0f);
-			directionChangedThisUpdate = true;
-		}
-		else if (_inputManager->GetKeyPress(Keycode::RIGHT) && _direction != glm::vec2(-1.0f, 0.0f))
-		{
-			_direction = glm::vec2(1.0f, 0.0f);
-			directionChangedThisUpdate = true;
-		}
-		else if (_inputManager->GetKeyPress(Keycode::DOWN) && _direction != glm::vec2(0.0f, 1.0f))
-		{
-			_direction = glm::vec2(0.0f, -1.0f);
-			directionChangedThisUpdate = true;
-		}
+		_direction = glm::vec2(-1.0f, 0.0f);
+	}
+	else if (_inputManager->GetKeyPress(Keycode::UP) && _lastDirection != glm::vec2(0.0f, -1.0f))
+	{
+		_direction = glm::vec2(0.0f, 1.0f);
+	}
+	else if (_inputManager->GetKeyPress(Keycode::RIGHT) && _lastDirection != glm::vec2(-1.0f, 0.0f))
+	{
+		_direction = glm::vec2(1.0f, 0.0f);
+	}
+	else if (_inputManager->GetKeyPress(Keycode::DOWN) && _lastDirection != glm::vec2(0.0f, 1.0f))
+	{
+		_direction = glm::vec2(0.0f, -1.0f);
 	}
 
-	if (_timer > (0.25f - (_tailLength * 0.02f)))
+	if (_timer > (0.15f - (_tailLength * 0.002f)))
 	{
-		directionChangedThisUpdate = false;
+		_lastDirection = _direction;
 		UpdatePosition();
 		_timer = 0;
 	}
-}
-void Snake::Draw()
-{
-	_renderer->Draw();
 }
 
 void Snake::Death()
@@ -184,12 +169,4 @@ void Snake::Restart()
 
 	SpawnTail();
 	SpawnFood();
-}
-
-void Snake::Init()
-{
-	_camera = new Camera(-16, -9, -1, 1);
-	_renderer = new Renderer2D(_camera);
-	_objManager = new ObjectManager(_renderer);
-	Input::GetInstance()->SetCamera(_camera);
 }

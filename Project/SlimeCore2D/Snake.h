@@ -6,21 +6,17 @@ class Snake
 {
 public: 
 
-	Snake();
+	Snake(Camera* cam, Renderer2D* rend, ObjectManager* objMan);
+
 	~Snake(); 
 
 	void SpawnFood(); 
-
-	void SpawnHead(); 
 
 	void UpdatePosition(); 
 
 	void SpawnTail(); 
 
-	void Init();
-
 	void Update(float deltaTime);
-	void Draw();
 
 	void Death();
 	void Restart();
@@ -39,6 +35,7 @@ private:
 	std::vector<glm::vec2> _bodyPos; 
 
 	glm::vec2 _direction = glm::vec2(0);
+	glm::vec2 _lastDirection = glm::vec2(0);
 	glm::vec2 spawnPos;
 	float updateLength = 0;
 

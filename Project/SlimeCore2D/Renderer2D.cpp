@@ -3,6 +3,8 @@
 #include <array>
 #include <iostream>
 #include "Math.h"
+#include <map>
+
 
 std::vector<glm::vec2> Renderer2D::UVs;
 Camera* Renderer2D::camera;
@@ -72,6 +74,28 @@ Renderer2D::Renderer2D(Camera* camera)
 	loc = glGetUniformLocation(UIShader->GetID(), "Textures");
 
 	glUniform1iv(loc, maxTextures, samplers);
+
+
+	//if (FT_Init_FreeType(&ft))
+	//{
+	//	std::cout << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
+	//	return;
+	//}
+
+
+	//if (FT_New_Face(ft, "..\\fonts\\Cabin-Regular.ttf", 0, &face))
+	//{
+	//	std::cout << "ERROR::FREETYPE: Failed to load font" << std::endl;
+	//	return;
+	//}
+
+	//FT_Set_Pixel_Sizes(face, 0, 48);
+
+	//if (FT_Load_Char(face, 'X', FT_LOAD_RENDER))
+	//{
+	//	std::cout << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
+	//	return;
+	//}
 
 	Init();
 }
@@ -188,7 +212,7 @@ void Renderer2D::DrawUI()
 	UIShader->setMat4("OrthoMatrix", UIMatrix);
 	UIShader->setMat4("Model", glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)));
 
-	static int testingINT = 0;
+	//DrawUIQuad();
 
 	EndBatch();
 	Flush();

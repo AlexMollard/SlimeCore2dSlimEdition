@@ -1,4 +1,6 @@
 #pragma once
+#include <ft2build.h>
+#include FT_FREETYPE_H
 #include "Quad.h"
 #include "Texture.h"
 #include <vector>
@@ -53,4 +55,7 @@ private:
 	static Camera* camera;
 
 	static std::vector<glm::vec2> UVs;
+	FT_Library ft;
+	FT_Face face;
+
 };
