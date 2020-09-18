@@ -103,6 +103,7 @@ void Snake::UpdatePosition()
 void Snake::SpawnTail()
 {
 	++_tailLength;
+	++_score; 
 	if (_bodyPos.size() == 0)
 	{
 		_bodyPos.push_back(spawnPos);
@@ -144,6 +145,8 @@ void Snake::Update(float deltaTime)
 		UpdatePosition();
 		_timer = 0;
 	}
+
+
 }
 
 void Snake::Death()

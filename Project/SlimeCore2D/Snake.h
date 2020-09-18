@@ -18,6 +18,8 @@ public:
 
 	void Update(float deltaTime);
 
+	int GetScore() { return _score; }
+
 	void Death();
 	void Restart();
 private:
@@ -32,6 +34,7 @@ private:
 	glm::vec2 _foodPos; 
 
 	int _tailLength = 0; 
+	int _score = 0; 
 	std::vector<glm::vec2> _bodyPos; 
 
 	glm::vec2 _direction = glm::vec2(0);
