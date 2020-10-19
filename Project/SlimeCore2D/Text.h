@@ -1,9 +1,9 @@
 #pragma once
-#include "glm.hpp"
-#include <map>
-#include "Shader.h"
 #include <ft2build.h>
 #include FT_FREETYPE_H
+#include "glm.hpp"
+#include "Shader.h"
+#include <map>
 
 struct Character
 {
@@ -18,12 +18,12 @@ class Text
 public:
 	Text(); 
 	
-	void RenderText(Shader& s, std::string text, float x, float y, float scale, glm::vec3 colour);
+	void RenderText(Shader& s, std::string text, float x, float y, float scale, glm::vec3 color);
 protected:
 	unsigned int VAO, VBO; 
 
 	
 	glm::mat4 _projection; 
-	std::map<char, Character> _characters; 
+	std::map<GLchar, Character> Characters;
 };
 

@@ -1,5 +1,6 @@
 #include "Snake.h"
 #include <iostream> 
+#include <string>
 
 #define GRIDX 25
 #define GRIDY 20
@@ -36,7 +37,7 @@ Snake::Snake(Camera* cam, Renderer2D* rend, ObjectManager* objMan)
 	_textShader = new Shader("Text Shader", "textVert.shader", "textFrag.shader"); 
 	_testText = new Text(); 
 
-	_testText->RenderText(*_textShader, "FUCK ME IN THE ASS, please", 25.0f, 25.0f, 1.0f, glm::vec3(0.5f, 0.8f, 0.2f)); 
+
 	SpawnFood();
 	SpawnTail();
 }
@@ -156,7 +157,15 @@ void Snake::Update(float deltaTime)
 		_timer = 0;
 	}
 
-
+	std::string test = "Score: " + std::to_string(_score);
+	_testText->RenderText(*_textShader, test, 25.0f, 25.0f, 1.0f, glm::vec3(0.5f, 0.8f, 0.2f));
+	for (int x = 0; x < 4; x++)
+	{
+		for (int y = 0; y < 20; y++)
+		{
+			_testText->RenderText(*_textShader, "Connor you gay af", 25.0f + (450.0f * x), 75.0f + (50.0f * y), 1.0f, glm::vec3(1.0f, 1.0f, 1.0f));
+		}
+	}
 }
 
 void Snake::Death()
