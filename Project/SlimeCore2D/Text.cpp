@@ -6,12 +6,14 @@
 
 Text::Text()
 {
-	if (FT_Init_FreeType(&_ftLib))
+	FT_Library* _ftLib = new FT_Library();
+	FT_Face _ftFace;
+
+	if (FT_Init_FreeType(_ftLib))
 		std::cout << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
 
-
-	if (FT_New_Face(_ftLib, "font/Cabin-Regular.ttf", 0, &_ftFace))
-		std::cout << "ERROR::FREETYPE: Faild to load font" << std::endl;
+	if (FT_New_Face(*_ftLib, "..\\Fonts\\arial.ttf", 0, &_ftFace))
+		std::cout << "ERROR::FREETYPE: Failed to load font" << std::endl;
 
 	FT_Set_Pixel_Sizes(_ftFace, 0, 48);
 
@@ -23,7 +25,7 @@ Text::Text()
 	for (unsigned char c = 0; c < 128; c++)
 	{
 		// load character glyph 
-		if (FT_Load_Char((FT_Face)_ftFace, c, FT_LOAD_RENDER))
+		if (FT_Load_Char(_ftFace, c, FT_LOAD_RENDER))
 		{
 			std::cout << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
 			continue;
@@ -55,12 +57,28 @@ Text::Text()
 			glm::ivec2(_ftFace->glyph->bitmap_left, _ftFace->glyph->bitmap_top),
 			_ftFace->glyph->advance.x
 		};
+
 		_characters.insert(std::pair<char, Character>(c, character));
 
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
 		FT_Done_Face(_ftFace);
-		FT_Done_FreeType(_ftLib);
+		FT_Done_FreeType(*_ftLib);
+
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+		_projection = glm::ortho(0.0f, 800.0f, 0.0f, 600.0f);
+
+		glGenVertexArrays(1, &VAO);
+		glGenBuffers(1, &VBO);
+		glBindVertexArray(VAO);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindVertexArray(0);
 	}
 }
 
@@ -94,7 +112,7 @@ void Text::RenderText(Shader& s, std::string text, float x, float y, float scale
 			{ xpos + w, ypos + h,   1.0f, 0.0f }
 		};
 		// render glyph texture over quad
-		glBindTexture(GL_TEXTURE_2D, ch.textureID);
+		glBindTexture(GL_TEXTURE_2D, ch.TextureID);
 		// update content of VBO memory
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
 		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);

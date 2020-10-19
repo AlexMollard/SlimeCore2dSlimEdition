@@ -1,6 +1,8 @@
 #pragma once
 #include "ObjectManager.h"
 #include "Cell.h"
+#include "Text.h"
+#include "Shader.h"
 
 class Snake
 {
@@ -43,6 +45,9 @@ private:
 	float updateLength = 0;
 
 	float _timer; 
+
+	Text* _testText; 
+	Shader* _textShader;
 
 
 	bool isDead = false;

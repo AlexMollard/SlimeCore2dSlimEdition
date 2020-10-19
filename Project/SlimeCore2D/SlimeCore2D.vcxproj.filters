@@ -157,5 +157,11 @@
     <None Include="..\Shaders\UIVertex.shader">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="textVert.shader">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="textFrag.shader">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

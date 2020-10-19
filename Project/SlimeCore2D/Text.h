@@ -21,9 +21,9 @@ public:
 	void RenderText(Shader& s, std::string text, float x, float y, float scale, glm::vec3 colour);
 protected:
 	unsigned int VAO, VBO; 
-	FT_Library _ftLib;
-	FT_Face _ftFace; 
 
+	
+	glm::mat4 _projection; 
 	std::map<char, Character> _characters; 
 };
 

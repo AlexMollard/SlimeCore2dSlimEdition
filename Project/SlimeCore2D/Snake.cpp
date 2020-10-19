@@ -33,6 +33,10 @@ Snake::Snake(Camera* cam, Renderer2D* rend, ObjectManager* objMan)
 		}
 	}
 
+	_textShader = new Shader("Text Shader", "textVert.shader", "textFrag.shader"); 
+	_testText = new Text(); 
+
+	_testText->RenderText(*_textShader, "FUCK ME IN THE ASS, please", 25.0f, 25.0f, 1.0f, glm::vec3(0.5f, 0.8f, 0.2f)); 
 	SpawnFood();
 	SpawnTail();
 }
@@ -47,6 +51,12 @@ Snake::~Snake()
 
 	delete[] _grid;
 	_grid = nullptr;
+
+	delete _textShader;
+	_textShader = nullptr; 
+
+	delete _testText;
+	_testText = nullptr;
 }
 
 void Snake::SpawnFood()
