@@ -17,14 +17,14 @@ Snake::Snake(Camera* cam, Renderer2D* rend, ObjectManager* objMan)
 	_hsFile.open("..\\Txt\\HS.txt"); 
 	if (_hsFile.is_open())
 	{
-		int index = 9; 
+		int index = 0; 
 		while (std::getline(_hsFile, line))
 		{
+			if (line.compare("") == 0)
+				continue; 
 			_highScores[index] = std::stoi(line); 
-			std::cout << line << std::endl;]
-			index--; 
+			index++; 
 		}
-
 		_hsFile.close();
 	}
 	else
@@ -63,6 +63,13 @@ Snake::Snake(Camera* cam, Renderer2D* rend, ObjectManager* objMan)
 
 Snake::~Snake()
 {
+	_hsFile.open("..\\Txt\\HS.txt");
+	for (int i = 0; i < 10; i++)
+	{
+		_hsFile << std::to_string(_highScores[i]) << std::endl;
+	}
+	_hsFile.close();
+
 	for (size_t x = 0; x < GRIDX; x++)
 	{
 		delete[] _grid[x];
@@ -223,15 +230,13 @@ void Snake::Restart()
 
 void Snake::SaveScore(int score)
 {
-	for (int i = 9; i >= 0; i--)
+	for (int i = 0; i <= 9; i++)
 	{
 		if (score <= _highScores[i])
-		{
 			continue; 
-		}
 
 		int savedScore = _highScores[i];
 		_highScores[i] = score;
-		score = savedScore; 
+		score = savedScore;
 	}
 }
