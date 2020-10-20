@@ -3,6 +3,7 @@
 #include "Cell.h"
 #include "Text.h"
 #include "Shader.h"
+#include <fstream>
 
 class Snake
 {
@@ -57,6 +58,7 @@ private:
 	Shader* _textShader;
 
 	int _highScores[10]; 
+	std::fstream _hsFile; 
 
 	bool isDead = false;
 

@@ -12,6 +12,25 @@ Snake::Snake(Camera* cam, Renderer2D* rend, ObjectManager* objMan)
 	_objManager = objMan;
 	Input::GetInstance()->SetCamera(_camera);
 
+	//Reading the high scores from a file 
+	std::string line; 
+	_hsFile.open("..\\Txt\\HS.txt"); 
+	if (_hsFile.is_open())
+	{
+		int index = 9; 
+		while (std::getline(_hsFile, line))
+		{
+			_highScores[index] = std::stoi(line); 
+			std::cout << line << std::endl;]
+			index--; 
+		}
+
+		_hsFile.close();
+	}
+	else
+		std::cout << "Failed to load file" << std::endl; 
+
+
 	srand(time_t(0)); 
 
 	_grid = new Cell * [GRIDX];
@@ -207,7 +226,9 @@ void Snake::SaveScore(int score)
 	for (int i = 9; i >= 0; i--)
 	{
 		if (score <= _highScores[i])
+		{
 			continue; 
+		}
 
 		int savedScore = _highScores[i];
 		_highScores[i] = score;
