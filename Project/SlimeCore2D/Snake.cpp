@@ -106,15 +106,22 @@ void Snake::UpdatePosition()
 
 	if (_bodyPos[0] == _foodPos)
 	{
+		++_score;
 		SpawnFood();
 		SpawnTail();
+	}
+
+	for (int i = 1; i < _bodyPos.size(); i++)
+	{
+		if (_bodyPos[0] == _bodyPos[i])
+			Death(); 
 	}
 }
 
 void Snake::SpawnTail()
 {
 	++_tailLength;
-	++_score; 
+
 	if (_bodyPos.size() == 0)
 	{
 		_bodyPos.push_back(spawnPos);
@@ -159,18 +166,20 @@ void Snake::Update(float deltaTime)
 
 	std::string test = "Score: " + std::to_string(_score);
 	_testText->RenderText(*_textShader, test, 25.0f, 25.0f, 1.0f, glm::vec3(0.5f, 0.8f, 0.2f));
-	for (int x = 0; x < 4; x++)
+	_testText->RenderText(*_textShader, "SNAKE", 850.0F, 900.0F, 1.0F, glm::vec3(1.0f, 0.0f, 0.0f));
+
+	for (size_t i = 0; i < 10; i++)
 	{
-		for (int y = 0; y < 20; y++)
-		{
-			_testText->RenderText(*_textShader, "Connor you gay af", 25.0f + (450.0f * x), 75.0f + (50.0f * y), 1.0f, glm::vec3(1.0f, 1.0f, 1.0f));
-		}
+		std::string highScore = "HS" + std::to_string(i + 1) + ":     " + std::to_string(_highScores[i]);
+		_testText->RenderText(*_textShader, highScore, 25.0f, 900.0f - (50.0f * i), 1.0f, glm::vec3(0.0f, 1.0f, 0.0f)); 
 	}
 }
 
 void Snake::Death()
 {
 	std::cout << "GAMEOVER \nYour score: " << _tailLength - 1 << std::endl;
+	SaveScore(_score); 
+	_score = 0; 
 	Restart();
 }
 
@@ -191,4 +200,17 @@ void Snake::Restart()
 
 	SpawnTail();
 	SpawnFood();
+}
+
+void Snake::SaveScore(int score)
+{
+	for (int i = 9; i >= 0; i--)
+	{
+		if (score <= _highScores[i])
+			continue; 
+
+		int savedScore = _highScores[i];
+		_highScores[i] = score;
+		score = savedScore; 
+	}
 }

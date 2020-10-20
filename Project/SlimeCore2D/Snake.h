@@ -24,6 +24,13 @@ public:
 
 	void Death();
 	void Restart();
+
+	void SaveScore(int score); 
+
+	void Swap(int& a, int& b); 
+
+	int BinarySearch(int arr[], int l, int r, int x); 
+
 private:
 	Renderer2D* _renderer = nullptr;
 	ObjectManager* _objManager = nullptr;
@@ -49,6 +56,7 @@ private:
 	Text* _testText; 
 	Shader* _textShader;
 
+	int _highScores[10]; 
 
 	bool isDead = false;
 
