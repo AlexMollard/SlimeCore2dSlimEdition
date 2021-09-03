@@ -112,7 +112,7 @@ void Snake::UpdatePosition()
 
 	for (int i = tailEnd; i > 0; i--)
 	{
-		_bodyPos[i] = _bodyPos[i - 1];
+		_bodyPos[i] = _bodyPos[i - 1.0f];
 
 		_grid[(int)_bodyPos[i].x][(int)_bodyPos[i].y].SetState(Cell::STATE::TAIL);
 		_grid[(int)_bodyPos[i].x][(int)_bodyPos[i].y]._cell->SetColor(snakeColor);

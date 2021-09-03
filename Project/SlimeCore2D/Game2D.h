@@ -2,6 +2,7 @@
 #include "ObjectManager.h"
 #include "PhysicsScene.h"
 #include "Snake.h"
+#include "AStar.h"
 
 class Game2D
 {
@@ -22,6 +23,7 @@ private:
 	Camera* camera = nullptr;
 	GameObject* testObject = nullptr;
 	Snake* snakeGame = nullptr;
+	AStar* aStartTest = nullptr; 
 
 
 

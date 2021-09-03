@@ -163,11 +163,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AStar.cpp" />
     <ClCompile Include="BoundingBox.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Cell.cpp" />
     <ClCompile Include="CollisionManager.cpp" />
     <ClCompile Include="Input.cpp" />
+    <ClCompile Include="Node.cpp" />
     <ClCompile Include="ObjectManager.cpp" />
     <ClCompile Include="Quad.cpp" />
     <ClCompile Include="Game2D.cpp" />
@@ -184,12 +186,14 @@
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AStar.h" />
     <ClInclude Include="BoundingBox.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Cell.h" />
     <ClInclude Include="CollisionManager.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="Keycode.h" />
+    <ClInclude Include="Node.h" />
     <ClInclude Include="ObjectManager.h" />
     <ClInclude Include="Quad.h" />
     <ClInclude Include="Game2D.h" />

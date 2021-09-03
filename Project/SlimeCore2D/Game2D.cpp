@@ -14,8 +14,11 @@ Game2D::~Game2D()
 	delete objectManager;
 	objectManager = nullptr;
 
-	delete snakeGame;
-	snakeGame = nullptr;
+	/*delete snakeGame;
+	snakeGame = nullptr;*/
+
+	delete aStartTest; 
+	aStartTest = nullptr; 
 }
 
 void Game2D::Init()
@@ -26,7 +29,9 @@ void Game2D::Init()
 	physicsScene = new PhysicsScene();
 	Input::GetInstance()->SetCamera(camera);
 
-	snakeGame = new Snake(camera, renderer, objectManager);
+	//snakeGame = new Snake(camera, renderer, objectManager);
+
+	aStartTest = new AStar(camera, renderer, objectManager); 
 }
 
 void Game2D::Update(float deltaTime)
@@ -34,7 +39,7 @@ void Game2D::Update(float deltaTime)
 	camera->Update(deltaTime);
 	physicsScene->update(deltaTime);
 	objectManager->UpdateFrames(deltaTime);
-	snakeGame->Update(deltaTime);
+	//snakeGame->Update(deltaTime);
 
 }
 
