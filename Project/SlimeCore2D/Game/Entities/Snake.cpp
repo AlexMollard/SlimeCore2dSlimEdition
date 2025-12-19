@@ -1,4 +1,5 @@
 #include "Snake.h"
+#include "Resources/ResourceManager.h"
 #include <iostream> 
 #include <string>
 
@@ -53,7 +54,11 @@ Snake::Snake(Camera* cam, Renderer2D* rend, ObjectManager* objMan)
 		}
 	}
 
-	_textShader = new Shader("Text Shader", "textVert.shader", "textFrag.shader"); 
+
+	_textShader = ResourceManager::GetInstance().GetShader("text");
+	if (!_textShader)
+		_textShader = new Shader("Text Shader", "textVert.shader", "textFrag.shader");
+
 	_testText = new Text(); 
 
 

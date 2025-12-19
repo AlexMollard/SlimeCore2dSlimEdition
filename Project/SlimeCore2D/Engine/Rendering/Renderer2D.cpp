@@ -1,4 +1,5 @@
 #include "Renderer2D.h"
+#include "Resources/ResourceManager.h"
 #include <algorithm>
 #include <array>
 #include <iostream>
@@ -54,8 +55,16 @@ static glm::vec2 basicUVS[4] =
 
 Renderer2D::Renderer2D(Camera* camera)
 {
-	basicShader = new Shader("Basic Shader", "..\\Shaders\\BasicVertex.shader", "..\\Shaders\\BasicFragment.shader");
-	UIShader = new Shader("Basic Shader", "..\\Shaders\\UIVertex.shader", "..\\Shaders\\UIFragment.shader");
+	// Load shaders from resource directories
+	ResourceManager::GetInstance().LoadShadersFromDir();
+
+	basicShader = ResourceManager::GetInstance().GetShader("basic");
+	if (!basicShader)
+		basicShader = new Shader("Basic Shader", "..\\Shaders\\BasicVertex.shader", "..\\Shaders\\BasicFragment.shader");
+
+	UIShader = ResourceManager::GetInstance().GetShader("ui");
+	if (!UIShader)
+		UIShader = new Shader("UI Shader", "..\\Shaders\\UIVertex.shader", "..\\Shaders\\UIFragment.shader");
 
 	this->camera = camera;
 

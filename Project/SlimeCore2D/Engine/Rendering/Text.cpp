@@ -1,4 +1,5 @@
 #include "Text.h"
+#include "Resources/ResourceManager.h"
 #include <iostream>
 #include "glfw3.h"
 #include "glew.h"
@@ -19,12 +20,16 @@ Text::Text()
 	}
 
 	// find path to font
-	std::string font_name = "..\\Fonts\\Chilanka-Regular.ttf";
+	std::string font_name = ResourceManager::GetInstance().GetResourcePath("Fonts\\Chilanka-Regular.ttf");
+	if (font_name.empty())
+	{
+		font_name = "..\\Fonts\\Chilanka-Regular.ttf";
+	}
 
 	// load font as face
 	FT_Face face;
 	if (FT_New_Face(ft, font_name.c_str(), 0, &face)) {
-		std::cout << "ERROR::FREETYPE: Failed to load font" << std::endl;
+		std::cout << "ERROR::FREETYPE: Failed to load font: " << font_name << std::endl;
 		return;
 	}
 	else {
