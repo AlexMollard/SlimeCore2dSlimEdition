@@ -1,6 +1,6 @@
-#include <iostream>
 #include <glew.h>
 #include <glfw3.h>
+#include <iostream>
 
 class Window
 {
@@ -15,6 +15,7 @@ public:
 	void Window_destroy();
 
 	float GetDeltaTime();
+
 protected:
 	// Main Window
 	GLFWwindow* window;

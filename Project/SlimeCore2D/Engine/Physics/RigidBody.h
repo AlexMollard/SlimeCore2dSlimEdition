@@ -1,32 +1,57 @@
 #pragma once
-#include "glm.hpp"
 #include <string>
-#include "BoundingBox.h"
 #include <vector>
+
+#include "BoundingBox.h"
+#include "glm.hpp"
 
 class RigidBody
 {
 public:
 	std::string name = "";
 
-	glm::vec2 GetVelocity() { return velocity; };
+	glm::vec2 GetVelocity()
+	{
+		return velocity;
+	};
 
 	void SetPos(glm::vec3 newPos);
 	void SetPos(float x, float y, float z);
 	glm::vec3 GetPos();
 
-	void SetVelocity(glm::vec2 newVel) { velocity = newVel; };
-	void AddVelocity(glm::vec2 newVel) { velocity += newVel; };
+	void SetVelocity(glm::vec2 newVel)
+	{
+		velocity = newVel;
+	};
+
+	void AddVelocity(glm::vec2 newVel)
+	{
+		velocity += newVel;
+	};
 
 	void fixedUpdate(glm::vec2 gravity, float timeStep);
 
-	bool GetKinematic() { return isKinematic; };
-	void SetKinematic(bool value) { isKinematic = value; };
+	bool GetKinematic()
+	{
+		return isKinematic;
+	};
+
+	void SetKinematic(bool value)
+	{
+		isKinematic = value;
+	};
 
 	void ApplyDrag(float timeStep);
 
-	float GetMass() { return mass; };
-	void SetMass(float newMass) { mass = newMass; };
+	float GetMass()
+	{
+		return mass;
+	};
+
+	void SetMass(float newMass)
+	{
+		mass = newMass;
+	};
 
 	void ApplyForceToActor(RigidBody* obj, glm::vec2 force);
 	void ApplyForce(glm::vec2 force);
@@ -43,7 +68,6 @@ public:
 
 	BoundingBox* GetBoundingBox();
 	void SetBoundingBox(glm::vec2 offset, glm::vec2 scale);
-
 
 	glm::vec2 GetScale();
 	void SetScale(glm::vec2 newScale);
@@ -62,8 +86,8 @@ public:
 	bool isKinematic = false;
 	int ID = -404;
 	bool useBoundingBox = false;
-protected:
 
+protected:
 	glm::vec3 position = glm::vec3(0);
 	glm::vec3 localPosition = glm::vec3(0);
 	glm::vec2 scale = glm::vec2(1);

@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+
 #include "glew.h"
 #include "glfw3.h"
 
@@ -12,9 +13,21 @@ public:
 	~Texture();
 
 	void load(std::string dir);
-	void Bind() { glBindTexture(GL_TEXTURE_2D, textureID); };
-	unsigned int GetID() { return textureID; };
-	void SetID(unsigned int newID) { textureID = newID; };
+
+	void Bind()
+	{
+		glBindTexture(GL_TEXTURE_2D, textureID);
+	};
+
+	unsigned int GetID()
+	{
+		return textureID;
+	};
+
+	void SetID(unsigned int newID)
+	{
+		textureID = newID;
+	};
 
 	int GetWidth();
 	int GetHeight();

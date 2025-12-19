@@ -27,9 +27,9 @@ bool BoundingBox::GetMouseColliding()
 {
 	glm::vec2 mousePos = inputManager->GetMousePos();
 
-	bool collisionX = (mousePos.x > min.x&& max.x > mousePos.x);
+	bool collisionX = (mousePos.x > min.x && max.x > mousePos.x);
 
-	bool collisionY = (mousePos.y > min.y&& max.y > mousePos.y);
+	bool collisionY = (mousePos.y > min.y && max.y > mousePos.y);
 
 	return (collisionX && collisionY);
 }

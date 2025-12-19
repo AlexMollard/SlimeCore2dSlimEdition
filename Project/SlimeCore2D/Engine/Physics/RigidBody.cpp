@@ -1,4 +1,5 @@
 #include "RigidBody.h"
+
 #include <iostream>
 
 void RigidBody::SetPos(glm::vec3 newPos)

@@ -1,7 +1,9 @@
 #include "Snake.h"
-#include "Resources/ResourceManager.h"
-#include <iostream> 
+
+#include <iostream>
 #include <string>
+
+#include "Resources/ResourceManager.h"
 
 #define GRIDX 25
 #define GRIDY 20
@@ -13,34 +15,33 @@ Snake::Snake(Camera* cam, Renderer2D* rend, ObjectManager* objMan)
 	_objManager = objMan;
 	Input::GetInstance()->SetCamera(_camera);
 
-	//Reading the high scores from a file 
-	std::string line; 
-	_hsFile.open("..\\Txt\\HS.txt"); 
+	//Reading the high scores from a file
+	std::string line;
+	_hsFile.open("..\\Txt\\HS.txt");
 	if (_hsFile.is_open())
 	{
-		int index = 0; 
+		int index = 0;
 		while (std::getline(_hsFile, line))
 		{
 			if (line.compare("") == 0)
-				continue; 
-			_highScores[index] = std::stoi(line); 
-			index++; 
+				continue;
+			_highScores[index] = std::stoi(line);
+			index++;
 		}
 		_hsFile.close();
 	}
 	else
-		std::cout << "Failed to load file" << std::endl; 
+		std::cout << "Failed to load file" << std::endl;
 
+	srand(time_t(0));
 
-	srand(time_t(0)); 
-
-	_grid = new Cell * [GRIDX];
+	_grid = new Cell*[GRIDX];
 	for (size_t i = 0; i < GRIDX; i++)
 	{
 		_grid[i] = new Cell[GRIDY];
 	}
 
-	spawnPos = glm::vec2(GRIDX/2 - 1, GRIDY/2 - 1);
+	spawnPos = glm::vec2(GRIDX / 2 - 1, GRIDY / 2 - 1);
 
 	float cellSize = 0.5f;
 	float cellspacing = cellSize + 0.1f;
@@ -54,13 +55,11 @@ Snake::Snake(Camera* cam, Renderer2D* rend, ObjectManager* objMan)
 		}
 	}
 
-
 	_textShader = ResourceManager::GetInstance().GetShader("text");
 	if (!_textShader)
 		_textShader = new Shader("Text Shader", "textVert.shader", "textFrag.shader");
 
-	_testText = new Text(); 
-
+	_testText = new Text();
 
 	SpawnFood();
 	SpawnTail();
@@ -85,7 +84,7 @@ Snake::~Snake()
 	_grid = nullptr;
 
 	delete _textShader;
-	_textShader = nullptr; 
+	_textShader = nullptr;
 
 	delete _testText;
 	_testText = nullptr;
@@ -98,8 +97,8 @@ void Snake::SpawnFood()
 	{
 		x = rand() % GRIDX;
 		y = rand() % GRIDY;
-
-	} while (std::find(_bodyPos.begin(), _bodyPos.end(), glm::vec2(x,y)) != _bodyPos.end());
+	}
+	while (std::find(_bodyPos.begin(), _bodyPos.end(), glm::vec2(x, y)) != _bodyPos.end());
 
 	_foodPos = glm::vec2(x, y);
 
@@ -109,31 +108,30 @@ void Snake::SpawnFood()
 
 void Snake::UpdatePosition()
 {
-	int tailEnd = _tailLength - 1; 
+	int tailEnd = _tailLength - 1;
 	glm::vec2 endOfTailPosFromPrevTic = _bodyPos.back();
 
-	_grid[(int)endOfTailPosFromPrevTic.x][(int)endOfTailPosFromPrevTic.y].SetState(Cell::STATE::EMPTY);
-	_grid[(int)endOfTailPosFromPrevTic.x][(int)endOfTailPosFromPrevTic.y]._cell->SetColor(gridColor);
+	_grid[(int) endOfTailPosFromPrevTic.x][(int) endOfTailPosFromPrevTic.y].SetState(Cell::STATE::EMPTY);
+	_grid[(int) endOfTailPosFromPrevTic.x][(int) endOfTailPosFromPrevTic.y]._cell->SetColor(gridColor);
 
 	for (int i = tailEnd; i > 0; i--)
 	{
 		_bodyPos[i] = _bodyPos[i - 1];
 
-		_grid[(int)_bodyPos[i].x][(int)_bodyPos[i].y].SetState(Cell::STATE::TAIL);
-		_grid[(int)_bodyPos[i].x][(int)_bodyPos[i].y]._cell->SetColor(snakeColor);
+		_grid[(int) _bodyPos[i].x][(int) _bodyPos[i].y].SetState(Cell::STATE::TAIL);
+		_grid[(int) _bodyPos[i].x][(int) _bodyPos[i].y]._cell->SetColor(snakeColor);
 	}
 
-	_bodyPos[0] += _direction; 
-
+	_bodyPos[0] += _direction;
 
 	if (_bodyPos[0].x >= GRIDX || _bodyPos[0].x < 0 || _bodyPos[0].y >= GRIDY || _bodyPos[0].y < 0)
 	{
 		Death();
-		return; 
+		return;
 	}
 
-	_grid[(int)_bodyPos[0].x][(int)_bodyPos[0].y].SetState(Cell::STATE::TAIL);
-	_grid[(int)_bodyPos[0].x][(int)_bodyPos[0].y]._cell->SetColor(snakeColor * glm::vec3(1.2f));
+	_grid[(int) _bodyPos[0].x][(int) _bodyPos[0].y].SetState(Cell::STATE::TAIL);
+	_grid[(int) _bodyPos[0].x][(int) _bodyPos[0].y]._cell->SetColor(snakeColor * glm::vec3(1.2f));
 
 	if (_bodyPos[0] == _foodPos)
 	{
@@ -145,7 +143,7 @@ void Snake::UpdatePosition()
 	for (int i = 1; i < _bodyPos.size(); i++)
 	{
 		if (_bodyPos[0] == _bodyPos[i])
-			Death(); 
+			Death();
 	}
 }
 
@@ -162,15 +160,14 @@ void Snake::SpawnTail()
 		_bodyPos.push_back(_bodyPos.back() - (_bodyPos[_bodyPos.size() - 1]));
 	}
 
-	_grid[(int)_bodyPos.back().x][(int)_bodyPos.back().y].SetState(Cell::STATE::TAIL);
-	_grid[(int)_bodyPos.back().x][(int)_bodyPos.back().y]._cell->SetColor(gridColor);
+	_grid[(int) _bodyPos.back().x][(int) _bodyPos.back().y].SetState(Cell::STATE::TAIL);
+	_grid[(int) _bodyPos.back().x][(int) _bodyPos.back().y]._cell->SetColor(gridColor);
 }
-
 
 void Snake::Update(float deltaTime)
 {
 	_timer += deltaTime;
-	
+
 	if (_inputManager->GetKeyPress(Keycode::LEFT) && _lastDirection != glm::vec2(1.0f, 0.0f))
 	{
 		_direction = glm::vec2(-1.0f, 0.0f);
@@ -202,15 +199,15 @@ void Snake::Update(float deltaTime)
 	for (size_t i = 0; i < 10; i++)
 	{
 		std::string highScore = "HS" + std::to_string(i + 1) + ":     " + std::to_string(_highScores[i]);
-		_testText->RenderText(*_textShader, highScore, 25.0f, 900.0f - (50.0f * i), 1.0f, glm::vec3(0.0f, 1.0f, 0.0f)); 
+		_testText->RenderText(*_textShader, highScore, 25.0f, 900.0f - (50.0f * i), 1.0f, glm::vec3(0.0f, 1.0f, 0.0f));
 	}
 }
 
 void Snake::Death()
 {
 	std::cout << "GAMEOVER \nYour score: " << _tailLength - 1 << std::endl;
-	SaveScore(_score); 
-	_score = 0; 
+	SaveScore(_score);
+	_score = 0;
 	Restart();
 }
 
@@ -228,7 +225,6 @@ void Snake::Restart()
 		}
 	}
 
-
 	SpawnTail();
 	SpawnFood();
 }
@@ -238,7 +234,7 @@ void Snake::SaveScore(int score)
 	for (int i = 0; i <= 9; i++)
 	{
 		if (score <= _highScores[i])
-			continue; 
+			continue;
 
 		int savedScore = _highScores[i];
 		_highScores[i] = score;

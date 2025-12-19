@@ -1,4 +1,5 @@
 #include "Input.h"
+
 #include <iostream>
 #include <string>
 
@@ -25,7 +26,7 @@ void Input::Update()
 	aspectX = -camera->GetAspectRatio().x;
 	aspectY = -camera->GetAspectRatio().y;
 
-	deltaMouse = glm::vec2((float)mouseXPos, (float)mouseYPos);
+	deltaMouse = glm::vec2((float) mouseXPos, (float) mouseYPos);
 
 	glfwGetCursorPos(window, &mouseXPos, &mouseYPos);
 	glfwGetWindowSize(window, &winWidth, &winHeight);
@@ -37,7 +38,7 @@ void Input::Update()
 	mouseYPos -= aspectY;
 	mouseYPos = -mouseYPos;
 
-	deltaMouse -= glm::vec2((float)mouseXPos, (float)mouseYPos);
+	deltaMouse -= glm::vec2((float) mouseXPos, (float) mouseYPos);
 	Input::scroll = 0.0f;
 }
 
@@ -103,7 +104,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 
 bool Input::GetKeyPress(Keycode key)
 {
-	int state = glfwGetKey(GetInstance()->window, (int)key);
+	int state = glfwGetKey(GetInstance()->window, (int) key);
 	if (state == GLFW_PRESS)
 	{
 		return true;

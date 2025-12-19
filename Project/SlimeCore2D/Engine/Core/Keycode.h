@@ -3,11 +3,11 @@
 enum Keycode
 {
 	SPACE = 32,
-	APOSTROPHE = 39,	/* ' */
-	COMMA = 44,			/* , */
-	MINUS = 45,			/* - */
-	PERIOD = 46,		/* . */
-	SLASH = 47,			/* / */
+	APOSTROPHE = 39, /* ' */
+	COMMA = 44,      /* , */
+	MINUS = 45,      /* - */
+	PERIOD = 46,     /* . */
+	SLASH = 47,      /* / */
 	KEY_0 = 48,
 	KEY_1 = 49,
 	KEY_2 = 50,
@@ -18,8 +18,8 @@ enum Keycode
 	KEY_7 = 55,
 	KEY_8 = 56,
 	KEY_9 = 57,
-	SEMICOLON = 59,		/* ; */
-	EQUAL = 61,			/* = */
+	SEMICOLON = 59, /* ; */
+	EQUAL = 61,     /* = */
 
 	A = 65,
 	B,

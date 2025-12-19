@@ -1,6 +1,7 @@
 #include "Quad.h"
 
-Quad::Quad() : GameObject()
+Quad::Quad()
+      : GameObject()
 {
 }
 

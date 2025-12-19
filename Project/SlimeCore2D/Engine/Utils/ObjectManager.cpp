@@ -9,7 +9,7 @@ ObjectManager::~ObjectManager()
 {
 	for (int i = 0; i < objects.size(); i++)
 	{
-		delete (Quad*)objects[i];
+		delete (Quad*) objects[i];
 
 		objects[i] = nullptr;
 	}

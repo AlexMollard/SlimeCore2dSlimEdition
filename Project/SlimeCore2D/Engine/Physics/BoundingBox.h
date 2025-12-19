@@ -1,6 +1,6 @@
 #pragma once
-#include "glm.hpp"
 #include "Core/Input.h"
+#include "glm.hpp"
 
 class BoundingBox
 {
@@ -22,8 +22,8 @@ public:
 
 	glm::vec2 offset = glm::vec2(0);
 	glm::vec2 scale = glm::vec2(0);
-private:
 
+private:
 	Input* inputManager = Input::GetInstance();
 
 	glm::vec2 max = glm::vec2(0);

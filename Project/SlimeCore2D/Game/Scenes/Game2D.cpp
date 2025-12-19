@@ -3,7 +3,6 @@
 Game2D::Game2D()
 {
 	Init();
-
 }
 
 Game2D::~Game2D()
@@ -35,7 +34,6 @@ void Game2D::Update(float deltaTime)
 	physicsScene->update(deltaTime);
 	objectManager->UpdateFrames(deltaTime);
 	snakeGame->Update(deltaTime);
-
 }
 
 void Game2D::Draw()

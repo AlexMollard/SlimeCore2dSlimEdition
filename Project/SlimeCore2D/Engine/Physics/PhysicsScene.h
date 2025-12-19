@@ -1,11 +1,11 @@
 #pragma once
-#include "RigidBody.h"
-#include <vector>
-#include "glm.hpp"
-#include "CollisionManager.h"
-
-#include <functional>
 #include <algorithm>
+#include <functional>
+#include <vector>
+
+#include "CollisionManager.h"
+#include "glm.hpp"
+#include "RigidBody.h"
 
 class PhysicsScene
 {
@@ -21,11 +21,25 @@ public:
 	void update(float dt);
 	void Debug();
 
-	void setGravity(const glm::vec3 gravity) { this->gravity = gravity; }
-	glm::vec2 getGravity() const { return gravity; }
+	void setGravity(const glm::vec3 gravity)
+	{
+		this->gravity = gravity;
+	}
 
-	void setTimeStep(const float timeStep) { this->timeStep = timeStep; }
-	float getTimeStep() const { return timeStep; }
+	glm::vec2 getGravity() const
+	{
+		return gravity;
+	}
+
+	void setTimeStep(const float timeStep)
+	{
+		this->timeStep = timeStep;
+	}
+
+	float getTimeStep() const
+	{
+		return timeStep;
+	}
 
 protected:
 	glm::vec2 gravity;

@@ -1,11 +1,14 @@
 #include "PhysicsScene.h"
+
 #include <iostream>
-#include <tuple>
 #include <sstream>
+#include <tuple>
 #include <unordered_map>
+
 #include "Rendering/Renderer2D.h"
 
-PhysicsScene::PhysicsScene() : timeStep(0.01f), gravity(glm::vec2(0, -3.24f))
+PhysicsScene::PhysicsScene()
+      : timeStep(0.01f), gravity(glm::vec2(0, -3.24f))
 {
 }
 
@@ -47,14 +50,14 @@ void PhysicsScene::removeActor(RigidBody* actor)
 	actors.erase(location);
 }
 
-void PhysicsScene::update(float dt) {
-
+void PhysicsScene::update(float dt)
+{
 	// update physics at a fixed time step
 	static float accumulatedTime = 0.0f;
 	accumulatedTime += dt;
 	while (accumulatedTime >= timeStep)
 	{
-		for (auto pActor : actors)
+		for (auto pActor: actors)
 		{
 			pActor->fixedUpdate(gravity, timeStep);
 		}
@@ -73,7 +76,6 @@ void PhysicsScene::update(float dt) {
 
 			auto result = CollisionManager::QuadVsQuad(object, other);
 
-
 			if (glm::length(result) > 0.01)
 			{
 				other->SetNormal(result);
@@ -81,7 +83,6 @@ void PhysicsScene::update(float dt) {
 				other->ApplyOffSetToActor(object, glm::vec3(result, 0));
 				other->resolveCollision(object);
 			}
-
 		}
 	}
 }

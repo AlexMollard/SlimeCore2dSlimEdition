@@ -1,8 +1,9 @@
 #pragma once
+#include <string>
+
 #include "glew.h"
 #include "glfw3.h"
 #include "glm.hpp"
-#include <string>
 
 class Shader
 {
@@ -14,14 +15,23 @@ public:
 	unsigned int CompileShader(unsigned int type, const std::string& source);
 	void CheckCompileErrors(GLuint shader, std::string type);
 	unsigned int GetID();
-	void Use() { glUseProgram(shader_ID); }
-	std::string GetName() { return name; };
+
+	void Use()
+	{
+		glUseProgram(shader_ID);
+	}
+
+	std::string GetName()
+	{
+		return name;
+	};
 
 #pragma region Uniform functions
+
 	// ------------------------------------------------------------------------
 	void setBool(const std::string& name, bool value) const
 	{
-		glUniform1i(glGetUniformLocation(shader_ID, name.c_str()), (int)value);
+		glUniform1i(glGetUniformLocation(shader_ID, name.c_str()), (int) value);
 	}
 
 	// ------------------------------------------------------------------------
@@ -41,6 +51,7 @@ public:
 	{
 		glUniform2fv(glGetUniformLocation(shader_ID, name.c_str()), 1, &value[0]);
 	}
+
 	void setVec2(const std::string& name, float x, float y) const
 	{
 		glUniform2f(glGetUniformLocation(shader_ID, name.c_str()), x, y);
@@ -51,6 +62,7 @@ public:
 	{
 		glUniform3fv(glGetUniformLocation(shader_ID, name.c_str()), 1, &value[0]);
 	}
+
 	void setVec3(const std::string& name, float x, float y, float z) const
 	{
 		glUniform3f(glGetUniformLocation(shader_ID, name.c_str()), x, y, z);
@@ -61,6 +73,7 @@ public:
 	{
 		glUniform4fv(glGetUniformLocation(shader_ID, name.c_str()), 1, &value[0]);
 	}
+
 	void setVec4(const std::string& name, float x, float y, float z, float w)
 	{
 		glUniform4f(glGetUniformLocation(shader_ID, name.c_str()), x, y, z, w);
@@ -83,6 +96,7 @@ public:
 	{
 		glUniformMatrix4fv(glGetUniformLocation(shader_ID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
 	}
+
 #pragma endregion
 
 protected:

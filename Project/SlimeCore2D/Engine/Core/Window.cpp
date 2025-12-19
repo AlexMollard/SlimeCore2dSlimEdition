@@ -70,7 +70,7 @@ void Window::Update_Window()
 		glfwSetWindowShouldClose(window, true);
 
 	now = glfwGetTime();
-	delta = (float)(now - last);
+	delta = (float) (now - last);
 	last = now;
 }
 

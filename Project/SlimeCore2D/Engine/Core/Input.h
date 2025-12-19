@@ -1,16 +1,17 @@
 #pragma once
-#include "glm.hpp"
+#include "Camera.h"
 #include "glew.h"
 #include "glfw3.h"
+#include "glm.hpp"
 #include "Keycode.h"
-#include "Camera.h"
 
 class Input
 {
 public:
 	~Input();
 
-	static Input* GetInstance() {
+	static Input* GetInstance()
+	{
 		if (!instance)
 			instance = new Input;
 		return instance;
@@ -38,6 +39,7 @@ public:
 	void SetFocus(bool focus);
 
 	static glm::vec2 GetMouseToWorldPos();
+
 private:
 	static Input* instance;
 

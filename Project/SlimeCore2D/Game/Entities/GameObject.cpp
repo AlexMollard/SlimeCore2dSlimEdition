@@ -1,5 +1,7 @@
 #include "GameObject.h"
+
 #include <string>
+
 #include "gtc/quaternion.hpp"
 
 GameObject::GameObject()
@@ -210,6 +212,5 @@ void GameObject::SetRender(bool value)
 
 bool GameObject::GetMouseColliding()
 {
-	return (Input::GetMousePos().x > GetPos().x - (GetScale().x / 2) && Input::GetMousePos().x < GetPos().x + (GetScale().x / 2)
-		&& Input::GetMousePos().y > GetPos().y - (GetScale().y / 2) && Input::GetMousePos().y < GetPos().y + (GetScale().y / 2));
+	return (Input::GetMousePos().x > GetPos().x - (GetScale().x / 2) && Input::GetMousePos().x < GetPos().x + (GetScale().x / 2) && Input::GetMousePos().y > GetPos().y - (GetScale().y / 2) && Input::GetMousePos().y < GetPos().y + (GetScale().y / 2));
 }

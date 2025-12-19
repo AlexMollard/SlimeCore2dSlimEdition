@@ -53,7 +53,7 @@ public:
 
 	bool GetRender();
 	void SetRender(bool value);
-	
+
 	bool GetMouseColliding();
 
 protected:
@@ -66,7 +66,6 @@ protected:
 
 	Texture* texture = nullptr;
 	Shader* shader = nullptr;
-
 
 	// Sprite Stuff
 	int frame = 0;

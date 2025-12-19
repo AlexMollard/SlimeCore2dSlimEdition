@@ -2,12 +2,9 @@
 
 Cell::Cell()
 {
- 
 }
-
 
 Cell::~Cell()
 {
-	_cell = nullptr; 
+	_cell = nullptr;
 }
-

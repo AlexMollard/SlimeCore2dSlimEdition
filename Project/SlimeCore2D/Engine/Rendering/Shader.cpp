@@ -1,9 +1,11 @@
 #include "Shader.h"
-#include "ext.hpp"
-#include <vector>
+
 #include <fstream>
-#include <sstream>
 #include <iostream>
+#include <sstream>
+#include <vector>
+
+#include "ext.hpp"
 
 Shader::Shader(std::string name, const char* vertexPath, const char* fragmentPath, const char* geometryPath)
 {
@@ -110,7 +112,7 @@ unsigned int Shader::CompileShader(unsigned int type, const std::string& source)
 	{
 		int length;
 		glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
-		char* errorMessage = (char*)alloca(length * sizeof(char));
+		char* errorMessage = (char*) alloca(length * sizeof(char));
 		glGetShaderInfoLog(id, length, &length, errorMessage);
 		std::cout << "Failed to compile " << (type == GL_VERTEX_SHADER ? "Vertex" : "fragment") << "Shader" << std::endl;
 		std::cout << errorMessage << std::endl;

@@ -1,11 +1,12 @@
 #include "Renderer2D.h"
-#include "Resources/ResourceManager.h"
+
 #include <algorithm>
 #include <array>
 #include <iostream>
-#include "Math.h"
 #include <map>
 
+#include "Math.h"
+#include "Resources/ResourceManager.h"
 
 std::vector<glm::vec2> Renderer2D::UVs;
 Camera* Renderer2D::camera;
@@ -45,13 +46,7 @@ struct RendererData
 
 static RendererData data;
 
-static glm::vec2 basicUVS[4] =
-{
-	glm::vec2(0.0f,0.0f),
-	glm::vec2(1.0f,0.0f),
-	glm::vec2(1.0f,1.0f),
-	glm::vec2(0.0f,1.0f)
-};
+static glm::vec2 basicUVS[4] = { glm::vec2(0.0f, 0.0f), glm::vec2(1.0f, 0.0f), glm::vec2(1.0f, 1.0f), glm::vec2(0.0f, 1.0f) };
 
 Renderer2D::Renderer2D(Camera* camera)
 {
@@ -76,7 +71,6 @@ Renderer2D::Renderer2D(Camera* camera)
 		samplers[i] = i;
 
 	glUniform1iv(loc, maxTextures, samplers);
-
 
 	UIShader->Use();
 
@@ -119,7 +113,7 @@ void Renderer2D::AddObject(GameObject* newObject)
 	GameObject* go = newObject;
 	go->SetID(objectPool.size());
 	go->SetShader(basicShader);
-	 
+
 	if (objectPool.size() > 0)
 	{
 		if (objectPool.back()->GetPos().z <= go->GetPos().z)
@@ -132,14 +126,13 @@ void Renderer2D::AddObject(GameObject* newObject)
 		{
 			if (objectPool[i]->GetPos().z >= go->GetPos().z)
 			{
- 				objectPool.insert(objectPool.begin() + i, go);
+				objectPool.insert(objectPool.begin() + i, go);
 				return;
 			}
 		}
-
 	}
 	else
-	objectPool.push_back(go);
+		objectPool.push_back(go);
 }
 
 Texture* Renderer2D::LoadTexture(std::string dir)
@@ -168,26 +161,25 @@ void Renderer2D::Draw()
 	{
 		if (objectPool[i]->GetRender() == false)
 			continue;
-	
+
 		if (glm::distance(camPos, glm::vec2(objectPool[i]->GetPos())) > distanceFromCenter)
 		{
 			continue;
 		}
-	
+
 		if (objectPool[i]->GetTexture() == nullptr)
 		{
-			DrawQuad(objectPool[i]->GetPos(), objectPool[i]->GetScale(), { objectPool[i]->GetColor() ,1.0f });
+			DrawQuad(objectPool[i]->GetPos(), objectPool[i]->GetScale(), { objectPool[i]->GetColor(), 1.0f });
 		}
 		else if (objectPool[i]->GetTexture() != nullptr)
 		{
-			DrawQuad(objectPool[i]->GetPos(), objectPool[i]->GetScale(), { objectPool[i]->GetColor() ,1.0f }, objectPool[i]->GetTexture(), objectPool[i]->GetFrame(), objectPool[i]->GetSpriteWidth());
+			DrawQuad(objectPool[i]->GetPos(), objectPool[i]->GetScale(), { objectPool[i]->GetColor(), 1.0f }, objectPool[i]->GetTexture(), objectPool[i]->GetFrame(), objectPool[i]->GetSpriteWidth());
 		}
 	}
 
 	EndBatch();
 	Flush();
 	DrawUI();
-
 }
 
 void Renderer2D::DrawUI()
@@ -213,9 +205,9 @@ Shader* Renderer2D::GetBasicShader()
 void Renderer2D::DrawUIQuad(glm::vec2 pos, int layer, glm::vec2 size, glm::vec3 color, Texture* texture)
 {
 	if (texture == nullptr)
-		DrawQuad(glm::vec3(pos.x, pos.y, 2 + layer * 0.01f), size, { color,1.0f });
+		DrawQuad(glm::vec3(pos.x, pos.y, 2 + layer * 0.01f), size, { color, 1.0f });
 	else
-		DrawQuad(glm::vec3(pos.x, pos.y, 2 + layer * 0.01f), size, { color,1.0f }, texture,0,texture->GetWidth());
+		DrawQuad(glm::vec3(pos.x, pos.y, 2 + layer * 0.01f), size, { color, 1.0f }, texture, 0, texture->GetWidth());
 }
 
 void Renderer2D::DrawQuad(glm::vec3 position, glm::vec2 size, glm::vec4 color)
@@ -229,13 +221,7 @@ void Renderer2D::DrawQuad(glm::vec3 position, glm::vec2 size, glm::vec4 color)
 
 	float textureIndex = 0.0f;
 
-	glm::vec3 positions[4] =
-	{
-		glm::vec3(position.x - size.x / 2, position.y - size.y / 2, position.z),
-		glm::vec3(position.x + size.x / 2,position.y - size.y / 2, position.z),
-		glm::vec3(position.x + size.x / 2,position.y + size.y / 2, position.z),
-		glm::vec3(position.x - size.x / 2,position.y + size.y / 2, position.z)
-	};
+	glm::vec3 positions[4] = { glm::vec3(position.x - size.x / 2, position.y - size.y / 2, position.z), glm::vec3(position.x + size.x / 2, position.y - size.y / 2, position.z), glm::vec3(position.x + size.x / 2, position.y + size.y / 2, position.z), glm::vec3(position.x - size.x / 2, position.y + size.y / 2, position.z) };
 
 	for (int i = 0; i < 4; i++)
 	{
@@ -263,14 +249,14 @@ void Renderer2D::DrawQuad(glm::vec3 position, glm::vec2 size, glm::vec4 color, T
 	{
 		if (data.textureSlots[i] == texture->GetID())
 		{
-			textureIndex = (float)i;
+			textureIndex = (float) i;
 			break;
 		}
 	}
 
 	if (textureIndex == 0.0f)
 	{
-		textureIndex = (float)data.textureSlotIndex;
+		textureIndex = (float) data.textureSlotIndex;
 		data.textureSlots[data.textureSlotIndex] = texture->GetID();
 		data.textureSlotIndex++;
 	}
@@ -287,13 +273,7 @@ void Renderer2D::DrawQuad(glm::vec3 position, glm::vec2 size, glm::vec4 color, T
 		setActiveRegion(texture, frame, spriteWidth);
 	}
 
-	glm::vec3 positions[4] =
-	{
-		glm::vec3(position.x - size.x / 2, position.y - size.y / 2, position.z),
-		glm::vec3(position.x + size.x / 2,position.y - size.y / 2, position.z),
-		glm::vec3(position.x + size.x / 2,position.y + size.y / 2, position.z),
-		glm::vec3(position.x - size.x / 2,position.y + size.y / 2, position.z)
-	};
+	glm::vec3 positions[4] = { glm::vec3(position.x - size.x / 2, position.y - size.y / 2, position.z), glm::vec3(position.x + size.x / 2, position.y - size.y / 2, position.z), glm::vec3(position.x + size.x / 2, position.y + size.y / 2, position.z), glm::vec3(position.x - size.x / 2, position.y + size.y / 2, position.z) };
 
 	for (int i = 0; i < 4; i++)
 	{
@@ -310,7 +290,6 @@ void Renderer2D::DrawQuad(glm::vec3 position, glm::vec2 size, glm::vec4 color, T
 void Renderer2D::RemoveQuad(GameObject* object)
 {
 	objectPool.erase(objectPool.begin() + GetObjectIndex(object));
-
 }
 
 int Renderer2D::GetObjectIndex(GameObject* object)
@@ -332,8 +311,8 @@ void Renderer2D::setActiveRegion(Texture* texture, int regionIndex, int spriteWi
 	//					  (int) textureSize / spriteWidth;
 	int numberOfRegions = texture->GetWidth() / spriteWidth;
 
-	float uv_x = (regionIndex % numberOfRegions) / (float)numberOfRegions;
-	float uv_y = (regionIndex / (float)numberOfRegions) * (float)numberOfRegions;
+	float uv_x = (regionIndex % numberOfRegions) / (float) numberOfRegions;
+	float uv_y = (regionIndex / (float) numberOfRegions) * (float) numberOfRegions;
 
 	glm::vec2 uv_down_left = glm::vec2(uv_x, uv_y);
 	glm::vec2 uv_down_right = glm::vec2(uv_x + 1.0f / numberOfRegions, uv_y);
@@ -358,16 +337,16 @@ void Renderer2D::Init()
 	glBufferData(GL_ARRAY_BUFFER, maxVertexCount * sizeof(Vertex), nullptr, GL_DYNAMIC_DRAW);
 
 	glEnableVertexArrayAttrib(data.quadVA, 0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)offsetof(Vertex, position));
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*) offsetof(Vertex, position));
 
 	glEnableVertexArrayAttrib(data.quadVA, 1);
-	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)offsetof(Vertex, color));
+	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*) offsetof(Vertex, color));
 
 	glEnableVertexArrayAttrib(data.quadVA, 2);
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)offsetof(Vertex, texCoords));
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*) offsetof(Vertex, texCoords));
 
 	glEnableVertexArrayAttrib(data.quadVA, 3);
-	glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)offsetof(Vertex, texIndex));
+	glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*) offsetof(Vertex, texIndex));
 
 	uint32_t indices[maxIndexCount];
 	uint32_t offset = 0;
@@ -431,7 +410,7 @@ void Renderer2D::SetShader(Shader* shader)
 
 void Renderer2D::EndBatch()
 {
-	GLsizeiptr size = (uint8_t*)data.quadBufferPtr - (uint8_t*)data.quadBuffer;
+	GLsizeiptr size = (uint8_t*) data.quadBufferPtr - (uint8_t*) data.quadBuffer;
 	glBindBuffer(GL_ARRAY_BUFFER, data.quadVB);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, size, data.quadBuffer);
 }

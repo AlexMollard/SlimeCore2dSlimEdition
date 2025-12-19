@@ -41,5 +41,5 @@ namespace Math
 		glm::vec2 m3 = Lerp(pointThree, pointFour, time);
 		return BezierCurve(m1, m2, m3, time);
 	}
-	
-};
+
+}; // namespace Math

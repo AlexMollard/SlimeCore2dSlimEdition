@@ -7,9 +7,10 @@ CollisionManager::CollisionManager()
 CollisionManager::~CollisionManager()
 {
 }
+
 glm::vec2 CollisionManager::QuadVsQuad(RigidBody* rbOne, RigidBody* rbTwo)
 {
-	glm::vec2 overlapVector = { 0,0 };
+	glm::vec2 overlapVector = { 0, 0 };
 	float overlap = 999999999999.0f;
 
 	glm::vec2 posOne = (rbOne->useBoundingBox) ? rbOne->GetBoundingBox()->GetPos(rbOne->GetPos()) : rbOne->GetPos();

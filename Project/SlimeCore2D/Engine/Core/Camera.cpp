@@ -1,4 +1,5 @@
 #include "Camera.h"
+
 #include "Input.h"
 
 Camera::Camera(float aspectX, float aspectY, float near, float far)
@@ -29,7 +30,7 @@ void Camera::CameraMoveMent(float deltaTime)
 
 	if (Input::GetScroll() > 0)
 		SetFOV(fieldOfView - moveSpeed);
-	
+
 	if (Input::GetScroll() < 0)
 		SetFOV(fieldOfView + moveSpeed);
 
@@ -49,14 +50,14 @@ glm::vec2 Camera::GetPosition()
 
 glm::mat4 Camera::GetTransform()
 {
-	return  transform;
+	return transform;
 }
 
 void Camera::UpdateTransform()
 {
 	transform = defaultTransform;
 
-	transform = glm::translate(transform, { position , 0.0f });
+	transform = glm::translate(transform, { position, 0.0f });
 }
 
 void Camera::SetAspectRatio(glm::vec2 newAspectRatio)

@@ -1,7 +1,7 @@
 #pragma once
-#include "Utils/ObjectManager.h"
-#include "Physics/PhysicsScene.h"
 #include "Entities/Snake.h"
+#include "Physics/PhysicsScene.h"
+#include "Utils/ObjectManager.h"
 
 class Game2D
 {
@@ -22,8 +22,6 @@ private:
 	Camera* camera = nullptr;
 	GameObject* testObject = nullptr;
 	Snake* snakeGame = nullptr;
-
-
 
 	float timer = 0.0f;
 };

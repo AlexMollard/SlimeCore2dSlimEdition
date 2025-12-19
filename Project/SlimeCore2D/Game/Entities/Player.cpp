@@ -1,6 +1,7 @@
 #include "Player.h"
 
-Player::Player() : Quad()
+Player::Player()
+      : Quad()
 {
 }
 
@@ -42,7 +43,7 @@ void Player::Init(Camera* cam, Cell** cells, GameObject* shadow)
 	shadow->SetTexture(player_Shadow);
 	shadow->SetParent(this);
 	shadow->UpdatePos();
-	shadow->SetScale(glm::vec2(1,2));
+	shadow->SetScale(glm::vec2(1, 2));
 }
 
 void Player::Update(float deltaTime)
@@ -111,32 +112,32 @@ void Player::UpdateSurroundingTiles()
 	// I have taken 1 from the players Y position as the current player sprite is 32px high
 
 	// Top Left
-	if (&cells[((int)position.x - 1) + MAPSIZE][((int)position.y) + MAPSIZE] != nullptr)
-		surroundingTiles[0] = cells[((int)position.x - 1) + MAPSIZE][((int)position.y) + MAPSIZE].object;
+	if (&cells[((int) position.x - 1) + MAPSIZE][((int) position.y) + MAPSIZE] != nullptr)
+		surroundingTiles[0] = cells[((int) position.x - 1) + MAPSIZE][((int) position.y) + MAPSIZE].object;
 
 	// Top
-	surroundingTiles[1] = cells[((int)position.x) + MAPSIZE][((int)position.y) + MAPSIZE].object;
+	surroundingTiles[1] = cells[((int) position.x) + MAPSIZE][((int) position.y) + MAPSIZE].object;
 
 	// Top Right
-	surroundingTiles[2] = cells[((int)position.x + 1) + MAPSIZE][((int)position.y) + MAPSIZE].object;
+	surroundingTiles[2] = cells[((int) position.x + 1) + MAPSIZE][((int) position.y) + MAPSIZE].object;
 
 	// Left
-	surroundingTiles[3] = cells[((int)position.x - 1) + MAPSIZE][((int)position.y - 1) + MAPSIZE].object;
+	surroundingTiles[3] = cells[((int) position.x - 1) + MAPSIZE][((int) position.y - 1) + MAPSIZE].object;
 
 	// Center
-	surroundingTiles[4] = cells[((int)position.x) + MAPSIZE][((int)position.y - 1) + MAPSIZE].object;
+	surroundingTiles[4] = cells[((int) position.x) + MAPSIZE][((int) position.y - 1) + MAPSIZE].object;
 
 	// Right
-	surroundingTiles[5] = cells[((int)position.x + 1) + MAPSIZE][((int)position.y - 1) + MAPSIZE].object;
+	surroundingTiles[5] = cells[((int) position.x + 1) + MAPSIZE][((int) position.y - 1) + MAPSIZE].object;
 
 	// Bottom left
-	surroundingTiles[6] = cells[((int)position.x - 1) + MAPSIZE][((int)position.y - 2) + MAPSIZE].object;
+	surroundingTiles[6] = cells[((int) position.x - 1) + MAPSIZE][((int) position.y - 2) + MAPSIZE].object;
 
 	// Bottom
-	surroundingTiles[7] = cells[((int)position.x) + MAPSIZE][((int)position.y - 2) + MAPSIZE].object;
+	surroundingTiles[7] = cells[((int) position.x) + MAPSIZE][((int) position.y - 2) + MAPSIZE].object;
 
 	// Bottom Right
-	surroundingTiles[8] = cells[((int)position.x + 1) + MAPSIZE][((int)position.y - 2) + MAPSIZE].object;
+	surroundingTiles[8] = cells[((int) position.x + 1) + MAPSIZE][((int) position.y - 2) + MAPSIZE].object;
 }
 
 void Player::SetAllCells(Cell** cells)
