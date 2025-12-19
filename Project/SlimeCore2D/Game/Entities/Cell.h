@@ -1,32 +1,15 @@
 #pragma once
+
 #include "GameObject.h"
 #include "glm.hpp"
 
 class Cell
 {
 public:
-	enum class STATE
-	{
-		EMPTY,
-		FOOD,
-		HEAD,
-		TAIL
-	};
-	Cell();
-	~Cell();
+	GameObject* visual = nullptr;
 
-	void SetState(STATE newState)
+	void SetColor(const glm::vec3& c)
 	{
-		m_currentState = newState;
+		if (visual) visual->SetColor(c);
 	}
-
-	STATE GetState()
-	{
-		return m_currentState;
-	}
-
-	GameObject* m_cell = nullptr;
-
-private:
-	STATE m_currentState = STATE::EMPTY;
 };

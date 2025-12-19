@@ -1,10 +1,3 @@
 #include "Cell.h"
 
-Cell::Cell()
-{
-}
-
-Cell::~Cell()
-{
-	m_cell = nullptr;
-}
+// Intentionally empty. Cell is a tiny render helper.

@@ -170,6 +170,7 @@
     <ClCompile Include="Engine\Core\Input.cpp" />
     <ClCompile Include="Engine\Utils\ObjectManager.cpp" />
     <ClCompile Include="Engine\Rendering\Quad.cpp" />
+    <ClCompile Include="Game\Scenes\Dialogue.cpp" />
     <ClCompile Include="Game\Scenes\Game2D.cpp" />
     <ClCompile Include="Game\Entities\GameObject.cpp" />
     <ClCompile Include="Engine\Physics\PhysicsScene.cpp" />
@@ -183,6 +184,7 @@
     <ClCompile Include="Engine\Rendering\Text.cpp" />
     <ClCompile Include="Engine\Rendering\Texture.cpp" />
     <ClCompile Include="Engine\Core\Window.cpp" />
+    <ClCompile Include="Game\Scenes\World.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Physics\BoundingBox.h" />
@@ -193,6 +195,7 @@
     <ClInclude Include="Engine\Core\Keycode.h" />
     <ClInclude Include="Engine\Utils\ObjectManager.h" />
     <ClInclude Include="Engine\Rendering\Quad.h" />
+    <ClInclude Include="Game\Scenes\Dialogue.h" />
     <ClInclude Include="Game\Scenes\Game2D.h" />
     <ClInclude Include="Game\Entities\GameObject.h" />
     <ClInclude Include="Engine\Physics\PhysicsScene.h" />
@@ -206,6 +209,8 @@
     <ClInclude Include="Engine\Rendering\Text.h" />
     <ClInclude Include="Engine\Rendering\Texture.h" />
     <ClInclude Include="Engine\Core\Window.h" />
+    <ClInclude Include="Game\Scenes\World.h" />
+    <ClInclude Include="Game\Scenes\WorldTypes.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Game\Resources\Shaders\BasicFragment.shader" />
