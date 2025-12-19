@@ -1,8 +1,8 @@
 #pragma once
-#include "ObjectManager.h"
+#include "Utils/ObjectManager.h"
 #include "Cell.h"
-#include "Text.h"
-#include "Shader.h"
+#include "Rendering/Text.h"
+#include "Rendering/Shader.h"
 #include <fstream>
 
 class Snake

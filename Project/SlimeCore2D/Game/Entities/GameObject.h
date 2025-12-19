@@ -1,7 +1,7 @@
 #pragma once
-#include "RigidBody.h"
-#include "Shader.h"
-#include "Texture.h"
+#include "Physics/RigidBody.h"
+#include "Rendering/Shader.h"
+#include "Rendering/Texture.h"
 
 class GameObject : public RigidBody
 {

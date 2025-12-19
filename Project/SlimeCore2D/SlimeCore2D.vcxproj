@@ -94,7 +94,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\glew\include;$(SolutionDir)Dependencies\glfw\include;$(SolutionDir)Dependencies\glm;$(SolutionDir)Dependencies\stb;$(SolutionDir)Dependencies\fType</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\glew\include;$(SolutionDir)Dependencies\glfw\include;$(SolutionDir)Dependencies\glm;$(SolutionDir)Dependencies\stb;$(SolutionDir)Dependencies\fType;$(SolutionDir)SlimeCore2D\Engine;$(SolutionDir)SlimeCore2D\Game</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -111,7 +111,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\glew\include;$(SolutionDir)Dependencies\glfw\include;$(SolutionDir)Dependencies\glm;$(SolutionDir)Dependencies\stb;$(SolutionDir)Dependencies\fType</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\glew\include;$(SolutionDir)Dependencies\glfw\include;$(SolutionDir)Dependencies\glm;$(SolutionDir)Dependencies\stb;$(SolutionDir)Dependencies\fType;$(SolutionDir)SlimeCore2D\Engine;$(SolutionDir)SlimeCore2D\Game</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -130,7 +130,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\glew\include;$(SolutionDir)Dependencies\glfw\include;$(SolutionDir)Dependencies\glm;$(SolutionDir)Dependencies\stb;$(SolutionDir)Dependencies\fType</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\glew\include;$(SolutionDir)Dependencies\glfw\include;$(SolutionDir)Dependencies\glm;$(SolutionDir)Dependencies\stb;$(SolutionDir)Dependencies\fType;$(SolutionDir)SlimeCore2D\Engine;$(SolutionDir)SlimeCore2D\Game</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -151,7 +151,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\glew\include;$(SolutionDir)Dependencies\glfw\include;$(SolutionDir)Dependencies\glm;$(SolutionDir)Dependencies\stb;$(SolutionDir)Dependencies\fType</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\glew\include;$(SolutionDir)Dependencies\glfw\include;$(SolutionDir)Dependencies\glm;$(SolutionDir)Dependencies\stb;$(SolutionDir)Dependencies\fType;$(SolutionDir)SlimeCore2D\Engine;$(SolutionDir)SlimeCore2D\Game</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -163,55 +163,55 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="BoundingBox.cpp" />
-    <ClCompile Include="Camera.cpp" />
-    <ClCompile Include="Cell.cpp" />
-    <ClCompile Include="CollisionManager.cpp" />
-    <ClCompile Include="Input.cpp" />
-    <ClCompile Include="ObjectManager.cpp" />
-    <ClCompile Include="Quad.cpp" />
-    <ClCompile Include="Game2D.cpp" />
-    <ClCompile Include="GameObject.cpp" />
-    <ClCompile Include="PhysicsScene.cpp" />
-    <ClCompile Include="Renderer2D.cpp" />
-    <ClCompile Include="RigidBody.cpp" />
-    <ClCompile Include="Shader.cpp" />
-    <ClCompile Include="SlimeCore2D.cpp" />
-    <ClCompile Include="Snake.cpp" />
-    <ClCompile Include="Sprite.cpp" />
-    <ClCompile Include="Text.cpp" />
-    <ClCompile Include="Texture.cpp" />
-    <ClCompile Include="Window.cpp" />
+    <ClCompile Include="Engine\Physics\BoundingBox.cpp" />
+    <ClCompile Include="Engine\Core\Camera.cpp" />
+    <ClCompile Include="Game\Entities\Cell.cpp" />
+    <ClCompile Include="Engine\Physics\CollisionManager.cpp" />
+    <ClCompile Include="Engine\Core\Input.cpp" />
+    <ClCompile Include="Engine\Utils\ObjectManager.cpp" />
+    <ClCompile Include="Engine\Rendering\Quad.cpp" />
+    <ClCompile Include="Game\Scenes\Game2D.cpp" />
+    <ClCompile Include="Game\Entities\GameObject.cpp" />
+    <ClCompile Include="Engine\Physics\PhysicsScene.cpp" />
+    <ClCompile Include="Engine\Rendering\Renderer2D.cpp" />
+    <ClCompile Include="Engine\Physics\RigidBody.cpp" />
+    <ClCompile Include="Engine\Rendering\Shader.cpp" />
+    <ClCompile Include="Game\Scenes\SlimeCore2D.cpp" />
+    <ClCompile Include="Game\Entities\Snake.cpp" />
+    <ClCompile Include="Engine\Rendering\Sprite.cpp" />
+    <ClCompile Include="Engine\Rendering\Text.cpp" />
+    <ClCompile Include="Engine\Rendering\Texture.cpp" />
+    <ClCompile Include="Engine\Core\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="BoundingBox.h" />
-    <ClInclude Include="Camera.h" />
-    <ClInclude Include="Cell.h" />
-    <ClInclude Include="CollisionManager.h" />
-    <ClInclude Include="Input.h" />
-    <ClInclude Include="Keycode.h" />
-    <ClInclude Include="ObjectManager.h" />
-    <ClInclude Include="Quad.h" />
-    <ClInclude Include="Game2D.h" />
-    <ClInclude Include="GameObject.h" />
-    <ClInclude Include="PhysicsScene.h" />
-    <ClInclude Include="Renderer2D.h" />
-    <ClInclude Include="RigidBody.h" />
-    <ClInclude Include="Shader.h" />
-    <ClInclude Include="Math.h" />
-    <ClInclude Include="Snake.h" />
-    <ClInclude Include="Sprite.h" />
-    <ClInclude Include="Text.h" />
-    <ClInclude Include="Texture.h" />
-    <ClInclude Include="Window.h" />
+    <ClInclude Include="Engine\Physics\BoundingBox.h" />
+    <ClInclude Include="Engine\Core\Camera.h" />
+    <ClInclude Include="Game\Entities\Cell.h" />
+    <ClInclude Include="Engine\Physics\CollisionManager.h" />
+    <ClInclude Include="Engine\Core\Input.h" />
+    <ClInclude Include="Engine\Core\Keycode.h" />
+    <ClInclude Include="Engine\Utils\ObjectManager.h" />
+    <ClInclude Include="Engine\Rendering\Quad.h" />
+    <ClInclude Include="Game\Scenes\Game2D.h" />
+    <ClInclude Include="Game\Entities\GameObject.h" />
+    <ClInclude Include="Engine\Physics\PhysicsScene.h" />
+    <ClInclude Include="Engine\Rendering\Renderer2D.h" />
+    <ClInclude Include="Engine\Physics\RigidBody.h" />
+    <ClInclude Include="Engine\Rendering\Shader.h" />
+    <ClInclude Include="Engine\Core\Math.h" />
+    <ClInclude Include="Game\Entities\Snake.h" />
+    <ClInclude Include="Engine\Rendering\Sprite.h" />
+    <ClInclude Include="Engine\Rendering\Text.h" />
+    <ClInclude Include="Engine\Rendering\Texture.h" />
+    <ClInclude Include="Engine\Core\Window.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\Shaders\BasicFragment.shader" />
-    <None Include="..\Shaders\BasicVertex.shader" />
-    <None Include="..\Shaders\UIFragment.shader" />
-    <None Include="..\Shaders\UIVertex.shader" />
-    <None Include="textFrag.shader" />
-    <None Include="textVert.shader" />
+    <None Include="Game\Resources\Shaders\BasicFragment.shader" />
+    <None Include="Game\Resources\Shaders\BasicVertex.shader" />
+    <None Include="Game\Resources\Shaders\UIFragment.shader" />
+    <None Include="Game\Resources\Shaders\UIVertex.shader" />
+    <None Include="Game\Resources\Shaders\textFrag.shader" />
+    <None Include="Game\Resources\Shaders\textVert.shader" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

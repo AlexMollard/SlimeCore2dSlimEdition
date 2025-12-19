@@ -1,4 +1,4 @@
-#include "Window.h"
+#include "Core/Window.h"
 #include "Game2D.h"
 
 Input* Input::instance = 0;

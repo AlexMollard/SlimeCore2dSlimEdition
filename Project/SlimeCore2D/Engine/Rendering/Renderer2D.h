@@ -2,7 +2,7 @@
 #include "Quad.h"
 #include "Texture.h"
 #include <vector>
-#include "Camera.h"
+#include "Core/Camera.h"
 
 class Renderer2D
 {

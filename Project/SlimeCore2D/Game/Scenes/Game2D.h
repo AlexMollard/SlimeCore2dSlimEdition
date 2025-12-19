@@ -1,7 +1,7 @@
 #pragma once
-#include "ObjectManager.h"
-#include "PhysicsScene.h"
-#include "Snake.h"
+#include "Utils/ObjectManager.h"
+#include "Physics/PhysicsScene.h"
+#include "Entities/Snake.h"
 
 class Game2D
 {
