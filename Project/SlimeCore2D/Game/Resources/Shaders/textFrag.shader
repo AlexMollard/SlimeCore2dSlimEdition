@@ -8,5 +8,9 @@ uniform vec3 textColor;
 void main()
 {
     vec4 sampled = vec4(1.0, 1.0, 1.0, texture(text, TexCoords).r);
-    color = vec4(textColor, 1.0) * sampled;
+    vec4 result = vec4(textColor, 1.0) * sampled;
+    // discard fragments with (almost) zero alpha to avoid rectangular artifacts
+    if (result.a < 0.01)
+        discard;
+    color = result;
 }

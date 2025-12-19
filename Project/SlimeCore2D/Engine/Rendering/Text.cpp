@@ -89,6 +89,8 @@ void Text::RenderText(Shader& shader, std::string text, float x, float y, float 
 {
 	// activate corresponding render state
 	shader.Use();
+	// ensure the sampler uses texture unit 0
+	shader.setInt("text", 0);
 
 	glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(1920), 0.0f, static_cast<float>(1080));
 	shader.setMat4("projection", projection);
