@@ -9,6 +9,8 @@ float Input::scroll;
 double Input::mouseXPos;
 double Input::mouseYPos;
 
+std::unordered_map<int, bool> Input::keyPrevState;
+
 Input::Input()
 {
 	window = glfwGetCurrentContext();
@@ -111,6 +113,24 @@ bool Input::GetKeyPress(Keycode key)
 	}
 
 	return false;
+}
+
+bool Input::GetKeyRelease(Keycode key)
+{
+	// Edge-detect a release: return true only when the key was pressed previously
+	// and is not pressed now.
+	int state = glfwGetKey(GetInstance()->window, (int) key);
+	bool isPressedNow = (state == GLFW_PRESS || state == GLFW_REPEAT);
+
+	bool wasPressed = false;
+	auto it = keyPrevState.find((int) key);
+	if (it != keyPrevState.end())
+		wasPressed = it->second;
+
+	// update saved state for next call
+	keyPrevState[(int) key] = isPressedNow;
+
+	return (wasPressed && !isPressedNow);
 }
 
 void Input::SetScroll(float newScroll)

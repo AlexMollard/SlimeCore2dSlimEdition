@@ -1,5 +1,7 @@
 #pragma once
+#include <array>
 #include <fstream>
+#include <vector>
 
 #include "Cell.h"
 #include "Rendering/Shader.h"
@@ -28,11 +30,20 @@ public:
 	void Restart();
 
 	void SaveScore(int score);
+	void TogglePause();
+	void ToggleWallWrap();
 
 private:
+	enum class GameState
+	{
+		Ready, // waiting for first movement
+		Playing,
+		Paused,
+		GameOver
+	};
+
 	Renderer2D* m_renderer = nullptr;
 	ObjectManager* m_objManager = nullptr;
-	Input* m_inputManager = Input::GetInstance();
 	Camera* m_camera = nullptr;
 
 	Cell** m_grid = nullptr;
@@ -53,10 +64,13 @@ private:
 	Text* m_testText;
 	Shader* m_textShader;
 
-	int m_highScores[10];
+	std::array<int, 10> m_highScores{};
 	std::fstream m_hsFile;
 
-	bool m_isDead = false;
+	GameState m_state = GameState::Ready;
+	bool m_wrapWalls = false;
+	float m_baseTick = 0.15f;
+	float m_minTick = 0.06f;
 
 	//Colours
 	glm::vec3 m_gridColor = glm::vec3(0.25f);

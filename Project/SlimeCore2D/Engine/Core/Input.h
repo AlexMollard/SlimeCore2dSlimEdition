@@ -4,6 +4,7 @@
 #include "glfw3.h"
 #include "glm.hpp"
 #include "Keycode.h"
+#include <unordered_map>
 
 class Input
 {
@@ -31,6 +32,7 @@ public:
 	void SetCamera(Camera* cam);
 
 	static bool GetKeyPress(Keycode key);
+	static bool GetKeyRelease(Keycode key);
 
 	static void SetScroll(float newScroll);
 	static float GetScroll();
@@ -49,6 +51,8 @@ private:
 
 	static double mouseXPos;
 	static double mouseYPos;
+
+    static std::unordered_map<int, bool> keyPrevState;
 
 	int winWidth = 0;
 	int winHeight = 0;
