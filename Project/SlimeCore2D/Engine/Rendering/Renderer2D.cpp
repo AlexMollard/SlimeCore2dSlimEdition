@@ -8,10 +8,10 @@
 #include "Math.h"
 #include "Resources/ResourceManager.h"
 
-std::vector<glm::vec2> Renderer2D::UVs;
-Camera* Renderer2D::camera;
+std::vector<glm::vec2> Renderer2D::m_UVs;
+Camera* Renderer2D::m_camera;
 Shader* Renderer2D::basicShader;
-Shader* Renderer2D::UIShader;
+Shader* Renderer2D::m_UIShader;
 
 static const size_t maxQuadCount = 2000;
 static const size_t maxVertexCount = maxQuadCount * 4;
@@ -57,11 +57,11 @@ Renderer2D::Renderer2D(Camera* camera)
 	if (!basicShader)
 		basicShader = new Shader("Basic Shader", "..\\Shaders\\BasicVertex.shader", "..\\Shaders\\BasicFragment.shader");
 
-	UIShader = ResourceManager::GetInstance().GetShader("ui");
-	if (!UIShader)
-		UIShader = new Shader("UI Shader", "..\\Shaders\\UIVertex.shader", "..\\Shaders\\UIFragment.shader");
+	m_UIShader = ResourceManager::GetInstance().GetShader("ui");
+	if (!m_UIShader)
+		m_UIShader = new Shader("UI Shader", "..\\Shaders\\UIVertex.shader", "..\\Shaders\\UIFragment.shader");
 
-	this->camera = camera;
+	this->m_camera = camera;
 
 	basicShader->Use();
 
@@ -72,9 +72,9 @@ Renderer2D::Renderer2D(Camera* camera)
 
 	glUniform1iv(loc, maxTextures, samplers);
 
-	UIShader->Use();
+	m_UIShader->Use();
 
-	loc = glGetUniformLocation(UIShader->GetID(), "Textures");
+	loc = glGetUniformLocation(m_UIShader->GetID(), "Textures");
 
 	glUniform1iv(loc, maxTextures, samplers);
 
@@ -84,62 +84,62 @@ Renderer2D::Renderer2D(Camera* camera)
 Renderer2D::~Renderer2D()
 {
 	ShutDown();
-	for (int i = 0; i < texturePool.size(); i++)
+	for (int i = 0; i < m_texturePool.size(); i++)
 	{
-		delete texturePool[i];
-		texturePool[i] = nullptr;
+		delete m_texturePool[i];
+		m_texturePool[i] = nullptr;
 	}
 
 	delete basicShader;
 	basicShader = nullptr;
 
-	delete UIShader;
-	UIShader = nullptr;
+	delete m_UIShader;
+	m_UIShader = nullptr;
 
-	delete camera;
-	camera = nullptr;
+	delete m_camera;
+	m_camera = nullptr;
 }
 
 void Renderer2D::AddObject(GameObject* newObject)
 {
-	std::vector<GameObject*>::iterator it = find(objectPool.begin(), objectPool.end(), newObject);
+	std::vector<GameObject*>::iterator it = find(m_objectPool.begin(), m_objectPool.end(), newObject);
 
-	if (it != objectPool.end())
+	if (it != m_objectPool.end())
 	{
 		std::cout << "GameObject already in Renderer: " << *it << '\n';
 		return;
 	}
 
 	GameObject* go = newObject;
-	go->SetID(objectPool.size());
+	go->SetID(m_objectPool.size());
 	go->SetShader(basicShader);
 
-	if (objectPool.size() > 0)
+	if (m_objectPool.size() > 0)
 	{
-		if (objectPool.back()->GetPos().z <= go->GetPos().z)
+		if (m_objectPool.back()->GetPos().z <= go->GetPos().z)
 		{
-			objectPool.push_back(go);
+			m_objectPool.push_back(go);
 			return;
 		}
 
-		for (int i = 0; i < objectPool.size(); i++)
+		for (int i = 0; i < m_objectPool.size(); i++)
 		{
-			if (objectPool[i]->GetPos().z >= go->GetPos().z)
+			if (m_objectPool[i]->GetPos().z >= go->GetPos().z)
 			{
-				objectPool.insert(objectPool.begin() + i, go);
+				m_objectPool.insert(m_objectPool.begin() + i, go);
 				return;
 			}
 		}
 	}
 	else
-		objectPool.push_back(go);
+		m_objectPool.push_back(go);
 }
 
 Texture* Renderer2D::LoadTexture(std::string dir)
 {
 	Texture* tempTex = new Texture(dir);
 
-	texturePool.push_back(tempTex);
+	m_texturePool.push_back(tempTex);
 	return tempTex;
 }
 
@@ -149,31 +149,31 @@ void Renderer2D::Draw()
 
 	basicShader->Use();
 
-	basicShader->setMat4("OrthoMatrix", camera->GetTransform());
+	basicShader->setMat4("OrthoMatrix", m_camera->GetTransform());
 	basicShader->setMat4("Model", glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)));
 	basicShader->setVec4("SunColor", glm::vec4(1.0f));
 
-	glm::vec2 camPos = camera->GetPosition();
+	glm::vec2 camPos = m_camera->GetPosition();
 
-	float distanceFromCenter = -camera->GetAspectRatio().x + 6;
+	float distanceFromCenter = -m_camera->GetAspectRatio().x + 6;
 
-	for (int i = 0; i < objectPool.size(); i++)
+	for (int i = 0; i < m_objectPool.size(); i++)
 	{
-		if (objectPool[i]->GetRender() == false)
+		if (m_objectPool[i]->GetRender() == false)
 			continue;
 
-		if (glm::distance(camPos, glm::vec2(objectPool[i]->GetPos())) > distanceFromCenter)
+		if (glm::distance(camPos, glm::vec2(m_objectPool[i]->GetPos())) > distanceFromCenter)
 		{
 			continue;
 		}
 
-		if (objectPool[i]->GetTexture() == nullptr)
+		if (m_objectPool[i]->GetTexture() == nullptr)
 		{
-			DrawQuad(objectPool[i]->GetPos(), objectPool[i]->GetScale(), { objectPool[i]->GetColor(), 1.0f });
+			DrawQuad(m_objectPool[i]->GetPos(), m_objectPool[i]->GetScale(), { m_objectPool[i]->GetColor(), 1.0f });
 		}
-		else if (objectPool[i]->GetTexture() != nullptr)
+		else if (m_objectPool[i]->GetTexture() != nullptr)
 		{
-			DrawQuad(objectPool[i]->GetPos(), objectPool[i]->GetScale(), { objectPool[i]->GetColor(), 1.0f }, objectPool[i]->GetTexture(), objectPool[i]->GetFrame(), objectPool[i]->GetSpriteWidth());
+			DrawQuad(m_objectPool[i]->GetPos(), m_objectPool[i]->GetScale(), { m_objectPool[i]->GetColor(), 1.0f }, m_objectPool[i]->GetTexture(), m_objectPool[i]->GetFrame(), m_objectPool[i]->GetSpriteWidth());
 		}
 	}
 
@@ -186,10 +186,10 @@ void Renderer2D::DrawUI()
 {
 	BeginBatch();
 
-	UIShader->Use();
+	m_UIShader->Use();
 
-	UIShader->setMat4("OrthoMatrix", UIMatrix);
-	UIShader->setMat4("Model", glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)));
+	m_UIShader->setMat4("OrthoMatrix", m_UIMatrix);
+	m_UIShader->setMat4("Model", glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)));
 
 	//DrawUIQuad();
 
@@ -279,7 +279,7 @@ void Renderer2D::DrawQuad(glm::vec3 position, glm::vec2 size, glm::vec4 color, T
 	{
 		data.quadBufferPtr->position = positions[i];
 		data.quadBufferPtr->color = color;
-		data.quadBufferPtr->texCoords = (useBasicUVS) ? basicUVS[i] : UVs[i];
+		data.quadBufferPtr->texCoords = (useBasicUVS) ? basicUVS[i] : m_UVs[i];
 		data.quadBufferPtr->texIndex = textureIndex;
 		data.quadBufferPtr++;
 	}
@@ -289,14 +289,14 @@ void Renderer2D::DrawQuad(glm::vec3 position, glm::vec2 size, glm::vec4 color, T
 
 void Renderer2D::RemoveQuad(GameObject* object)
 {
-	objectPool.erase(objectPool.begin() + GetObjectIndex(object));
+	m_objectPool.erase(m_objectPool.begin() + GetObjectIndex(object));
 }
 
 int Renderer2D::GetObjectIndex(GameObject* object)
 {
-	for (int i = 0; i < objectPool.size(); i++)
+	for (int i = 0; i < m_objectPool.size(); i++)
 	{
-		if (objectPool[i] == object)
+		if (m_objectPool[i] == object)
 		{
 			return i;
 		}
@@ -306,7 +306,7 @@ int Renderer2D::GetObjectIndex(GameObject* object)
 
 void Renderer2D::setActiveRegion(Texture* texture, int regionIndex, int spriteWidth)
 {
-	UVs.clear();
+	m_UVs.clear();
 
 	//					  (int) textureSize / spriteWidth;
 	int numberOfRegions = texture->GetWidth() / spriteWidth;
@@ -319,10 +319,10 @@ void Renderer2D::setActiveRegion(Texture* texture, int regionIndex, int spriteWi
 	glm::vec2 uv_up_right = glm::vec2(uv_x + 1.0f / numberOfRegions, (uv_y + 1.0f));
 	glm::vec2 uv_up_left = glm::vec2(uv_x, (uv_y + 1.0f));
 
-	UVs.push_back(uv_down_left);
-	UVs.push_back(uv_down_right);
-	UVs.push_back(uv_up_right);
-	UVs.push_back(uv_up_left);
+	m_UVs.push_back(uv_down_left);
+	m_UVs.push_back(uv_down_right);
+	m_UVs.push_back(uv_up_right);
+	m_UVs.push_back(uv_up_left);
 }
 
 void Renderer2D::Init()
@@ -403,7 +403,7 @@ void Renderer2D::BeginBatch()
 void Renderer2D::SetShader(Shader* shader)
 {
 	shader->Use();
-	shader->setMat4("OrthoMatrix", camera->GetTransform());
+	shader->setMat4("OrthoMatrix", m_camera->GetTransform());
 	shader->setMat4("Model", glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)));
 	shader->setVec4("SunColor", glm::vec4(1.0f));
 }

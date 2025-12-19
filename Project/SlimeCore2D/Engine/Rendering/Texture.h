@@ -16,25 +16,25 @@ public:
 
 	void Bind()
 	{
-		glBindTexture(GL_TEXTURE_2D, textureID);
+		glBindTexture(GL_TEXTURE_2D, m_textureID);
 	};
 
 	unsigned int GetID()
 	{
-		return textureID;
+		return m_textureID;
 	};
 
 	void SetID(unsigned int newID)
 	{
-		textureID = newID;
+		m_textureID = newID;
 	};
 
 	int GetWidth();
 	int GetHeight();
 
 protected:
-	unsigned int textureID = 0;
-	int width = 0;
-	int height = 0;
-	int nrChannels = 4;
+	unsigned int m_textureID = 0;
+	int m_width = 0;
+	int m_height = 0;
+	int m_nrChannels = 4;
 };

@@ -5,8 +5,8 @@
 Texture::Texture(std::string dir)
 {
 	// Create and bind texture ID
-	glGenTextures(1, &textureID);
-	glBindTexture(GL_TEXTURE_2D, textureID);
+	glGenTextures(1, &m_textureID);
+	glBindTexture(GL_TEXTURE_2D, m_textureID);
 
 	// Set Wrapping mode
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -17,11 +17,11 @@ Texture::Texture(std::string dir)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 	// Load Image and generate mipmaps
-	unsigned char* data = stbi_load(dir.c_str(), &width, &height, &nrChannels, 0);
+	unsigned char* data = stbi_load(dir.c_str(), &m_width, &m_height, &m_nrChannels, 0);
 
 	if (data)
 	{
-		glTexImage2D(GL_TEXTURE_2D, 0, nrChannels != 4 ? GL_RGB : GL_RGBA, width, height, 0, nrChannels != 4 ? GL_RGB : GL_RGBA, GL_UNSIGNED_BYTE, data);
+		glTexImage2D(GL_TEXTURE_2D, 0, m_nrChannels != 4 ? GL_RGB : GL_RGBA, m_width, m_height, 0, m_nrChannels != 4 ? GL_RGB : GL_RGBA, GL_UNSIGNED_BYTE, data);
 	}
 	else
 	{
@@ -32,21 +32,21 @@ Texture::Texture(std::string dir)
 
 Texture::Texture(unsigned int* id)
 {
-	this->textureID = *id;
+	this->m_textureID = *id;
 }
 
 Texture::~Texture()
 {
-	if (textureID != 0)
-		glDeleteTextures(1, &textureID);
-	textureID = 0;
+	if (m_textureID != 0)
+		glDeleteTextures(1, &m_textureID);
+	m_textureID = 0;
 }
 
 void Texture::load(std::string dir)
 {
 	// Create and bind texture ID
-	glGenTextures(1, &textureID);
-	glBindTexture(GL_TEXTURE_2D, textureID);
+	glGenTextures(1, &m_textureID);
+	glBindTexture(GL_TEXTURE_2D, m_textureID);
 
 	// Set Wrapping mode
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -57,11 +57,11 @@ void Texture::load(std::string dir)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	// Load Image and generate mipmaps
-	unsigned char* data = stbi_load(dir.c_str(), &width, &height, &nrChannels, 0);
+	unsigned char* data = stbi_load(dir.c_str(), &m_width, &m_height, &m_nrChannels, 0);
 
 	if (data)
 	{
-		glTexImage2D(GL_TEXTURE_2D, 0, nrChannels != 4 ? GL_RGB : GL_RGBA, width, height, 0, nrChannels != 4 ? GL_RGB : GL_RGBA, GL_UNSIGNED_BYTE, data);
+		glTexImage2D(GL_TEXTURE_2D, 0, m_nrChannels != 4 ? GL_RGB : GL_RGBA, m_width, m_height, 0, m_nrChannels != 4 ? GL_RGB : GL_RGBA, GL_UNSIGNED_BYTE, data);
 	}
 	else
 	{
@@ -72,10 +72,10 @@ void Texture::load(std::string dir)
 
 int Texture::GetWidth()
 {
-	return width;
+	return m_width;
 }
 
 int Texture::GetHeight()
 {
-	return height;
+	return m_height;
 }

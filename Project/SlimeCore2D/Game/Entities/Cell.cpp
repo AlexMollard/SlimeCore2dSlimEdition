@@ -6,5 +6,5 @@ Cell::Cell()
 
 Cell::~Cell()
 {
-	_cell = nullptr;
+	m_cell = nullptr;
 }

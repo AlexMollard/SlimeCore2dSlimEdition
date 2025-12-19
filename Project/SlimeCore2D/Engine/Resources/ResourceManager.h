@@ -33,5 +33,5 @@ private:
 	ResourceManager();
 	~ResourceManager();
 
-	std::unordered_map<std::string, Shader*> shaders; // key: lowercase name
+	std::unordered_map<std::string, Shader*> m_shaders; // key: lowercase name
 };

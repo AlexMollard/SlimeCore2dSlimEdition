@@ -64,7 +64,7 @@ Text::Text()
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 			// now store character for later use
 			Character character = { texture, glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows), glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top), static_cast<unsigned int>(face->glyph->advance.x) };
-			Characters.insert(std::pair<char, Character>(c, character));
+			m_characters.insert(std::pair<char, Character>(c, character));
 		}
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
@@ -101,7 +101,7 @@ void Text::RenderText(Shader& shader, std::string text, float x, float y, float 
 	std::string::const_iterator c;
 	for (c = text.begin(); c != text.end(); c++)
 	{
-		Character ch = Characters[*c];
+		Character ch = m_characters[*c];
 
 		float xpos = x + ch.Bearing.x * scale;
 		float ypos = y - (ch.Size.y - ch.Bearing.y) * scale;

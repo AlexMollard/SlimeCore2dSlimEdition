@@ -24,6 +24,6 @@ public:
 protected:
 	unsigned int VAO, VBO;
 
-	glm::mat4 _projection;
-	std::map<GLchar, Character> Characters;
+	glm::mat4 m_projection;
+	std::map<GLchar, Character> m_characters;
 };

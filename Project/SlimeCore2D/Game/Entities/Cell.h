@@ -17,16 +17,16 @@ public:
 
 	void SetState(STATE newState)
 	{
-		_currentState = newState;
+		m_currentState = newState;
 	}
 
 	STATE GetState()
 	{
-		return _currentState;
+		return m_currentState;
 	}
 
-	GameObject* _cell = nullptr;
+	GameObject* m_cell = nullptr;
 
 private:
-	STATE _currentState = STATE::EMPTY;
+	STATE m_currentState = STATE::EMPTY;
 };

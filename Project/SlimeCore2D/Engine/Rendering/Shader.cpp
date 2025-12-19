@@ -9,7 +9,7 @@
 
 Shader::Shader(std::string name, const char* vertexPath, const char* fragmentPath, const char* geometryPath)
 {
-	this->name = name;
+	this->m_name = name;
 	// 1. retrieve the vertex/fragment source code from filePath
 	std::string vertexCode;
 	std::string fragmentCode;
@@ -75,13 +75,13 @@ Shader::Shader(std::string name, const char* vertexPath, const char* fragmentPat
 		CheckCompileErrors(geometry, "GEOMETRY");
 	}
 	// shader Program
-	shader_ID = glCreateProgram();
-	glAttachShader(shader_ID, vertex);
-	glAttachShader(shader_ID, fragment);
+	m_shaderID = glCreateProgram();
+	glAttachShader(m_shaderID, vertex);
+	glAttachShader(m_shaderID, fragment);
 	if (geometryPath != nullptr)
-		glAttachShader(shader_ID, geometry);
-	glLinkProgram(shader_ID);
-	CheckCompileErrors(shader_ID, "PROGRAM");
+		glAttachShader(m_shaderID, geometry);
+	glLinkProgram(m_shaderID);
+	CheckCompileErrors(m_shaderID, "PROGRAM");
 	// delete the shaders as they're linked into our program now and no longer necessery
 	glDeleteShader(vertex);
 	glDeleteShader(fragment);
@@ -91,12 +91,12 @@ Shader::Shader(std::string name, const char* vertexPath, const char* fragmentPat
 
 Shader::Shader(std::string name)
 {
-	this->name = name;
+	this->m_name = name;
 }
 
 Shader::~Shader()
 {
-	glDeleteProgram(shader_ID);
+	glDeleteProgram(m_shaderID);
 }
 
 unsigned int Shader::CompileShader(unsigned int type, const std::string& source)
@@ -149,5 +149,5 @@ void Shader::CheckCompileErrors(GLuint shader, std::string type)
 
 unsigned int Shader::GetID()
 {
-	return shader_ID;
+	return m_shaderID;
 }

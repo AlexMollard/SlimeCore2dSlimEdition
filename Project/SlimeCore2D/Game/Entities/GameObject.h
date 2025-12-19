@@ -57,21 +57,21 @@ public:
 	bool GetMouseColliding();
 
 protected:
-	glm::vec3 color = glm::vec3(1);
-	glm::vec3 defaultColor = glm::vec3(1);
-	glm::vec3 spawnPoint = glm::vec3(0);
+	glm::vec3 m_color = glm::vec3(1);
+	glm::vec3 m_defaultColor = glm::vec3(1);
+	glm::vec3 m_spawnPoint = glm::vec3(0);
 
-	bool render = true;
-	bool isPlayer = false;
+	bool m_render = true;
+	bool m_isPlayer = false;
 
-	Texture* texture = nullptr;
-	Shader* shader = nullptr;
+	Texture* m_texture = nullptr;
+	Shader* m_shader = nullptr;
 
 	// Sprite Stuff
-	int frame = 0;
-	int spriteWidth = 16;
-	int TextureWidth = 16;
-	float frameRate = 0.5f;
-	float frameRateTimer = 0.0f;
-	bool hasAnimation = false;
+	int m_frame = 0;
+	int m_spriteWidth = 16;
+	int m_textureWidth = 16;
+	float m_frameRate = 0.5f;
+	float m_frameRateTimer = 0.0f;
+	bool m_hasAnimation = false;
 };

@@ -289,18 +289,18 @@ bool ResourceManager::LoadShadersFromDir(const std::string& dir)
 void ResourceManager::AddShader(const std::string& name, const std::string& vertexPath, const std::string& fragmentPath)
 {
 	auto key = ToLower(name);
-	if (shaders.find(key) != shaders.end())
+	if (m_shaders.find(key) != m_shaders.end())
 		return; // already have it
 
 	Shader* s = new Shader(name, vertexPath.c_str(), fragmentPath.c_str());
-	shaders[key] = s;
+	m_shaders[key] = s;
 }
 
 Shader* ResourceManager::GetShader(const std::string& name)
 {
 	auto key = ToLower(name);
-	auto it = shaders.find(key);
-	if (it != shaders.end())
+	auto it = m_shaders.find(key);
+	if (it != m_shaders.end())
 		return it->second;
 	return nullptr;
 }
@@ -350,5 +350,5 @@ std::string ResourceManager::GetResourcePath(const std::string& relativePath)
 void ResourceManager::Clear()
 {
 	// Clear resource registrations; ResourceManager does not delete shader objects.
-	shaders.clear();
+	m_shaders.clear();
 }

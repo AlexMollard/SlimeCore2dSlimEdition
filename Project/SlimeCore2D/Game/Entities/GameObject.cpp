@@ -20,7 +20,7 @@ void GameObject::Create(glm::vec3 pos, glm::vec3 color, glm::vec2 scale, int id)
 {
 	SetPos(pos);
 	SetSpawn(pos);
-	defaultColor = color;
+	m_defaultColor = color;
 	SetColor(color);
 	SetScale(scale);
 	SetID(id);
@@ -29,22 +29,22 @@ void GameObject::Create(glm::vec3 pos, glm::vec3 color, glm::vec2 scale, int id)
 void GameObject::Respawn()
 {
 	SetVelocity(glm::vec2(0));
-	SetPos(spawnPoint);
+	SetPos(m_spawnPoint);
 }
 
 void GameObject::SetSpawn(glm::vec3 newSpawn)
 {
-	spawnPoint = newSpawn;
+	m_spawnPoint = newSpawn;
 }
 
 glm::vec3 GameObject::GetColor()
 {
-	return color;
+	return m_color;
 }
 
 void GameObject::SetColor(glm::vec3 newColor)
 {
-	color = newColor;
+	m_color = newColor;
 }
 
 void GameObject::SetColor(float r, float g, float b)
@@ -54,12 +54,12 @@ void GameObject::SetColor(float r, float g, float b)
 
 void GameObject::SetShader(Shader* newShader)
 {
-	shader = newShader;
+	m_shader = newShader;
 }
 
 Shader* GameObject::GetShader()
 {
-	return shader;
+	return m_shader;
 }
 
 void GameObject::SetRotate(float rotation)
@@ -98,98 +98,98 @@ int GameObject::GetID()
 
 Texture* GameObject::GetTexture()
 {
-	return texture;
+	return m_texture;
 }
 
 void GameObject::SetTexture(Texture* tex)
 {
-	texture = tex;
+	m_texture = tex;
 
-	if (texture != nullptr)
+	if (m_texture != nullptr)
 	{
-		if (!hasAnimation)
-			SetScale(glm::vec2(texture->GetWidth() / 16, texture->GetHeight() / 16));
+		if (!m_hasAnimation)
+			SetScale(glm::vec2(m_texture->GetWidth() / 16, m_texture->GetHeight() / 16));
 		else
-			SetScale(glm::vec2(spriteWidth, texture->GetHeight()) / glm::vec2(spriteWidth));
+			SetScale(glm::vec2(m_spriteWidth, m_texture->GetHeight()) / glm::vec2(m_spriteWidth));
 
-		SetTextureWidth(texture->GetWidth());
+		SetTextureWidth(m_texture->GetWidth());
 	}
 }
 
 void GameObject::SetFrame(int Frame)
 {
-	frame = Frame;
+	m_frame = Frame;
 }
 
 void GameObject::AdvanceFrame()
 {
-	frame++;
+	m_frame++;
 
-	if (frame >= TextureWidth / spriteWidth)
+	if (m_frame >= m_textureWidth / m_spriteWidth)
 	{
-		frame = 0;
+		m_frame = 0;
 	}
 }
 
 int GameObject::GetFrame()
 {
-	return frame;
+	return m_frame;
 }
 
 int GameObject::GetSpriteWidth()
 {
-	return spriteWidth;
+	return m_spriteWidth;
 }
 
 void GameObject::SetSpriteWidth(int newWidth)
 {
-	spriteWidth = newWidth;
-	if (TextureWidth > spriteWidth)
-		hasAnimation = true;
+	m_spriteWidth = newWidth;
+	if (m_textureWidth > m_spriteWidth)
+		m_hasAnimation = true;
 }
 
 int GameObject::GetTextureWidth()
 {
-	return TextureWidth;
+	return m_textureWidth;
 }
 
 void GameObject::SetTextureWidth(int newWidth)
 {
-	TextureWidth = newWidth;
+	m_textureWidth = newWidth;
 
-	if (TextureWidth > spriteWidth)
-		hasAnimation = true;
+	if (m_textureWidth > m_spriteWidth)
+		m_hasAnimation = true;
 }
 
 bool GameObject::GetHasAnimation()
 {
-	return hasAnimation;
+	return m_hasAnimation;
 }
 
 void GameObject::SetHasAnimation(bool value)
 {
-	hasAnimation = value;
+	m_hasAnimation = value;
 }
 
 void GameObject::SetFrameRate(float frameRate)
 {
-	this->frameRate = frameRate;
+	this->m_frameRate = frameRate;
 }
 
 float GameObject::GetFrameRate()
 {
-	return frameRate;
+	return m_frameRate;
 }
 
 void GameObject::UpdateSpriteTimer(float deltaTime)
 {
-	if (hasAnimation)
+	if (m_hasAnimation)
 	{
-		frameRateTimer += deltaTime;
+		m_frameRateTimer += deltaTime;
 
-		if (frameRateTimer > frameRate)
+		if (m_frameRateTimer > m_frameRate)
 		{
-			frameRateTimer = 0;
+			m_frameRateTimer = 0;
 			AdvanceFrame();
 		}
 	}
@@ -197,17 +197,17 @@ void GameObject::UpdateSpriteTimer(float deltaTime)
 
 bool GameObject::GetIsPlayer()
 {
-	return isPlayer;
+	return m_isPlayer;
 }
 
 bool GameObject::GetRender()
 {
-	return render;
+	return m_render;
 }
 
 void GameObject::SetRender(bool value)
 {
-	render = value;
+	m_render = value;
 }
 
 bool GameObject::GetMouseColliding()

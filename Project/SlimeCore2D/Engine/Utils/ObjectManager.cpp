@@ -2,29 +2,29 @@
 
 ObjectManager::ObjectManager(Renderer2D* renderer)
 {
-	this->renderer = renderer;
+	this->m_renderer = renderer;
 }
 
 ObjectManager::~ObjectManager()
 {
-	for (int i = 0; i < objects.size(); i++)
+	for (int i = 0; i < m_objects.size(); i++)
 	{
-		delete (Quad*) objects[i];
+		delete (Quad*) m_objects[i];
 
-		objects[i] = nullptr;
+		m_objects[i] = nullptr;
 	}
 
-	delete renderer;
-	renderer = nullptr;
+	delete m_renderer;
+	m_renderer = nullptr;
 }
 
 GameObject* ObjectManager::CreateGameObject(glm::vec3 pos, glm::vec2 size, glm::vec3 color)
 {
 	GameObject* go = new GameObject();
-	go->Create(pos, color, size, objects.size());
+	go->Create(pos, color, size, m_objects.size());
 
-	renderer->AddObject(go);
-	objects.push_back(go);
+	m_renderer->AddObject(go);
+	m_objects.push_back(go);
 
 	return go;
 }
@@ -32,10 +32,10 @@ GameObject* ObjectManager::CreateGameObject(glm::vec3 pos, glm::vec2 size, glm::
 GameObject* ObjectManager::CreateQuad(glm::vec3 pos, glm::vec2 size, glm::vec3 color)
 {
 	Quad* go = new Quad();
-	go->Create(pos, color, size, objects.size());
+	go->Create(pos, color, size, m_objects.size());
 
-	renderer->AddObject(go);
-	objects.push_back(go);
+	m_renderer->AddObject(go);
+	m_objects.push_back(go);
 
 	return go;
 }
@@ -43,26 +43,26 @@ GameObject* ObjectManager::CreateQuad(glm::vec3 pos, glm::vec2 size, glm::vec3 c
 GameObject* ObjectManager::CreateQuad(glm::vec3 pos, glm::vec2 size, Texture* tex)
 {
 	Quad* go = new Quad();
-	go->Create(pos, glm::vec3(1), size, objects.size());
+	go->Create(pos, glm::vec3(1), size, m_objects.size());
 	go->SetTexture(tex);
 
-	renderer->AddObject(go);
-	objects.push_back(go);
+	m_renderer->AddObject(go);
+	m_objects.push_back(go);
 
 	return go;
 }
 
 void ObjectManager::RemoveQuad(GameObject* object)
 {
-	objects.erase(objects.begin() + GetObjectIndex(object));
-	renderer->RemoveQuad(object);
+	m_objects.erase(m_objects.begin() + GetObjectIndex(object));
+	m_renderer->RemoveQuad(object);
 }
 
 int ObjectManager::GetObjectIndex(GameObject* object)
 {
-	for (int i = 0; i < objects.size(); i++)
+	for (int i = 0; i < m_objects.size(); i++)
 	{
-		if (objects[i] == object)
+		if (m_objects[i] == object)
 		{
 			return i;
 		}
@@ -72,26 +72,26 @@ int ObjectManager::GetObjectIndex(GameObject* object)
 
 void ObjectManager::Update(float deltaTime)
 {
-	for (int i = 0; i < objects.size(); i++)
+	for (int i = 0; i < m_objects.size(); i++)
 	{
-		objects[i]->Update(deltaTime);
+		m_objects[i]->Update(deltaTime);
 	}
 }
 
 void ObjectManager::UpdateFrames(float deltaTime)
 {
-	for (int i = 0; i < objects.size(); i++)
+	for (int i = 0; i < m_objects.size(); i++)
 	{
-		objects[i]->UpdateSpriteTimer(deltaTime);
+		m_objects[i]->UpdateSpriteTimer(deltaTime);
 	}
 }
 
 GameObject* ObjectManager::Get(int index)
 {
-	return objects[index];
+	return m_objects[index];
 }
 
 int ObjectManager::Size()
 {
-	return objects.size();
+	return m_objects.size();
 }

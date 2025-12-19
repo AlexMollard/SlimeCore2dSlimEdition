@@ -15,13 +15,13 @@ public:
 	void Draw();
 
 private:
-	Renderer2D* renderer = nullptr;
-	ObjectManager* objectManager = nullptr;
-	Input* inputManager = Input::GetInstance();
-	PhysicsScene* physicsScene = nullptr;
-	Camera* camera = nullptr;
-	GameObject* testObject = nullptr;
-	Snake* snakeGame = nullptr;
+	Renderer2D* m_renderer = nullptr;
+	ObjectManager* m_objectManager = nullptr;
+	Input* m_inputManager = Input::GetInstance();
+	PhysicsScene* m_physicsScene = nullptr;
+	Camera* m_camera = nullptr;
+	GameObject* m_testObject = nullptr;
+	Snake* m_snakeGame = nullptr;
 
-	float timer = 0.0f;
+	float m_timer = 0.0f;
 };

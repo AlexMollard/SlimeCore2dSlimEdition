@@ -21,7 +21,7 @@ public:
 
 	int GetScore()
 	{
-		return _score;
+		return m_score;
 	}
 
 	void Death();
@@ -30,36 +30,36 @@ public:
 	void SaveScore(int score);
 
 private:
-	Renderer2D* _renderer = nullptr;
-	ObjectManager* _objManager = nullptr;
-	Input* _inputManager = Input::GetInstance();
-	Camera* _camera = nullptr;
+	Renderer2D* m_renderer = nullptr;
+	ObjectManager* m_objManager = nullptr;
+	Input* m_inputManager = Input::GetInstance();
+	Camera* m_camera = nullptr;
 
-	Cell** _grid = nullptr;
+	Cell** m_grid = nullptr;
 
-	glm::vec2 _foodPos;
+	glm::vec2 m_foodPos;
 
-	int _tailLength = 0;
-	int _score = 0;
-	std::vector<glm::vec2> _bodyPos;
+	int m_tailLength = 0;
+	int m_score = 0;
+	std::vector<glm::vec2> m_bodyPos;
 
-	glm::vec2 _direction = glm::vec2(0);
-	glm::vec2 _lastDirection = glm::vec2(0);
-	glm::vec2 spawnPos;
-	float updateLength = 0;
+	glm::vec2 m_direction = glm::vec2(0);
+	glm::vec2 m_lastDirection = glm::vec2(0);
+	glm::vec2 m_spawnPos;
+	float m_updateLength = 0;
 
-	float _timer;
+	float m_timer;
 
-	Text* _testText;
-	Shader* _textShader;
+	Text* m_testText;
+	Shader* m_textShader;
 
-	int _highScores[10];
-	std::fstream _hsFile;
+	int m_highScores[10];
+	std::fstream m_hsFile;
 
-	bool isDead = false;
+	bool m_isDead = false;
 
 	//Colours
-	glm::vec3 gridColor = glm::vec3(0.25f);
-	glm::vec3 snakeColor = glm::vec3(0.1f, 0.75f, 0.15f);
-	glm::vec3 foodColor = glm::vec3(0.75f, 0.15f, 0.2f);
+	glm::vec3 m_gridColor = glm::vec3(0.25f);
+	glm::vec3 m_snakeColor = glm::vec3(0.1f, 0.75f, 0.15f);
+	glm::vec3 m_foodColor = glm::vec3(0.75f, 0.15f, 0.2f);
 };

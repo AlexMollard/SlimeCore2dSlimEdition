@@ -7,36 +7,36 @@ Game2D::Game2D()
 
 Game2D::~Game2D()
 {
-	delete physicsScene;
-	physicsScene = nullptr;
+	delete m_physicsScene;
+	m_physicsScene = nullptr;
 
-	delete objectManager;
-	objectManager = nullptr;
+	delete m_objectManager;
+	m_objectManager = nullptr;
 
-	delete snakeGame;
-	snakeGame = nullptr;
+	delete m_snakeGame;
+	m_snakeGame = nullptr;
 }
 
 void Game2D::Init()
 {
-	camera = new Camera(-16, -9, -1, 1);
-	renderer = new Renderer2D(camera);
-	objectManager = new ObjectManager(renderer);
-	physicsScene = new PhysicsScene();
-	Input::GetInstance()->SetCamera(camera);
+	m_camera = new Camera(-16, -9, -1, 1);
+	m_renderer = new Renderer2D(m_camera);
+	m_objectManager = new ObjectManager(m_renderer);
+	m_physicsScene = new PhysicsScene();
+	Input::GetInstance()->SetCamera(m_camera);
 
-	snakeGame = new Snake(camera, renderer, objectManager);
+	m_snakeGame = new Snake(m_camera, m_renderer, m_objectManager);
 }
 
 void Game2D::Update(float deltaTime)
 {
-	camera->Update(deltaTime);
-	physicsScene->update(deltaTime);
-	objectManager->UpdateFrames(deltaTime);
-	snakeGame->Update(deltaTime);
+	m_camera->Update(deltaTime);
+	m_physicsScene->update(deltaTime);
+	m_objectManager->UpdateFrames(deltaTime);
+	m_snakeGame->Update(deltaTime);
 }
 
 void Game2D::Draw()
 {
-	renderer->Draw();
+	m_renderer->Draw();
 }

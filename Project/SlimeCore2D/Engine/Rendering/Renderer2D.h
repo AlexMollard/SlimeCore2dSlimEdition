@@ -47,17 +47,17 @@ public:
 	static Shader* basicShader;
 
 private:
-	glm::vec3 currentColor = glm::vec3(-404);
-	glm::mat4 UIMatrix = glm::ortho<float>(16, -16, 9, -9, 2, 4);
-	Shader* currentShader = nullptr;
-	Texture* currentTexture = nullptr;
+	glm::vec3 m_currentColor = glm::vec3(-404);
+	glm::mat4 m_UIMatrix = glm::ortho<float>(16, -16, 9, -9, 2, 4);
+	Shader* m_currentShader = nullptr;
+	Texture* m_currentTexture = nullptr;
 
-	std::vector<GameObject*> objectPool;
-	std::vector<Texture*> texturePool;
-	std::vector<Shader*> shaderPool;
+	std::vector<GameObject*> m_objectPool;
+	std::vector<Texture*> m_texturePool;
+	std::vector<Shader*> m_shaderPool;
 
-	static Shader* UIShader;
-	static Camera* camera;
+	static Shader* m_UIShader;
+	static Camera* m_camera;
 
-	static std::vector<glm::vec2> UVs;
+	static std::vector<glm::vec2> m_UVs;
 };

@@ -20,6 +20,6 @@ public:
 	int Size();
 
 protected:
-	Renderer2D* renderer = nullptr;
-	std::vector<GameObject*> objects;
+	Renderer2D* m_renderer = nullptr;
+	std::vector<GameObject*> m_objects;
 };
