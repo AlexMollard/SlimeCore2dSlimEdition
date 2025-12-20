@@ -16,33 +16,60 @@ Input::Input()
 	window = glfwGetCurrentContext();
 	glfwSetWindowFocusCallback(window, window_focus_callback);
 	glfwSetScrollCallback(window, scroll_callback);
+
+	// initialize viewport to current framebuffer size (defaults to full window)
+	glfwGetFramebufferSize(window, &viewportWidth, &viewportHeight);
+	viewportX = 0;
+	viewportY = 0;
 }
 
 Input::~Input()
 {
 }
 
-// Most of this is broken because of the camera changing aspect ratio and position
+// Map cursor from framebuffer space into the active viewport and then into world coords
 void Input::Update()
 {
-	aspectX = -camera->GetAspectRatio().x;
-	aspectY = -camera->GetAspectRatio().y;
+	if (camera)
+	{
+		aspectX = -camera->GetAspectRatio().x;
+		aspectY = -camera->GetAspectRatio().y;
+	}
 
 	deltaMouse = glm::vec2((float) mouseXPos, (float) mouseYPos);
 
 	glfwGetCursorPos(window, &mouseXPos, &mouseYPos);
 	glfwGetWindowSize(window, &winWidth, &winHeight);
 
-	mouseXPos /= (winWidth / (aspectX * 2.0f));
+	// Use viewport rect (fallback to full window if not set)
+	int vpX = viewportX;
+	int vpY = viewportY;
+	int vpW = viewportWidth ? viewportWidth : winWidth;
+	int vpH = viewportHeight ? viewportHeight : winHeight;
+
+	double localX = mouseXPos - vpX;
+	double localY = mouseYPos - vpY;
+
+	// Clamp to viewport area
+	if (localX < 0) localX = 0;
+	if (localX > vpW) localX = vpW;
+	if (localY < 0) localY = 0;
+	if (localY > vpH) localY = vpH;
+
+	mouseXPos = localX;
+	mouseYPos = localY;
+
+	// Convert to world coordinates using camera half-extents
+	mouseXPos /= (vpW / (aspectX * 2.0f));
 	mouseXPos -= aspectX;
 
-	mouseYPos /= (winHeight / (aspectY * 2.0f));
+	mouseYPos /= (vpH / (aspectY * 2.0f));
 	mouseYPos -= aspectY;
 	mouseYPos = -mouseYPos;
 
 	deltaMouse -= glm::vec2((float) mouseXPos, (float) mouseYPos);
 	Input::scroll = 0.0f;
-}
+} 
 
 glm::vec2 Input::GetMousePos()
 {
@@ -72,7 +99,42 @@ bool Input::GetMouseDown(int button)
 void Input::SetCamera(Camera* cam)
 {
 	camera = cam;
-}
+	if (!camera || !window) return;
+
+	// Compute framebuffer/viewport to keep the camera aspect ratio and center it (letterbox/pillarbox)
+	int fbW = 0, fbH = 0;
+	glfwGetFramebufferSize(window, &fbW, &fbH);
+	if (fbW == 0 || fbH == 0)
+	{
+		SetViewportRect(0, 0, fbW, fbH);
+		glViewport(0, 0, fbW, fbH);
+		return;
+	}
+
+	glm::vec2 aspect = camera->GetAspectRatio();
+	float targetW = fabs(aspect.x * 2.0f);
+	float targetH = fabs(aspect.y * 2.0f);
+	float targetAR = targetW / targetH;
+	float windowAR = fbW / (float)fbH;
+
+	int vpX = 0, vpY = 0, vpW = fbW, vpH = fbH;
+	if (windowAR > targetAR)
+	{
+		// window wider -> pillarbox
+		vpH = fbH;
+		vpW = (int)(fbH * targetAR);
+		vpX = (fbW - vpW) / 2;
+	}
+	else
+	{
+		// window taller -> letterbox
+		vpW = fbW;
+		vpH = (int)(fbW / targetAR);
+		vpY = (fbH - vpH) / 2;
+	}
+	glViewport(vpX, vpY, vpW, vpH);
+	SetViewportRect(vpX, vpY, vpW, vpH);
+} 
 
 GLFWwindow* Input::GetWindow()
 {
@@ -102,6 +164,25 @@ void window_focus_callback(GLFWwindow* window, int focused)
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
 	Input::SetScroll(yoffset);
+}
+
+// Viewport helpers
+void Input::SetViewportRect(int x, int y, int width, int height)
+{
+	viewportX = x;
+	viewportY = y;
+	viewportWidth = width;
+	viewportHeight = height;
+}
+
+glm::vec4 Input::GetViewportRect()
+{
+	return glm::vec4(viewportX, viewportY, viewportWidth, viewportHeight);
+}
+
+Camera* Input::GetCamera()
+{
+	return camera;
 }
 
 bool Input::GetKeyPress(Keycode key)

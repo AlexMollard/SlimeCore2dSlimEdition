@@ -24,15 +24,15 @@ void Camera::Update(float deltaTime)
 
 void Camera::CameraMoveMent(float deltaTime)
 {
-	float speed = (Input::GetKeyPress(Keycode::LEFT_SHIFT)) ? 10.0f : 4.0f;
+	// float speed = (Input::GetKeyPress(Keycode::LEFT_SHIFT)) ? 10.0f : 4.0f;
 
-	float moveSpeed = speed * deltaTime;
+	// float moveSpeed = speed * deltaTime;
 
-	if (Input::GetScroll() > 0)
-		SetFOV(fieldOfView - moveSpeed);
+	// if (Input::GetScroll() > 0)
+	// 	SetFOV(fieldOfView - moveSpeed);
 
-	if (Input::GetScroll() < 0)
-		SetFOV(fieldOfView + moveSpeed);
+	// if (Input::GetScroll() < 0)
+	// 	SetFOV(fieldOfView + moveSpeed);
 
 	UpdateTransform();
 }

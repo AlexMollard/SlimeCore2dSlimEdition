@@ -30,6 +30,11 @@ public:
 	static bool GetMouseDown(int button);
 
 	void SetCamera(Camera* cam);
+	
+	// Viewport rectangle used for rendering when preserving aspect ratio
+	void SetViewportRect(int x, int y, int width, int height);
+	glm::vec4 GetViewportRect();
+	Camera* GetCamera();
 
 	static bool GetKeyPress(Keycode key);
 	static bool GetKeyRelease(Keycode key);
@@ -66,4 +71,10 @@ private:
 	glm::vec2 deltaMouse = glm::vec2();
 
 	Camera* camera = nullptr;
+
+	// Current viewport rect inside the framebuffer (x, y, width, height)
+	int viewportX = 0;
+	int viewportY = 0;
+	int viewportWidth = 0;
+	int viewportHeight = 0;
 };
