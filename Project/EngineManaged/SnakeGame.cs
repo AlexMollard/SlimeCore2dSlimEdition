@@ -3,209 +3,194 @@ using System.Collections.Generic;
 
 public static class SnakeGame
 {
-	// Viewport (visible grid)
-	private const int VIEW_W = 80;
+	private const int VIEW_W = 100;
 	private const int VIEW_H = 50;
+	private const int WORLD_W = 240;
+	private const int WORLD_H = 240;
 
-	// World (sim grid)
-	private const int WORLD_W = 120;
-	private const int WORLD_H = 120;
+	private static float _cellSize = 0.35f;
+	private static float _cellSpacing = 0.4f;
 
-	// Visual sizing
-	private static float _cellSize = 0.34f;
-	private static float _cellSpacing = 0.30f;
+	// Logic constants
+	private const float TICK_NORMAL = 0.12f;
+	private const float TICK_SPRINT = 0.05f; // Faster tick rate
 
-	// Tick
-	private static float _tick = 0.06f; // slightly slower = nicer
+	// Game Logic
+	private static float _tick = TICK_NORMAL;
 	private static float _accum = 0f;
 	private static float _time = 0f;
+	private static bool _isDead = false;
+	private static float _shake = 0f;
+	private static bool _isSprinting = false;
 
-	// Visual handles
-	private static ulong[,] _view = new ulong[VIEW_W, VIEW_H];
+	// Food
+	private static int _foodCount = 0;
+	private const int MAX_FOOD = 15; // Keep 15 pieces on map at once
 
-	// World data
-	private enum Terrain : byte { Grass, Rock, Water }
-	private struct Tile
-	{
-		public Terrain Terrain;
-		public bool Blocked;
-		public bool Food;
-	}
-	private static Tile[,] _world = new Tile[WORLD_W, WORLD_H];
-
-	// Snake
-	private static readonly List<Int2> _snake = new();
+	// Camera & Smoothing
+	private static float _camX, _camY;
+	private static List<Int2> _snake = new();
 	private static Int2 _dir = new(1, 0);
+	private static Int2 _nextDir = new(1, 0);
 	private static int _grow = 0;
 
-	private static Int2 _food;
-	private static readonly Random _rng = new(1337);
+	// Visual Handles
+	private static ulong[,] _view = new ulong[VIEW_W, VIEW_H];
+	private static ulong[] _eyes = new ulong[2];
 
-	// Colors (tweakable palette)
-	private static readonly Vec3 GRASS_A = new(0.10f, 0.16f, 0.10f);
-	private static readonly Vec3 GRASS_B = new(0.08f, 0.14f, 0.09f);
-	private static readonly Vec3 ROCK = new(0.18f, 0.18f, 0.20f);
-	private static readonly Vec3 WATER = new(0.07f, 0.12f, 0.22f);
+	// Compass
+	private static ulong _compassId;
 
-	private static readonly Vec3 SNAKE_BODY = new(0.12f, 0.75f, 0.18f);
-	private static readonly Vec3 SNAKE_HEAD = new(0.30f, 0.92f, 0.40f);
+	private enum Terrain : byte { Grass, Rock, Water }
+	private struct Tile { public Terrain Terrain; public bool Blocked; public bool Food; }
+	private static Tile[,] _world = new Tile[WORLD_W, WORLD_H];
+	private static readonly Random _rng = new();
 
-	private static readonly Vec3 FOOD_BASE = new(0.85f, 0.18f, 0.25f);
+	// Palette
+	private static readonly Vec3 COL_GRASS_1 = new(0.14f, 0.22f, 0.14f);
+	private static readonly Vec3 COL_GRASS_2 = new(0.12f, 0.20f, 0.12f);
+	private static readonly Vec3 COL_ROCK = new(0.25f, 0.25f, 0.28f);
+	private static readonly Vec3 COL_WATER = new(0.10f, 0.18f, 0.35f);
+	private static readonly Vec3 COL_SNAKE = new(0.40f, 0.90f, 0.30f);
+	private static readonly Vec3 COL_FOOD = new(1.00f, 0.20f, 0.30f);
+	private static readonly Vec3 COL_SNAKE_SPRINT = new(0.60f, 1.00f, 0.50f);
 
 	public static void Init()
 	{
-		GenerateWorldSimple();
-		ResetSnake();
-		SpawnFood();
+		GenerateOrganicWorld();
+		ResetGame();
 
-		BuildViewportVisuals();
-		PaintViewport();
+		// Build Grid
+		for (int x = 0; x < VIEW_W; x++)
+			for (int y = 0; y < VIEW_H; y++)
+				_view[x, y] = Native.Entity_CreateQuad(0, 0, _cellSize, _cellSize, 1, 1, 1);
 
-		try
+		// Build Eyes (attached to head)
+		_eyes[0] = Native.Entity_CreateQuad(0, 0, 0.08f, 0.08f, 0, 0, 0);
+		_eyes[1] = Native.Entity_CreateQuad(0, 0, 0.08f, 0.08f, 0, 0, 0);
+
+		_compassId = Native.Entity_CreateQuad(0, 0, 1.0f, 1.0f, 1, 1, 0); // Small yellow dot
+	}
+
+	private static Int2 GetNearestFoodPos()
+	{
+		Int2 head = _snake[0];
+		Int2 bestFood = new Int2(-1, -1);
+		float minDist = float.MaxValue;
+
+		for (int x = 0; x < WORLD_W; x++)
 		{
-			string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-			string fontPath = System.IO.Path.Combine(baseDir, "Fonts\\Chilanka-Regular.ttf");
-			if (!System.IO.File.Exists(fontPath))
+			for (int y = 0; y < WORLD_H; y++)
 			{
-				string winFont = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Fonts), "arial.ttf");
-				if (System.IO.File.Exists(winFont)) fontPath = winFont;
-			}
-
-			if (System.IO.File.Exists(fontPath))
-			{
-				IntPtr font = Native.Font_LoadFromFile(fontPath);
-				if (font != IntPtr.Zero)
+				if (_world[x, y].Food)
 				{
-					ulong id = Native.Entity_CreateQuad(0.0f, 0.0f, 100.0f, 100.0f, 1f, 1f, 1f);
-					uint tex = Native.Text_RenderToEntity(font, id, "Hello from C# (render)", 48);
-					Native.Font_Free(font);
+					// Calculate distance considering world wrap
+					float dx = Math.Abs(x - head.X);
+					if (dx > WORLD_W / 2) dx = WORLD_W - dx;
+
+					float dy = Math.Abs(y - head.Y);
+					if (dy > WORLD_H / 2) dy = WORLD_H - dy;
+
+					float distSq = dx * dx + dy * dy;
+					if (distSq < minDist)
+					{
+						minDist = distSq;
+						bestFood = new Int2(x, y);
+					}
 				}
 			}
 		}
-		catch (Exception ex)
-		{
-			Native.Engine_Log("Text test failed: " + ex.Message);
-		}
+		return bestFood;
+	}
 
-		Native.Engine_Log("SnakeGame.Init OK");
+	private static void GenerateOrganicWorld()
+	{
+		for (int y = 0; y < WORLD_H; y++)
+		{
+			for (int x = 0; x < WORLD_W; x++)
+			{
+				// Layer multiple sine waves at different angles to create "Noise"
+				float n = 0;
+				n += (float)Math.Sin(x * 0.15f + y * 0.05f);
+				n += (float)Math.Sin(x * -0.1f + y * 0.22f);
+				n += (float)Math.Sin(x * 0.3f + y * 0.3f) * 0.5f;
+
+				_world[x, y] = new Tile { Terrain = Terrain.Grass };
+				if (n > 1.2f) { _world[x, y].Terrain = Terrain.Rock; _world[x, y].Blocked = true; }
+				else if (n < -1.4f) { _world[x, y].Terrain = Terrain.Water; _world[x, y].Blocked = true; }
+			}
+		}
+	}
+
+	private static void ResetGame()
+	{
+		_snake.Clear();
+		Int2 start = new Int2(WORLD_W / 2, WORLD_H / 2);
+		_snake.Add(start);
+		_snake.Add(new Int2(start.X - 1, start.Y));
+		_dir = new Int2(1, 0);
+		_nextDir = _dir;
+		_grow = 4;
+		_isDead = false;
+		_camX = start.X; _camY = start.Y;
+		SpawnFood();
 	}
 
 	public static void Update(float dt)
 	{
 		_time += dt;
-		HandleInput();
+		_shake = Math.Max(0, _shake - dt * 2.0f);
 
-		_accum += dt;
-		while (_accum >= _tick)
+		if (!_isDead)
 		{
-			_accum -= _tick;
-			Step();
+			HandleInput();
+
+			// Adjust speed based on sprint state
+			_tick = _isSprinting ? TICK_SPRINT : TICK_NORMAL;
+
+			_accum += dt;
+			while (_accum >= _tick)
+			{
+				_accum -= _tick;
+				_dir = _nextDir;
+				Step();
+			}
 		}
+		else if (Native.Input_GetKeyDown(Keycode.SPACE)) ResetGame();
 
-		PaintViewport();
-	}
+		// Smooth Camera following the fractional movement of the snake
+		float interp = _accum / _tick;
+		float targetX = _snake[0].X + (_dir.X * interp);
+		float targetY = _snake[0].Y + (_dir.Y * interp);
 
-	// ------------------------------------------------------------
-	// World / Snake
-	// ------------------------------------------------------------
+		// Handle World Wrap for Camera
+		if (Math.Abs(targetX - _camX) > 5) _camX = targetX;
+		if (Math.Abs(targetY - _camY) > 5) _camY = targetY;
+		_camX = Lerp(_camX, targetX, dt * 10.0f);
+		_camY = Lerp(_camY, targetY, dt * 10.0f);
 
-	private static void GenerateWorldSimple()
-	{
-		// Mostly grass + a few obstacle clusters.
-		for (int y = 0; y < WORLD_H; y++)
-			for (int x = 0; x < WORLD_W; x++)
-				_world[x, y] = new Tile { Terrain = Terrain.Grass, Blocked = false, Food = false };
-
-		// Rocks clusters
-		for (int i = 0; i < 60; i++)
-		{
-			int cx = _rng.Next(0, WORLD_W);
-			int cy = _rng.Next(0, WORLD_H);
-			int r = _rng.Next(2, 6);
-
-			for (int y = cy - r; y <= cy + r; y++)
-				for (int x = cx - r; x <= cx + r; x++)
-				{
-					if (!InWorld(x, y)) continue;
-					if ((_rng.NextDouble() < 0.65) && (DistSq(x, y, cx, cy) <= r * r))
-					{
-						_world[x, y].Terrain = Terrain.Rock;
-						_world[x, y].Blocked = true;
-					}
-				}
-		}
-
-		// A few water blobs
-		for (int i = 0; i < 25; i++)
-		{
-			int cx = _rng.Next(0, WORLD_W);
-			int cy = _rng.Next(0, WORLD_H);
-			int r = _rng.Next(3, 8);
-
-			for (int y = cy - r; y <= cy + r; y++)
-				for (int x = cx - r; x <= cx + r; x++)
-				{
-					if (!InWorld(x, y)) continue;
-					if ((_rng.NextDouble() < 0.55) && (DistSq(x, y, cx, cy) <= r * r))
-					{
-						_world[x, y].Terrain = Terrain.Water;
-						_world[x, y].Blocked = true;
-					}
-				}
-		}
-	}
-
-	private static void ResetSnake()
-	{
-		_snake.Clear();
-		_snake.Add(new Int2(WORLD_W / 2, WORLD_H / 2));
-		_dir = new Int2(1, 0);
-		_grow = 6;
-	}
-
-	private static void SpawnFood()
-	{
-		// Clear old
-		if (InWorld(_food.X, _food.Y))
-			_world[_food.X, _food.Y].Food = false;
-
-		for (int tries = 0; tries < 10000; tries++)
-		{
-			int x = _rng.Next(0, WORLD_W);
-			int y = _rng.Next(0, WORLD_H);
-			if (_world[x, y].Blocked) continue;
-			if (IsSnakeAt(x, y)) continue;
-
-			_food = new Int2(x, y);
-			_world[x, y].Food = true;
-			return;
-		}
-
-		// If we somehow fail (very full board), just reset
-		ResetSnake();
+		Render(interp);
 	}
 
 	private static void Step()
 	{
 		Int2 head = _snake[0];
-		Int2 next = new Int2(head.X + _dir.X, head.Y + _dir.Y);
-
-		// Wrap edges (feels nicer than hard clamp)
-		next = new Int2(Wrap(next.X, WORLD_W), Wrap(next.Y, WORLD_H));
+		Int2 next = new Int2(Wrap(head.X + _dir.X, WORLD_W), Wrap(head.Y + _dir.Y, WORLD_H));
 
 		if (_world[next.X, next.Y].Blocked || IsSnakeAt(next.X, next.Y))
 		{
-			ResetSnake();
-			SpawnFood();
+			_isDead = true;
+			_shake = 0.4f;
 			return;
 		}
 
 		_snake.Insert(0, next);
-
 		if (_world[next.X, next.Y].Food)
 		{
 			_world[next.X, next.Y].Food = false;
-			_grow += 4;
+			_grow += 3;
+			_shake = 0.15f;
+			_foodCount--;
 			SpawnFood();
 		}
 
@@ -213,154 +198,165 @@ public static class SnakeGame
 		else _snake.RemoveAt(_snake.Count - 1);
 	}
 
-	// ------------------------------------------------------------
-	// Input
-	// ------------------------------------------------------------
+	private static void Render(float interp)
+	{
+		float camFracX = _camX - (float)Math.Floor(_camX);
+		float camFracY = _camY - (float)Math.Floor(_camY);
+
+		float shakeX = ((float)_rng.NextDouble() - 0.5f) * _shake;
+		float shakeY = ((float)_rng.NextDouble() - 0.5f) * _shake;
+
+		// --- NEW: Calculate the head's screen position once ---
+		// Since the camera centers on the head, its screen position is 
+		// always the offset from the center of the view grid.
+		float headScrX = (-camFracX + shakeX) * _cellSpacing;
+		float headScrY = (-camFracY + shakeY) * _cellSpacing;
+
+		for (int vx = 0; vx < VIEW_W; vx++)
+		{
+			for (int vy = 0; vy < VIEW_H; vy++)
+			{
+				int wx = Wrap((int)Math.Floor(_camX) - VIEW_W / 2 + vx, WORLD_W);
+				int wy = Wrap((int)Math.Floor(_camY) - VIEW_H / 2 + vy, WORLD_H);
+
+				float px = (vx - VIEW_W / 2f - camFracX + shakeX) * _cellSpacing;
+				float py = (vy - VIEW_H / 2f - camFracY + shakeY) * _cellSpacing;
+
+				ulong id = _view[vx, vy];
+				Native.Transform_SetPosition(id, px, py);
+
+				Vec3 col = GetTileColor(wx, wy);
+				if (_world[wx, wy].Food) col = COL_FOOD * (0.8f + 0.2f * (float)Math.Sin(_time * 12f));
+
+				int sIdx = GetSnakeIndexAt(wx, wy);
+				if (sIdx != -1)
+				{
+					// Use the sprint color if sprinting
+					Vec3 baseCol = _isSprinting ? COL_SNAKE_SPRINT : COL_SNAKE;
+					col = baseCol * (1.0f - (sIdx * 0.03f));
+
+					if (_isDead) col = new Vec3(0.4f, 0.1f, 0.1f);
+
+					if (sIdx == 0)
+					{
+						UpdateEyes(px, py); // px/py here will match headScrX/Y when at the head index
+						Native.Transform_SetSize(id, _cellSize * 1.15f, _cellSize * 1.15f);
+					}
+					else Native.Transform_SetSize(id, _cellSize, _cellSize);
+				}
+				else Native.Transform_SetSize(id, _cellSize, _cellSize);
+
+				Native.Visual_SetColor(id, col.X, col.Y, col.Z);
+			}
+		}
+
+		UpdateFoodCompass(headScrX, headScrY);
+	}
+
+	private static void UpdateFoodCompass(float hpx, float hpy)
+	{
+		Int2 nearest = GetNearestFoodPos();
+		if (nearest.X != -1)
+		{
+			Int2 head = _snake[0];
+
+			// Calculate vector to food with World Wrap correction
+			float dx = nearest.X - head.X;
+			if (Math.Abs(dx) > WORLD_W / 2) dx = -Math.Sign(dx) * (WORLD_W - Math.Abs(dx));
+
+			float dy = nearest.Y - head.Y;
+			if (Math.Abs(dy) > WORLD_H / 2) dy = -Math.Sign(dy) * (WORLD_H - Math.Abs(dy));
+
+			// Get angle to food
+			float angle = (float)Math.Atan2(dy, dx);
+			float orbitDist = 0.4f; // Distance from head center
+
+			// Position the compass dot
+			Native.Transform_SetPosition(_compassId, hpx + (float)Math.Cos(angle) * orbitDist, hpy + (float)Math.Sin(angle) * orbitDist);
+
+			// Pulse the color so it's visible
+			float pulse = 0.5f + 0.5f * (float)Math.Abs(Math.Sin(_time * 10f));
+			Native.Visual_SetColor(_compassId, pulse, pulse, 0); // Yellow pulse
+		}
+		else
+		{
+			// Hide compass if no food exists (move it far away)
+			Native.Transform_SetPosition(_compassId, 999, 999);
+		}
+	}
+
+	private static void UpdateEyes(float hpx, float hpy)
+	{
+		// Offset eyes based on direction
+		float ox = _dir.X * 0.1f;
+		float oy = _dir.Y * 0.1f;
+		// Perp vector for side-to-side spacing
+		float sx = -_dir.Y * 0.08f;
+		float sy = _dir.X * 0.08f;
+
+		Native.Transform_SetPosition(_eyes[0], hpx + ox + sx, hpy + oy + sy);
+		Native.Transform_SetPosition(_eyes[1], hpx + ox - sx, hpy + oy - sy);
+	}
+
+	private static Vec3 GetTileColor(int x, int y)
+	{
+		var t = _world[x, y].Terrain;
+		if (t == Terrain.Rock) return COL_ROCK;
+		if (t == Terrain.Water) return COL_WATER;
+		return ((x + y) % 2 == 0) ? COL_GRASS_1 : COL_GRASS_2;
+	}
 
 	private static void HandleInput()
 	{
-		// Your current assumption: W/A/S/D with ASCII codes
-		// If you switch to VK_ codes, adjust here.
-		const int W = 87, A = 65, S = 83, D = 68;
+		// I should get enums for these keycodes...
+		_isSprinting = Native.Input_GetKeyDown(Keycode.LEFT_SHIFT);
 
-		Int2 newDir = _dir;
-
-		if (Native.Input_GetKeyDown(W)) newDir = new Int2(0, 1);
-		else if (Native.Input_GetKeyDown(S)) newDir = new Int2(0, -1);
-		else if (Native.Input_GetKeyDown(A)) newDir = new Int2(-1, 0);
-		else if (Native.Input_GetKeyDown(D)) newDir = new Int2(1, 0);
-
-		if (!IsReverse(newDir, _dir))
-			_dir = newDir;
+		if ((Native.Input_GetKeyDown(Keycode.W) || Native.Input_GetKeyDown(Keycode.UP)) && _dir.Y == 0) _nextDir = new Int2(0, 1);
+		if ((Native.Input_GetKeyDown(Keycode.S) || Native.Input_GetKeyDown(Keycode.DOWN)) && _dir.Y == 0) _nextDir = new Int2(0, -1);
+		if ((Native.Input_GetKeyDown(Keycode.A) || Native.Input_GetKeyDown(Keycode.LEFT)) && _dir.X == 0) _nextDir = new Int2(-1, 0);
+		if ((Native.Input_GetKeyDown(Keycode.D) || Native.Input_GetKeyDown(Keycode.RIGHT)) && _dir.X == 0) _nextDir = new Int2(1, 0);
 	}
 
-	// ------------------------------------------------------------
-	// Viewport visuals
-	// ------------------------------------------------------------
-
-	private static void BuildViewportVisuals()
+	private static void SpawnFood()
 	{
-		for (int vx = 0; vx < VIEW_W; vx++)
-			for (int vy = 0; vy < VIEW_H; vy++)
-			{
-				float px = (vx - VIEW_W * 0.5f) * _cellSpacing;
-				float py = (vy - VIEW_H * 0.5f) * _cellSpacing;
-
-				// Start as grass A
-				_view[vx, vy] = Native.Entity_CreateQuad(px, py, _cellSize, _cellSize, GRASS_A.X, GRASS_A.Y, GRASS_A.Z);
-			}
-	}
-
-	private static void PaintViewport()
-	{
-		Int2 head = _snake[0];
-
-		int originX = head.X - VIEW_W / 2;
-		int originY = head.Y - VIEW_H / 2;
-
-		// Food pulse
-		float pulse = 0.65f + 0.35f * (float)Math.Sin(_time * 6.0f);
-
-		for (int vx = 0; vx < VIEW_W; vx++)
-			for (int vy = 0; vy < VIEW_H; vy++)
-			{
-				int wx = Wrap(originX + vx, WORLD_W);
-				int wy = Wrap(originY + vy, WORLD_H);
-
-				Vec3 baseCol = BaseTileColor(wx, wy, vx, vy);
-
-				// Overlays: food, snake
-				if (_world[wx, wy].Food)
-				{
-					// brighten + pulse
-					Vec3 c = FOOD_BASE * (0.85f + 0.25f * pulse);
-					SetCell(vx, vy, c);
-					continue;
-				}
-
-				int snakeIndex = SnakeIndexAt(wx, wy);
-				if (snakeIndex >= 0)
-				{
-					// Head brighter, body slightly darkens with distance
-					float t = Math.Clamp(snakeIndex / 24.0f, 0.0f, 1.0f);
-					Vec3 c = Lerp(SNAKE_HEAD, SNAKE_BODY, t);
-
-					// optional tiny "eye" effect: if head and moving toward this cell offset, brighten a bit
-					if (snakeIndex == 0)
-						c = c * 1.05f;
-
-					SetCell(vx, vy, c);
-					continue;
-				}
-
-				SetCell(vx, vy, baseCol);
-			}
-	}
-
-	private static Vec3 BaseTileColor(int wx, int wy, int vx, int vy)
-	{
-		Terrain t = _world[wx, wy].Terrain;
-
-		// Checkerboard grass to make the grid read better
-		bool checker = ((wx + wy) & 1) == 0;
-
-		return t switch
+		while (_foodCount < MAX_FOOD)
 		{
-			Terrain.Grass => checker ? GRASS_A : GRASS_B,
-			Terrain.Rock => ROCK,
-			Terrain.Water => WATER,
-			_ => GRASS_A
-		};
+			// Try to spawn one piece
+			bool spawned = false;
+			for (int i = 0; i < 100; i++) // Limit attempts to prevent infinite loops
+			{
+				int range = 40; // Max distance from head
+				int rx = _rng.Next(-range, range);
+				int ry = _rng.Next(-range, range);
+
+				int x = Wrap(_snake[0].X + rx, WORLD_W);
+				int y = Wrap(_snake[0].Y + ry, WORLD_H);
+
+				if (!_world[x, y].Blocked && !_world[x, y].Food && GetSnakeIndexAt(x, y) == -1)
+				{
+					_world[x, y].Food = true;
+					_foodCount++;
+					spawned = true;
+					break;
+				}
+			}
+			if (!spawned) break; // Board is too full
+		}
 	}
 
-	private static void SetCell(int vx, int vy, Vec3 c)
+	private static int GetSnakeIndexAt(int x, int y)
 	{
-		ulong id = _view[vx, vy];
-		if (id == 0) return;
-		Native.Visual_SetColor(id, c.X, c.Y, c.Z);
-	}
-
-	// ------------------------------------------------------------
-	// Helpers
-	// ------------------------------------------------------------
-
-	private static bool InWorld(int x, int y) => (uint)x < WORLD_W && (uint)y < WORLD_H;
-	private static int Wrap(int v, int mod) => (v % mod + mod) % mod;
-	private static int DistSq(int x, int y, int cx, int cy) { int dx = x - cx, dy = y - cy; return dx * dx + dy * dy; }
-
-	private static bool IsSnakeAt(int x, int y)
-	{
-		for (int i = 0; i < _snake.Count; i++)
-			if (_snake[i].X == x && _snake[i].Y == y) return true;
-		return false;
-	}
-
-	private static int SnakeIndexAt(int x, int y)
-	{
-		for (int i = 0; i < _snake.Count; i++)
-			if (_snake[i].X == x && _snake[i].Y == y) return i;
+		for (int i = 0; i < _snake.Count; i++) if (_snake[i].X == x && _snake[i].Y == y) return i;
 		return -1;
 	}
+	private static bool IsSnakeAt(int x, int y) => GetSnakeIndexAt(x, y) != -1;
+	private static int Wrap(int v, int m) => (v % m + m) % m;
+	private static float Lerp(float a, float b, float t) => a + (b - a) * t;
 
-	private static bool IsReverse(Int2 a, Int2 b) => (a.X == -b.X && a.Y == -b.Y);
-
-	private static Vec3 Lerp(Vec3 a, Vec3 b, float t) => new(
-		a.X + (b.X - a.X) * t,
-		a.Y + (b.Y - a.Y) * t,
-		a.Z + (b.Z - a.Z) * t
-	);
-
-	private readonly struct Int2
+	private struct Int2 { public int X, Y; public Int2(int x, int y) { X = x; Y = y; } }
+	private struct Vec3
 	{
-		public readonly int X, Y;
-		public Int2(int x, int y) { X = x; Y = y; }
-	}
-
-	private readonly struct Vec3
-	{
-		public readonly float X, Y, Z;
-		public Vec3(float x, float y, float z) { X = x; Y = y; Z = z; }
-
-		public static Vec3 operator *(Vec3 a, float s) => new(a.X * s, a.Y * s, a.Z * s);
+		public float X, Y, Z; public Vec3(float x, float y, float z) { X = x; Y = y; Z = z; }
+		public static Vec3 operator *(Vec3 a, float b) => new(a.X * b, a.Y * b, a.Z * b);
 	}
 }

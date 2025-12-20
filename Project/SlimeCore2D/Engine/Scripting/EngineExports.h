@@ -20,6 +20,10 @@ SLIME_EXPORT bool __cdecl Entity_IsAlive(EntityId id);
 SLIME_EXPORT void __cdecl Transform_SetPosition(EntityId id, float x, float y);
 SLIME_EXPORT void __cdecl Transform_GetPosition(EntityId id, float* outX, float* outY);
 
+// Transform-ish API (size)
+SLIME_EXPORT void __cdecl Transform_SetSize(EntityId id, float sx, float sy);
+SLIME_EXPORT void __cdecl Transform_GetSize(EntityId id, float* outSx, float* outSy);
+
 SLIME_EXPORT void __cdecl Visual_SetColor(EntityId id, float r, float g, float b);
 
 // Input

@@ -155,17 +155,10 @@ void Renderer2D::Draw()
 
 	glm::vec2 camPos = m_camera->GetPosition();
 
-	float distanceFromCenter = -m_camera->GetAspectRatio().x + 6;
-
 	for (int i = 0; i < m_objectPool.size(); i++)
 	{
 		if (m_objectPool[i]->GetRender() == false)
 			continue;
-
-		if (glm::distance(camPos, glm::vec2(m_objectPool[i]->GetPos())) > distanceFromCenter)
-		{
-			continue;
-		}
 
 		if (m_objectPool[i]->GetTexture() == nullptr)
 		{
@@ -343,7 +336,7 @@ void Renderer2D::Init()
 	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*) offsetof(Vertex, color));
 
 	glEnableVertexArrayAttrib(data.quadVA, 2);
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*) offsetof(Vertex, texCoords));
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*) offsetof(Vertex, texCoords));
 
 	glEnableVertexArrayAttrib(data.quadVA, 3);
 	glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*) offsetof(Vertex, texIndex));

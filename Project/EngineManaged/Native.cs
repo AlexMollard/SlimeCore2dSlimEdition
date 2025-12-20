@@ -26,15 +26,21 @@ internal static class Native
 	internal static extern void Transform_GetPosition(ulong id, out float x, out float y);
 
 	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern void Transform_SetSize(ulong id, float w, float h);
+
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern void Transform_GetSize(ulong id, out float w, out float h);
+
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
 	internal static extern void Visual_SetColor(ulong id, float r, float g, float b);
 
 
 	// INPUT
 	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
-	internal static extern bool Input_GetKeyDown(int key);
+	internal static extern bool Input_GetKeyDown(Keycode key);
 
 	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
-	internal static extern bool Input_GetKeyReleased(int key);
+	internal static extern bool Input_GetKeyReleased(Keycode key);
 
 	// TEXT / FONT
 	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]

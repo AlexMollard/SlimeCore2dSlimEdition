@@ -66,6 +66,28 @@ SLIME_EXPORT void __cdecl Transform_GetPosition(EntityId id, float* outX, float*
 	*outY = p.y;
 }
 
+SLIME_EXPORT void __cdecl Transform_SetSize(EntityId id, float sx, float sy)
+{
+	if (!ObjectManager::IsCreated() || id == 0)
+		return;
+	GameObject* obj = ObjectManager::Get().Get((ObjectId) id);
+	if (!obj)
+		return;
+	obj->SetScale(glm::vec2(sx, sy));
+}
+
+SLIME_EXPORT void __cdecl Transform_GetSize(EntityId id, float* outSx, float* outSy)
+{
+	if (!ObjectManager::IsCreated() || id == 0 || !outSx || !outSy)
+		return;
+	GameObject* obj = ObjectManager::Get().Get((ObjectId) id);
+	if (!obj)
+		return;
+	glm::vec2 s = obj->GetScale();
+	*outSx = s.x;
+	*outSy = s.y;
+}
+
 SLIME_EXPORT void __cdecl Visual_SetColor(EntityId id, float r, float g, float b)
 {
 	if (!ObjectManager::IsCreated() || id == 0)
