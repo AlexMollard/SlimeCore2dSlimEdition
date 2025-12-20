@@ -1,15 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Text;
 
 internal static class Native
 {
+	// -----------------------------
+	// Core / Logging
+	// -----------------------------
 	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
 	internal static extern void Engine_Log([MarshalAs(UnmanagedType.LPUTF8Str)] string msg);
 
-
-	// GAME OBJECTS
+	// -----------------------------
+	// Entity lifecycle (Object-level)
+	// -----------------------------
 	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
 	internal static extern ulong Entity_CreateQuad(float px, float py, float sx, float sy, float r, float g, float b);
 
@@ -19,34 +21,40 @@ internal static class Native
 	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
 	internal static extern bool Entity_IsAlive(ulong id);
 
+
+	// -----------------------------
+	// Entity transform & visual API (single, consistent surface)
+	// -----------------------------
 	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
-	internal static extern void Transform_SetPosition(ulong id, float x, float y);
+	internal static extern void Entity_SetPosition(ulong id, float x, float y);
 
 	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
-	internal static extern void Transform_GetPosition(ulong id, out float x, out float y);
+	internal static extern void Entity_GetPosition(ulong id, out float x, out float y);
 
 	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
-	internal static extern void Transform_SetSize(ulong id, float w, float h);
+	internal static extern void Entity_SetSize(ulong id, float w, float h);
 
 	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
-	internal static extern void Transform_GetSize(ulong id, out float w, out float h);
+	internal static extern void Entity_GetSize(ulong id, out float w, out float h);
 
 	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
-	internal static extern void Visual_SetColor(ulong id, float r, float g, float b);
+	internal static extern void Entity_SetColor(ulong id, float r, float g, float b);
 
 	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
-	internal static extern void Visual_SetLayer(ulong id, int layer);
+	internal static extern void Entity_SetLayer(ulong id, int layer);
 
 	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
-	internal static extern int Visual_GetLayer(ulong id);
+	internal static extern int Entity_GetLayer(ulong id);
 
 	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
-	internal static extern void Visual_SetAnchor(ulong id, float ax, float ay);
+	internal static extern void Entity_SetAnchor(ulong id, float ax, float ay);
 
 	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
-	internal static extern void Visual_GetAnchor(ulong id, out float ax, out float ay);
+	internal static extern void Entity_GetAnchor(ulong id, out float ax, out float ay);
 
-	// INPUT
+	// -----------------------------
+	// Input: keyboard / mouse / window
+	// -----------------------------
 	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
 	internal static extern bool Input_GetKeyDown(Keycode key);
 
@@ -89,7 +97,33 @@ internal static class Native
 	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
 	internal static extern void Input_SetFocus(bool focus);
 
-	// TEXT / FONT
+	// -----------------------------
+	// ObjectManager helpers
+	// -----------------------------
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern ulong ObjectManager_CreateGameObject(float px, float py, float sx, float sy, float r, float g, float b);
+
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern ulong ObjectManager_CreateQuad(float px, float py, float sx, float sy, float r, float g, float b);
+
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern ulong ObjectManager_CreateQuadWithTexture(float px, float py, float sx, float sy, uint texId);
+
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern void ObjectManager_Destroy(ulong id);
+
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern bool ObjectManager_IsAlive(ulong id);
+
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern int ObjectManager_GetSize();
+
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern ulong ObjectManager_GetIdAtIndex(int index);
+
+	// -----------------------------
+	// Text / Font helpers
+	// -----------------------------
 	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
 	internal static extern uint Text_CreateTextureFromFontFile([MarshalAs(UnmanagedType.LPUTF8Str)] string fontPath, [MarshalAs(UnmanagedType.LPUTF8Str)] string text, int pixelHeight, out int outWidth, out int outHeight);
 
@@ -102,7 +136,40 @@ internal static class Native
 	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
 	internal static extern uint Text_RenderToEntity(IntPtr font, ulong id, [MarshalAs(UnmanagedType.LPUTF8Str)] string text, int pixelHeight);
 
+	// -----------------------------
+	// Entity visual helpers (texture / visibility / animation)
+	// -----------------------------
 	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
 	internal static extern void Entity_SetTexture(ulong id, uint texId, int width, int height);
+
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern void Entity_SetRender(ulong id, bool value);
+
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern bool Entity_GetRender(ulong id);
+
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern void Entity_SetFrame(ulong id, int frame);
+
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern int Entity_GetFrame(ulong id);
+
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern void Entity_AdvanceFrame(ulong id);
+
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern void Entity_SetSpriteWidth(ulong id, int width);
+
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern int Entity_GetSpriteWidth(ulong id);
+
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern void Entity_SetHasAnimation(ulong id, bool value);
+
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern void Entity_SetFrameRate(ulong id, float frameRate);
+
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern float Entity_GetFrameRate(ulong id);
 
 }

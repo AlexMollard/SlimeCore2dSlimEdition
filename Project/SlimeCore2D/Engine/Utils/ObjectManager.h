@@ -40,7 +40,7 @@ public:
 
 	// Debug / stats
 	int Size() const;
-
+	ObjectId GetIdAtIndex(int index) const;
 private:
 	ObjectManager(Renderer2D* renderer, bool ownsRenderer);
 	~ObjectManager();

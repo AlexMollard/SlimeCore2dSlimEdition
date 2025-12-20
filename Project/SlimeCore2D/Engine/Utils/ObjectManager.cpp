@@ -149,3 +149,12 @@ int ObjectManager::Size() const
 {
 	return (int) m_objects.size();
 }
+
+ObjectId ObjectManager::GetIdAtIndex(int index) const
+{
+	if (index < 0 || index >= (int)m_objects.size())
+		return InvalidObjectId;
+	GameObject* obj = m_objects[index];
+	if (!obj) return InvalidObjectId;
+	return static_cast<ObjectId>(obj->GetID());
+}

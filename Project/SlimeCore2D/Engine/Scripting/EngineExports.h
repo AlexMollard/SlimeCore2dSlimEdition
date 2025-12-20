@@ -9,30 +9,51 @@
 
 using EntityId = std::uint64_t;
 
+// -----------------------------
+// Core / Logging
+// -----------------------------
 SLIME_EXPORT void __cdecl Engine_Log(const char* msg);
 
-// Entity/object lifecycle
+// -----------------------------
+// Entity lifecycle (Create/Destroy/IsAlive)
+// -----------------------------
 SLIME_EXPORT EntityId __cdecl Entity_CreateQuad(float px, float py, float sx, float sy, float r, float g, float b);
 SLIME_EXPORT void __cdecl Entity_Destroy(EntityId id);
 SLIME_EXPORT bool __cdecl Entity_IsAlive(EntityId id);
 
-// Transform-ish API (position)
-SLIME_EXPORT void __cdecl Transform_SetPosition(EntityId id, float x, float y);
-SLIME_EXPORT void __cdecl Transform_GetPosition(EntityId id, float* outX, float* outY);
+// -----------------------------
+// Entity transform & visual API
+// (position, size, color, layer, anchor)
+// -----------------------------
+SLIME_EXPORT void __cdecl Entity_SetPosition(EntityId id, float x, float y);
+SLIME_EXPORT void __cdecl Entity_GetPosition(EntityId id, float* outX, float* outY);
+SLIME_EXPORT void __cdecl Entity_SetSize(EntityId id, float sx, float sy);
+SLIME_EXPORT void __cdecl Entity_GetSize(EntityId id, float* outSx, float* outSy);
+SLIME_EXPORT void __cdecl Entity_SetColor(EntityId id, float r, float g, float b);
+SLIME_EXPORT void __cdecl Entity_SetLayer(EntityId id, int layer);
+SLIME_EXPORT int  __cdecl Entity_GetLayer(EntityId id);
+SLIME_EXPORT void __cdecl Entity_SetAnchor(EntityId id, float ax, float ay);
+SLIME_EXPORT void __cdecl Entity_GetAnchor(EntityId id, float* outAx, float* outAy);
 
-// Transform-ish API (size)
-SLIME_EXPORT void __cdecl Transform_SetSize(EntityId id, float sx, float sy);
-SLIME_EXPORT void __cdecl Transform_GetSize(EntityId id, float* outSx, float* outSy);
+// -----------------------------
+// Entity visual helpers (texture / visibility / animation)
+// -----------------------------
+SLIME_EXPORT void __cdecl Entity_SetTexture(EntityId id, unsigned int texId, int width, int height);
+SLIME_EXPORT void __cdecl Entity_SetRender(EntityId id, bool value);
+SLIME_EXPORT bool __cdecl Entity_GetRender(EntityId id);
 
-SLIME_EXPORT void __cdecl Visual_SetColor(EntityId id, float r, float g, float b);
+SLIME_EXPORT void __cdecl Entity_SetFrame(EntityId id, int frame);
+SLIME_EXPORT int  __cdecl Entity_GetFrame(EntityId id);
+SLIME_EXPORT void __cdecl Entity_AdvanceFrame(EntityId id);
+SLIME_EXPORT void __cdecl Entity_SetSpriteWidth(EntityId id, int width);
+SLIME_EXPORT int  __cdecl Entity_GetSpriteWidth(EntityId id);
+SLIME_EXPORT void __cdecl Entity_SetHasAnimation(EntityId id, bool value);
+SLIME_EXPORT void __cdecl Entity_SetFrameRate(EntityId id, float frameRate);
+SLIME_EXPORT float __cdecl Entity_GetFrameRate(EntityId id);
 
-SLIME_EXPORT void __cdecl Visual_SetLayer(EntityId id, int layer);
-SLIME_EXPORT int  __cdecl Visual_GetLayer(EntityId id);
-
-SLIME_EXPORT void __cdecl Visual_SetAnchor(EntityId id, float ax, float ay);
-SLIME_EXPORT void __cdecl Visual_GetAnchor(EntityId id, float* outAx, float* outAy);
-
-// Input
+// -----------------------------
+// Input: keyboard / mouse / window
+// -----------------------------
 SLIME_EXPORT bool __cdecl Input_GetKeyDown(int key);
 SLIME_EXPORT bool __cdecl Input_GetKeyReleased(int key);
 
@@ -56,15 +77,21 @@ SLIME_EXPORT float __cdecl Input_GetScroll();
 SLIME_EXPORT bool __cdecl Input_GetFocus();
 SLIME_EXPORT void __cdecl Input_SetFocus(bool focus);
 
-// Text/Font helpers
+// -----------------------------
+// Text / Font helpers
+// -----------------------------
 SLIME_EXPORT unsigned int __cdecl Text_CreateTextureFromFontFile(const char* fontPath, const char* text, int pixelHeight, int* outWidth, int* outHeight);
-
-// Load font file into memory and return an opaque handle (free with Font_Free)
 SLIME_EXPORT void* __cdecl Font_LoadFromFile(const char* path);
 SLIME_EXPORT void __cdecl Font_Free(void* font);
-
-// Render text using a loaded font and attach resulting texture to an entity.
-// Returns GL texture id (0 on failure).
 SLIME_EXPORT unsigned int __cdecl Text_RenderToEntity(void* font, EntityId id, const char* text, int pixelHeight);
 
-SLIME_EXPORT void __cdecl Entity_SetTexture(EntityId id, unsigned int texId, int width, int height);
+// -----------------------------
+// ObjectManager helpers
+// -----------------------------
+SLIME_EXPORT EntityId __cdecl ObjectManager_CreateGameObject(float px, float py, float sx, float sy, float r, float g, float b);
+SLIME_EXPORT EntityId __cdecl ObjectManager_CreateQuad(float px, float py, float sx, float sy, float r, float g, float b);
+SLIME_EXPORT EntityId __cdecl ObjectManager_CreateQuadWithTexture(float px, float py, float sx, float sy, unsigned int texId);
+SLIME_EXPORT void __cdecl ObjectManager_Destroy(EntityId id);
+SLIME_EXPORT bool __cdecl ObjectManager_IsAlive(EntityId id);
+SLIME_EXPORT int __cdecl ObjectManager_GetSize();
+SLIME_EXPORT EntityId __cdecl ObjectManager_GetIdAtIndex(int index);

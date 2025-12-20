@@ -64,34 +64,23 @@ public static class SnakeGame
 		GenerateOrganicWorld();
 		ResetGame();
 
-		// Build Grid
+		// Build Grid (use overload to set color, anchor, and layer in one step)
 		for (int x = 0; x < VIEW_W; x++)
 			for (int y = 0; y < VIEW_H; y++)
 			{
-				_view[x, y] = Entity.CreateQuad(0, 0, _cellSize, _cellSize, 1, 1, 1);
-				_view[x, y].SetLayer(0); // Base layer for world tiles
-				_view[x, y].SetAnchor(0.5f, 0.5f); // center anchor for consistent placement
+				_view[x, y] = Entity.CreateQuad(0, 0, _cellSize, _cellSize, 1f, 1f, 1f, 0.5f, 0.5f, 0);
 			}
 
 		// Build Eyes (attached to head)
-		_eyes[0] = Entity.CreateQuad(0, 0, 0.08f, 0.08f, 0, 0, 0);
-		_eyes[1] = Entity.CreateQuad(0, 0, 0.08f, 0.08f, 0, 0, 0);
-
-		// Eyes should render above the head tile
-		_eyes[0].SetLayer(10);
-		_eyes[1].SetLayer(10);
-		// Use centered anchors so position offsets are relative to the eye centers
-		_eyes[0].SetAnchor(0.5f, 0.5f);
-		_eyes[1].SetAnchor(0.5f, 0.5f);
+		_eyes[0] = Entity.CreateQuad(0, 0, 0.08f, 0.08f, 0f, 0f, 0f, 0.5f, 0.5f, 10);
+		_eyes[1] = Entity.CreateQuad(0, 0, 0.08f, 0.08f, 0f, 0f, 0f, 0.5f, 0.5f, 10);
 
 		// Create dedicated head quad so we can scale/anchor the head independently
-		_head = Entity.CreateQuad(0, 0, _cellSize * 1.15f, _cellSize * 1.15f, COL_SNAKE.X, COL_SNAKE.Y, COL_SNAKE.Z);
-		_head.SetLayer(5); // above tiles but below eyes
-		_head.SetAnchor(0.5f, 0.5f);
+		_head = Entity.CreateQuad(0, 0, _cellSize * 1.15f, _cellSize * 1.15f, COL_SNAKE.X, COL_SNAKE.Y, COL_SNAKE.Z, 0.5f, 0.5f, 5);
+		_head.SetVisible(true);
 
-		_compass = Entity.CreateQuad(0, 0, 0.1f, 0.1f, 1, 1, 0); // Small yellow dot
-		_compass.SetLayer(20); // keep compass above world tiles
-		_compass.SetAnchor(0.5f, 0.5f); // center anchor so orbiting uses the center of the dot
+		_compass = Entity.CreateQuad(0, 0, 0.1f, 0.1f, 1f, 1f, 0f, 0.5f, 0.5f, 20); // Small yellow dot
+		_compass.SetVisible(true); // show by default
 	}
 
 	private static Int2 GetNearestFoodPos()
@@ -299,7 +288,8 @@ public static class SnakeGame
 			// Orbit distance is proportional to the cell spacing so it stays visually consistent
 			float orbitDist = _cellSpacing * 0.9f;
 
-			// Position the compass dot
+			// Position the compass dot (and ensure it's visible)
+			_compass.SetVisible(true);
 			_compass.SetPosition(hpx + (float)Math.Cos(angle) * orbitDist, hpy + (float)Math.Sin(angle) * orbitDist);
 
 			// Pulse the color so it's visible
@@ -308,8 +298,8 @@ public static class SnakeGame
 		}
 		else
 		{
-			// Hide compass if no food exists (move it far away)
-			_compass.SetPosition(999, 999);
+			// Hide compass if no food exists
+			_compass.SetVisible(false);
 		}
 	}
 
