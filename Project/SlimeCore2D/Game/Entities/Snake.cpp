@@ -5,6 +5,7 @@
 #include <random>
 
 #include "Resources/ResourceManager.h"
+#include "Utils/ObjectManager.h"
 
 namespace
 {
@@ -37,11 +38,10 @@ namespace
 	}
 } // namespace
 
-Snake::Snake(Camera* cam, Renderer2D* rend, ObjectManager* objMan)
+Snake::Snake(Camera* cam, Renderer2D* rend)
 {
 	m_camera = cam;
 	m_renderer = rend;
-	m_objManager = objMan;
 	Input::GetInstance()->SetCamera(m_camera);
 
 	// High scores (kept)
@@ -89,6 +89,7 @@ Snake::~Snake()
 
 void Snake::BuildViewportVisuals()
 {
+	ObjectManager& objMgr = ObjectManager::Get();
 	// One-time creation of visible quads. We repaint colors every frame.
 	for (int x = 0; x < VIEW_W; ++x)
 	{
@@ -96,7 +97,7 @@ void Snake::BuildViewportVisuals()
 		{
 			const float worldX = (x - (VIEW_W * 0.5f)) * m_cellSpacing;
 			const float worldY = (y - (VIEW_H * 0.5f)) * m_cellSpacing;
-			m_view[x][y].visual = m_objManager->CreateQuad(glm::vec3(worldX, worldY, 0.0f), glm::vec2(m_cellSize), m_colGrass);
+			m_view[x][y].visual = objMgr.CreateQuad(glm::vec3(worldX, worldY, 0.0f), glm::vec2(m_cellSize), m_colGrass);
 		}
 	}
 }

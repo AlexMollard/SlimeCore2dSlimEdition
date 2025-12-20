@@ -1,7 +1,6 @@
 #pragma once
 #include "Entities/Snake.h"
 #include "Physics/PhysicsScene.h"
-#include "Utils/ObjectManager.h"
 
 class Game2D
 {
@@ -16,7 +15,6 @@ public:
 
 private:
 	Renderer2D* m_renderer = nullptr;
-	ObjectManager* m_objectManager = nullptr;
 	Input* m_inputManager = Input::GetInstance();
 	PhysicsScene* m_physicsScene = nullptr;
 	Camera* m_camera = nullptr;

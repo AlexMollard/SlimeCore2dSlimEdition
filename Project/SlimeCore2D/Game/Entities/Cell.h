@@ -2,14 +2,19 @@
 
 #include "GameObject.h"
 #include "glm.hpp"
+#include "Utils/ObjectManager.h"
 
 class Cell
 {
 public:
-	GameObject* visual = nullptr;
+	ObjectId visual = 0;
 
 	void SetColor(const glm::vec3& c)
 	{
-		if (visual) visual->SetColor(c);
+		if (visual)
+		{
+			ObjectManager& objMgr = ObjectManager::Get();
+			objMgr.Get(visual)->SetColor(c);
+		}
 	}
 };

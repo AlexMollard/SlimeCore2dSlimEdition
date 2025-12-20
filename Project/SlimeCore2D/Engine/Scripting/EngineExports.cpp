@@ -4,34 +4,61 @@
 
 #include "Utils/ObjectManager.h"
 
-void __cdecl Engine_Log(const char* msg)
+SLIME_EXPORT void __cdecl Engine_Log(const char* msg)
 {
 	std::printf("[C#] %s\n", msg ? msg : "<null>");
 	std::fflush(stdout);
 }
 
-// These are pseudo-calls. You'll map them to your actual object/entity system.
-EntityId __cdecl Entity_Create()
+SLIME_EXPORT EntityId __cdecl Entity_CreateQuad(float px, float py, float sx, float sy, float r, float g, float b)
 {
-	return 0;
+	if (!ObjectManager::IsCreated())
+		return 0;
+
+	ObjectId id = ObjectManager::Get().CreateQuad(glm::vec3(px, py, 0.0f), glm::vec2(sx, sy), glm::vec3(r, g, b));
+
+	return (EntityId) id;
 }
 
-void __cdecl Entity_Destroy(EntityId id)
+SLIME_EXPORT void __cdecl Entity_Destroy(EntityId id)
 {
-	// wip
+	if (!ObjectManager::IsCreated() || id == 0)
+		return;
+
+	ObjectManager::Get().DestroyObject((ObjectId) id);
 }
 
-bool __cdecl Entity_IsAlive(EntityId id)
+SLIME_EXPORT bool __cdecl Entity_IsAlive(EntityId id)
 {
-	return true;
+	if (!ObjectManager::IsCreated() || id == 0)
+		return false;
+
+	return ObjectManager::Get().IsAlive((ObjectId) id);
 }
 
-void __cdecl Transform_SetPosition(EntityId id, float x, float y)
+SLIME_EXPORT void __cdecl Transform_SetPosition(EntityId id, float x, float y)
 {
-	// wip
+	if (!ObjectManager::IsCreated() || id == 0)
+		return;
+
+	GameObject* obj = ObjectManager::Get().Get((ObjectId) id);
+	if (!obj)
+		return;
+
+	obj->SetPos(glm::vec3(x, y, 0.0f));
 }
 
-void __cdecl Transform_GetPosition(EntityId id, float* outX, float* outY)
+SLIME_EXPORT void __cdecl Transform_GetPosition(EntityId id, float* outX, float* outY)
 {
-	// wip
+	if (!ObjectManager::IsCreated() || id == 0 || !outX || !outY)
+		return;
+
+	GameObject* obj = ObjectManager::Get().Get((ObjectId) id);
+	if (!obj)
+		return;
+
+	glm::vec3 p = obj->GetPos();
+
+	*outX = p.x;
+	*outY = p.y;
 }

@@ -4,14 +4,6 @@
 
 #include "gtc/quaternion.hpp"
 
-GameObject::GameObject()
-{
-}
-
-GameObject::~GameObject()
-{
-}
-
 void GameObject::Update(float deltaTime)
 {
 }

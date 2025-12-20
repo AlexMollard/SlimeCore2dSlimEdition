@@ -6,8 +6,8 @@
 class GameObject : public RigidBody
 {
 public:
-	GameObject();
-	virtual ~GameObject();
+	GameObject() = default;
+	virtual ~GameObject() = default;
 
 	virtual void Update(float deltaTime);
 	virtual void Create(glm::vec3 pos, glm::vec3 color, glm::vec2 scale, int id);

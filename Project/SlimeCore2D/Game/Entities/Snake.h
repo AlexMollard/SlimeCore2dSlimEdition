@@ -9,15 +9,12 @@
 #include "Scenes/Dialogue.h"
 #include "Rendering/Shader.h"
 #include "Rendering/Text.h"
-#include "Utils/ObjectManager.h"
 #include "Scenes/World.h"
 
-// NOTE: Kept the name 'Snake' so your existing Game2D.cpp does not need major changes.
-// Internally this is now an open-world grid game with terrain, features, items, NPC snakes, and monsters.
 class Snake
 {
 public:
-	Snake(Camera* cam, Renderer2D* rend, ObjectManager* objMan);
+	Snake(Camera* cam, Renderer2D* rend);
 	~Snake();
 
 	void Update(float deltaTime);
@@ -67,7 +64,6 @@ private:
 
 	// ---------- Rendering resources
 	Renderer2D* m_renderer = nullptr;
-	ObjectManager* m_objManager = nullptr;
 	Camera* m_camera = nullptr;
 
 	Cell m_view[VIEW_W][VIEW_H];

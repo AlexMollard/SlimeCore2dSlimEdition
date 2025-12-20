@@ -1,97 +1,151 @@
 #include "ObjectManager.h"
 
-ObjectManager::ObjectManager(Renderer2D* renderer)
+#include <algorithm>=
+ObjectManager* ObjectManager::s_instance = nullptr;
+
+void ObjectManager::Create(Renderer2D* renderer, bool ownsRenderer)
 {
-	this->m_renderer = renderer;
+	if (s_instance)
+		return; // already created
+
+	s_instance = new ObjectManager(renderer, ownsRenderer);
+}
+
+void ObjectManager::Destroy()
+{
+	delete s_instance;
+	s_instance = nullptr;
+}
+
+ObjectManager& ObjectManager::Get()
+{
+	return *s_instance;
+}
+
+bool ObjectManager::IsCreated()
+{
+	return s_instance != nullptr;
+}
+
+ObjectManager::ObjectManager(Renderer2D* renderer, bool ownsRenderer)
+      : m_renderer(renderer), m_ownsRenderer(ownsRenderer)
+{
 }
 
 ObjectManager::~ObjectManager()
 {
-	for (int i = 0; i < m_objects.size(); i++)
+	// Delete all objects
+	for (auto* obj: m_objects)
 	{
-		delete (Quad*) m_objects[i];
-
-		m_objects[i] = nullptr;
+		// Your code deletes as (Quad*) always, which is risky if not all are Quad.
+		// We'll delete as GameObject* and rely on virtual destructor.
+		delete obj;
 	}
+	m_objects.clear();
+	m_objectsById.clear();
 
-	delete m_renderer;
-	m_renderer = nullptr;
+	if (m_ownsRenderer)
+	{
+		delete m_renderer;
+		m_renderer = nullptr;
+	}
 }
 
-GameObject* ObjectManager::CreateGameObject(glm::vec3 pos, glm::vec2 size, glm::vec3 color)
+ObjectId ObjectManager::CreateGameObject(glm::vec3 pos, glm::vec2 size, glm::vec3 color)
 {
+	ObjectId id = m_nextId++;
+
 	GameObject* go = new GameObject();
-	go->Create(pos, color, size, m_objects.size());
+	go->Create(pos, color, size, (int) id); // assumes your Create takes an "index/id" int
 
 	m_renderer->AddObject(go);
-	m_objects.push_back(go);
 
-	return go;
+	m_objects.push_back(go);
+	m_objectsById[id] = go;
+
+	return id;
 }
 
-GameObject* ObjectManager::CreateQuad(glm::vec3 pos, glm::vec2 size, glm::vec3 color)
+ObjectId ObjectManager::CreateQuad(glm::vec3 pos, glm::vec2 size, glm::vec3 color)
 {
+	ObjectId id = m_nextId++;
+
 	Quad* go = new Quad();
-	go->Create(pos, color, size, m_objects.size());
+	go->Create(pos, color, size, (int) id);
 
 	m_renderer->AddObject(go);
-	m_objects.push_back(go);
 
-	return go;
+	m_objects.push_back(go);
+	m_objectsById[id] = go;
+
+	return id;
 }
 
-GameObject* ObjectManager::CreateQuad(glm::vec3 pos, glm::vec2 size, Texture* tex)
+ObjectId ObjectManager::CreateQuad(glm::vec3 pos, glm::vec2 size, Texture* tex)
 {
+	ObjectId id = m_nextId++;
+
 	Quad* go = new Quad();
-	go->Create(pos, glm::vec3(1), size, m_objects.size());
+	go->Create(pos, glm::vec3(1), size, (int) id);
 	go->SetTexture(tex);
 
 	m_renderer->AddObject(go);
+
 	m_objects.push_back(go);
+	m_objectsById[id] = go;
 
-	return go;
+	return id;
 }
 
-void ObjectManager::RemoveQuad(GameObject* object)
+void ObjectManager::DestroyObject(ObjectId id)
 {
-	m_objects.erase(m_objects.begin() + GetObjectIndex(object));
-	m_renderer->RemoveQuad(object);
+	auto it = m_objectsById.find(id);
+	if (it == m_objectsById.end())
+		return;
+
+	GameObject* obj = it->second;
+
+	// Renderer removal first (your renderer takes pointer)
+	m_renderer->RemoveQuad(obj);
+
+	// Remove from iteration list
+	m_objects.erase(std::remove(m_objects.begin(), m_objects.end(), obj), m_objects.end());
+
+	// Remove from map and delete
+	m_objectsById.erase(it);
+	delete obj;
 }
 
-int ObjectManager::GetObjectIndex(GameObject* object)
+bool ObjectManager::IsAlive(ObjectId id) const
 {
-	for (int i = 0; i < m_objects.size(); i++)
-	{
-		if (m_objects[i] == object)
-		{
-			return i;
-		}
-	}
-	return -404;
+	return m_objectsById.find(id) != m_objectsById.end();
+}
+
+GameObject* ObjectManager::Get(ObjectId id)
+{
+	auto it = m_objectsById.find(id);
+	return (it != m_objectsById.end()) ? it->second : nullptr;
+}
+
+const GameObject* ObjectManager::Get(ObjectId id) const
+{
+	auto it = m_objectsById.find(id);
+	return (it != m_objectsById.end()) ? it->second : nullptr;
 }
 
 void ObjectManager::Update(float deltaTime)
 {
-	for (int i = 0; i < m_objects.size(); i++)
-	{
-		m_objects[i]->Update(deltaTime);
-	}
+	for (auto* obj: m_objects)
+		obj->Update(deltaTime);
 }
 
 void ObjectManager::UpdateFrames(float deltaTime)
 {
-	for (int i = 0; i < m_objects.size(); i++)
-	{
-		m_objects[i]->UpdateSpriteTimer(deltaTime);
-	}
+	for (auto* obj: m_objects)
+		obj->UpdateSpriteTimer(deltaTime);
 }
 
-GameObject* ObjectManager::Get(int index)
+int ObjectManager::Size() const
 {
-	return m_objects[index];
-}
-
-int ObjectManager::Size()
-{
-	return m_objects.size();
+	return (int) m_objects.size();
 }
