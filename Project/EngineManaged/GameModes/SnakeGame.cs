@@ -309,7 +309,23 @@ public class SnakeGame : IGameMode
                 Step();
             }
         }
-        else if (Input.GetKeyDown(Keycode.SPACE)) ResetGame();
+        else
+        {
+            if (Input.GetKeyDown(Keycode.SPACE))
+            {
+                ResetGame();
+            }
+            if(_snake.Count > 1)
+            {
+                // Slowly shrink the snake on death
+                _accum += dt;
+                while (_accum >= 0.2f)
+                {
+                    _accum -= 0.2f;
+                    if (_snake.Count > 1) _snake.RemoveAt(_snake.Count - 1);
+                }
+            }
+        }
 
         // Smooth Camera following the fractional movement of the snake
         float interp = _accum / _tick;
@@ -347,8 +363,14 @@ public class SnakeGame : IGameMode
             SpawnFood();
         }
 
-        if (_grow > 0) _grow--;
-        else _snake.RemoveAt(_snake.Count - 1);
+        if (_grow > 0)
+        {
+            _grow--;
+        }
+        else
+        {
+            _snake.RemoveAt(_snake.Count - 1);
+        }
     }
 
     private static void Render(float interp)
