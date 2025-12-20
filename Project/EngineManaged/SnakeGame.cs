@@ -178,7 +178,7 @@ public static class SnakeGame
 				Step();
 			}
 		}
-		else if (Native.Input_GetKeyDown(Keycode.SPACE)) ResetGame();
+		else if (Input.GetKeyDown(Keycode.SPACE)) ResetGame();
 
 		// Smooth Camera following the fractional movement of the snake
 		float interp = _accum / _tick;
@@ -344,12 +344,12 @@ public static class SnakeGame
 	private static void HandleInput()
 	{
 		// I should get enums for these keycodes...
-		_isSprinting = Native.Input_GetKeyDown(Keycode.LEFT_SHIFT);
+		_isSprinting = Input.GetKeyDown(Keycode.LEFT_SHIFT);
 
-		if ((Native.Input_GetKeyDown(Keycode.W) || Native.Input_GetKeyDown(Keycode.UP)) && _dir.Y == 0) _nextDir = new Int2(0, 1);
-		if ((Native.Input_GetKeyDown(Keycode.S) || Native.Input_GetKeyDown(Keycode.DOWN)) && _dir.Y == 0) _nextDir = new Int2(0, -1);
-		if ((Native.Input_GetKeyDown(Keycode.A) || Native.Input_GetKeyDown(Keycode.LEFT)) && _dir.X == 0) _nextDir = new Int2(-1, 0);
-		if ((Native.Input_GetKeyDown(Keycode.D) || Native.Input_GetKeyDown(Keycode.RIGHT)) && _dir.X == 0) _nextDir = new Int2(1, 0);
+		if ((Input.GetKeyDown(Keycode.W) || Input.GetKeyDown(Keycode.UP)) && _dir.Y == 0) _nextDir = new Int2(0, 1);
+		if ((Input.GetKeyDown(Keycode.S) || Input.GetKeyDown(Keycode.DOWN)) && _dir.Y == 0) _nextDir = new Int2(0, -1);
+		if ((Input.GetKeyDown(Keycode.A) || Input.GetKeyDown(Keycode.LEFT)) && _dir.X == 0) _nextDir = new Int2(-1, 0);
+		if ((Input.GetKeyDown(Keycode.D) || Input.GetKeyDown(Keycode.RIGHT)) && _dir.X == 0) _nextDir = new Int2(1, 0);
 	}
 
 	private static void SpawnFood()

@@ -144,6 +144,86 @@ SLIME_EXPORT bool __cdecl Input_GetKeyReleased(int key)
 	return Input::GetInstance()->GetKeyRelease(Keycode(key));
 }
 
+SLIME_EXPORT void __cdecl Input_GetMousePos(float* outX, float* outY)
+{
+	if (!outX || !outY) return;
+	auto p = Input::GetMousePos();
+	*outX = (float)p.x;
+	*outY = (float)p.y;
+}
+
+SLIME_EXPORT void __cdecl Input_GetMouseDelta(float* outX, float* outY)
+{
+	if (!outX || !outY) return;
+	auto p = Input::GetInstance()->GetDeltaMouse();
+	*outX = (float)p.x;
+	*outY = (float)p.y;
+}
+
+SLIME_EXPORT bool __cdecl Input_GetMouseDown(int button)
+{
+	return Input::GetMouseDown(button);
+}
+
+SLIME_EXPORT void __cdecl Input_GetMouseToWorldPos(float* outX, float* outY)
+{
+	if (!outX || !outY) return;
+	auto p = Input::GetMouseToWorldPos();
+	*outX = (float)p.x;
+	*outY = (float)p.y;
+}
+
+SLIME_EXPORT void __cdecl Input_GetWindowSize(float* outW, float* outH)
+{
+	if (!outW || !outH) return;
+	auto s = Input::GetInstance()->GetWindowSize();
+	*outW = (float)s.x;
+	*outH = (float)s.y;
+}
+
+SLIME_EXPORT void __cdecl Input_GetAspectRatio(float* outX, float* outY)
+{
+	if (!outX || !outY) return;
+	auto s = Input::GetInstance()->GetAspectRatio();
+	*outX = (float)s.x;
+	*outY = (float)s.y;
+}
+
+SLIME_EXPORT void __cdecl Input_SetViewportRect(int x, int y, int width, int height)
+{
+	Input::GetInstance()->SetViewportRect(x, y, width, height);
+}
+
+SLIME_EXPORT void __cdecl Input_GetViewportRect(int* outX, int* outY, int* outW, int* outH)
+{
+	if (!outX || !outY || !outW || !outH) return;
+	auto v = Input::GetInstance()->GetViewportRect();
+	*outX = (int)v.x;
+	*outY = (int)v.y;
+	*outW = (int)v.z;
+	*outH = (int)v.w;
+}
+
+SLIME_EXPORT void __cdecl Input_SetScroll(float newScroll)
+{
+	Input::SetScroll(newScroll);
+}
+
+SLIME_EXPORT float __cdecl Input_GetScroll()
+{
+	return Input::GetScroll();
+}
+
+SLIME_EXPORT bool __cdecl Input_GetFocus()
+{
+	return Input::GetInstance()->GetFocus();
+}
+
+SLIME_EXPORT void __cdecl Input_SetFocus(bool focus)
+{
+	Input::GetInstance()->SetFocus(focus);
+}
+
 SLIME_EXPORT unsigned int __cdecl Text_CreateTextureFromFontFile(const char* fontPath, const char* text, int pixelHeight, int* outWidth, int* outHeight)
 {
 	if (!text) return 0;
