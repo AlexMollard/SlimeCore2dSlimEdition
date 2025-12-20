@@ -28,14 +28,14 @@ public:
 
 	static void setActiveRegion(Texture* texture, int regionIndex, int spriteWidth);
 
-	static void DrawQuad(glm::vec3 position, glm::vec2 size, glm::vec4 color);
+	static void DrawQuad(glm::vec3 position, glm::vec2 size, glm::vec4 color, glm::vec2 anchor = glm::vec2(0.5f));
 
 	static void DrawQuad(glm::vec2 position, glm::vec2 size, glm::vec4 color)
 	{
 		DrawQuad(glm::vec3(position, -0.9f), size, color);
 	};
 
-	static void DrawQuad(glm::vec3 position, glm::vec2 size, glm::vec4 color, Texture* texture, int frame = 0, int spriteWidth = 16);
+	static void DrawQuad(glm::vec3 position, glm::vec2 size, glm::vec4 color, Texture* texture, int frame = 0, int spriteWidth = 16, glm::vec2 anchor = glm::vec2(0.5f));
 
 	void RemoveQuad(GameObject* object);
 	int GetObjectIndex(GameObject* object);

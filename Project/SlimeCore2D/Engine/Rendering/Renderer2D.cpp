@@ -155,6 +155,12 @@ void Renderer2D::Draw()
 
 	glm::vec2 camPos = m_camera->GetPosition();
 
+	// Sort objects by layer first, then by z (stable to preserve relative order within equal keys)
+	std::stable_sort(m_objectPool.begin(), m_objectPool.end(), [](GameObject* a, GameObject* b) {
+		if (a->GetLayer() != b->GetLayer()) return a->GetLayer() > b->GetLayer();
+		return a->GetPos().z < b->GetPos().z;
+	});
+
 	for (int i = 0; i < m_objectPool.size(); i++)
 	{
 		if (m_objectPool[i]->GetRender() == false)
@@ -203,7 +209,7 @@ void Renderer2D::DrawUIQuad(glm::vec2 pos, int layer, glm::vec2 size, glm::vec3 
 		DrawQuad(glm::vec3(pos.x, pos.y, 2 + layer * 0.01f), size, { color, 1.0f }, texture, 0, texture->GetWidth());
 }
 
-void Renderer2D::DrawQuad(glm::vec3 position, glm::vec2 size, glm::vec4 color)
+void Renderer2D::DrawQuad(glm::vec3 position, glm::vec2 size, glm::vec4 color, glm::vec2 anchor)
 {
 	if (data.indexCount >= maxIndexCount)
 	{
@@ -214,7 +220,14 @@ void Renderer2D::DrawQuad(glm::vec3 position, glm::vec2 size, glm::vec4 color)
 
 	float textureIndex = 0.0f;
 
-	glm::vec3 positions[4] = { glm::vec3(position.x - size.x / 2, position.y - size.y / 2, position.z), glm::vec3(position.x + size.x / 2, position.y - size.y / 2, position.z), glm::vec3(position.x + size.x / 2, position.y + size.y / 2, position.z), glm::vec3(position.x - size.x / 2, position.y + size.y / 2, position.z) };
+	// Anchor is normalized (0..1). position is the anchor point in world space.
+	// corners: (0,0) bottom-left, (1,0) bottom-right, (1,1) top-right, (0,1) top-left
+	glm::vec3 positions[4] = {
+		glm::vec3(position.x + (0.0f - anchor.x) * size.x, position.y + (0.0f - anchor.y) * size.y, position.z),
+		glm::vec3(position.x + (1.0f - anchor.x) * size.x, position.y + (0.0f - anchor.y) * size.y, position.z),
+		glm::vec3(position.x + (1.0f - anchor.x) * size.x, position.y + (1.0f - anchor.y) * size.y, position.z),
+		glm::vec3(position.x + (0.0f - anchor.x) * size.x, position.y + (1.0f - anchor.y) * size.y, position.z)
+	};
 
 	for (int i = 0; i < 4; i++)
 	{
@@ -228,7 +241,7 @@ void Renderer2D::DrawQuad(glm::vec3 position, glm::vec2 size, glm::vec4 color)
 	data.indexCount += 6;
 }
 
-void Renderer2D::DrawQuad(glm::vec3 position, glm::vec2 size, glm::vec4 color, Texture* texture, int frame, int spriteWidth)
+void Renderer2D::DrawQuad(glm::vec3 position, glm::vec2 size, glm::vec4 color, Texture* texture, int frame, int spriteWidth, glm::vec2 anchor)
 {
 	if (data.indexCount >= maxIndexCount || data.textureSlotIndex >= maxTextures)
 	{
@@ -266,7 +279,13 @@ void Renderer2D::DrawQuad(glm::vec3 position, glm::vec2 size, glm::vec4 color, T
 		setActiveRegion(texture, frame, spriteWidth);
 	}
 
-	glm::vec3 positions[4] = { glm::vec3(position.x - size.x / 2, position.y - size.y / 2, position.z), glm::vec3(position.x + size.x / 2, position.y - size.y / 2, position.z), glm::vec3(position.x + size.x / 2, position.y + size.y / 2, position.z), glm::vec3(position.x - size.x / 2, position.y + size.y / 2, position.z) };
+	// Anchor is normalized (0..1).
+	glm::vec3 positions[4] = {
+		glm::vec3(position.x + (0.0f - anchor.x) * size.x, position.y + (0.0f - anchor.y) * size.y, position.z),
+		glm::vec3(position.x + (1.0f - anchor.x) * size.x, position.y + (0.0f - anchor.y) * size.y, position.z),
+		glm::vec3(position.x + (1.0f - anchor.x) * size.x, position.y + (1.0f - anchor.y) * size.y, position.z),
+		glm::vec3(position.x + (0.0f - anchor.x) * size.x, position.y + (1.0f - anchor.y) * size.y, position.z)
+	};
 
 	for (int i = 0; i < 4; i++)
 	{

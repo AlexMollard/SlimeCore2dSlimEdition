@@ -206,3 +206,23 @@ bool GameObject::GetMouseColliding()
 {
 	return (Input::GetMousePos().x > GetPos().x - (GetScale().x / 2) && Input::GetMousePos().x < GetPos().x + (GetScale().x / 2) && Input::GetMousePos().y > GetPos().y - (GetScale().y / 2) && Input::GetMousePos().y < GetPos().y + (GetScale().y / 2));
 }
+
+void GameObject::SetLayer(int layer)
+{
+	m_layer = layer;
+}
+
+int GameObject::GetLayer()
+{
+	return m_layer;
+}
+
+void GameObject::SetAnchor(glm::vec2 anchor)
+{
+	m_anchor = anchor;
+}
+
+glm::vec2 GameObject::GetAnchor()
+{
+	return m_anchor;
+}  

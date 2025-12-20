@@ -100,6 +100,40 @@ SLIME_EXPORT void __cdecl Visual_SetColor(EntityId id, float r, float g, float b
 	obj->SetColor(r, g, b);
 }
 
+SLIME_EXPORT void __cdecl Visual_SetLayer(EntityId id, int layer)
+{
+	if (!ObjectManager::IsCreated() || id == 0) return;
+	GameObject* obj = ObjectManager::Get().Get((ObjectId) id);
+	if (!obj) return;
+	obj->SetLayer(layer);
+}
+
+SLIME_EXPORT int __cdecl Visual_GetLayer(EntityId id)
+{
+	if (!ObjectManager::IsCreated() || id == 0) return 0;
+	GameObject* obj = ObjectManager::Get().Get((ObjectId) id);
+	if (!obj) return 0;
+	return obj->GetLayer();
+}
+
+SLIME_EXPORT void __cdecl Visual_SetAnchor(EntityId id, float ax, float ay)
+{
+	if (!ObjectManager::IsCreated() || id == 0) return;
+	GameObject* obj = ObjectManager::Get().Get((ObjectId) id);
+	if (!obj) return;
+	obj->SetAnchor(glm::vec2(ax, ay));
+}
+
+SLIME_EXPORT void __cdecl Visual_GetAnchor(EntityId id, float* outAx, float* outAy)
+{
+	if (!ObjectManager::IsCreated() || id == 0 || !outAx || !outAy) return;
+	GameObject* obj = ObjectManager::Get().Get((ObjectId) id);
+	if (!obj) return;
+	auto a = obj->GetAnchor();
+	*outAx = a.x;
+	*outAy = a.y;
+}
+
 SLIME_EXPORT bool __cdecl Input_GetKeyDown(int key)
 {
 	return Input::GetInstance()->GetKeyPress(Keycode(key));

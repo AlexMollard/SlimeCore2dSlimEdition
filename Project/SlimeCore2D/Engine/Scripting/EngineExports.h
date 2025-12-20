@@ -26,6 +26,12 @@ SLIME_EXPORT void __cdecl Transform_GetSize(EntityId id, float* outSx, float* ou
 
 SLIME_EXPORT void __cdecl Visual_SetColor(EntityId id, float r, float g, float b);
 
+SLIME_EXPORT void __cdecl Visual_SetLayer(EntityId id, int layer);
+SLIME_EXPORT int  __cdecl Visual_GetLayer(EntityId id);
+
+SLIME_EXPORT void __cdecl Visual_SetAnchor(EntityId id, float ax, float ay);
+SLIME_EXPORT void __cdecl Visual_GetAnchor(EntityId id, float* outAx, float* outAy);
+
 // Input
 SLIME_EXPORT bool __cdecl Input_GetKeyDown(int key);
 SLIME_EXPORT bool __cdecl Input_GetKeyReleased(int key);

@@ -34,6 +34,17 @@ internal static class Native
 	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
 	internal static extern void Visual_SetColor(ulong id, float r, float g, float b);
 
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern void Visual_SetLayer(ulong id, int layer);
+
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern int Visual_GetLayer(ulong id);
+
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern void Visual_SetAnchor(ulong id, float ax, float ay);
+
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern void Visual_GetAnchor(ulong id, out float ax, out float ay);
 
 	// INPUT
 	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]

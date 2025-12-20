@@ -56,10 +56,19 @@ public:
 
 	bool GetMouseColliding();
 
+	void SetLayer(int layer);
+	int GetLayer();
+
+	void SetAnchor(glm::vec2 anchor);
+	glm::vec2 GetAnchor();
+
 protected:
 	glm::vec3 m_color = glm::vec3(1);
 	glm::vec3 m_defaultColor = glm::vec3(1);
 	glm::vec3 m_spawnPoint = glm::vec3(0);
+
+	int m_layer = 0;
+	glm::vec2 m_anchor = glm::vec2(0.5f, 0.5f);
 
 	bool m_render = true;
 	bool m_isPlayer = false;

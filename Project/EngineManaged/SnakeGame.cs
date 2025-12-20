@@ -35,11 +35,14 @@ public static class SnakeGame
 	private static int _grow = 0;
 
 	// Visual Handles
-	private static ulong[,] _view = new ulong[VIEW_W, VIEW_H];
-	private static ulong[] _eyes = new ulong[2];
+	private static Entity[,] _view = new Entity[VIEW_W, VIEW_H];
+	private static Entity[] _eyes = new Entity[2];
 
 	// Compass
-	private static ulong _compassId;
+	private static Entity _compass;
+
+	// Dedicated head quad (separate from underlying tile)
+	private static Entity _head;
 
 	private enum Terrain : byte { Grass, Rock, Water }
 	private struct Tile { public Terrain Terrain; public bool Blocked; public bool Food; }
@@ -64,13 +67,31 @@ public static class SnakeGame
 		// Build Grid
 		for (int x = 0; x < VIEW_W; x++)
 			for (int y = 0; y < VIEW_H; y++)
-				_view[x, y] = Native.Entity_CreateQuad(0, 0, _cellSize, _cellSize, 1, 1, 1);
+			{
+				_view[x, y] = Entity.CreateQuad(0, 0, _cellSize, _cellSize, 1, 1, 1);
+				_view[x, y].SetLayer(0); // Base layer for world tiles
+				_view[x, y].SetAnchor(0.5f, 0.5f); // center anchor for consistent placement
+			}
 
 		// Build Eyes (attached to head)
-		_eyes[0] = Native.Entity_CreateQuad(0, 0, 0.08f, 0.08f, 0, 0, 0);
-		_eyes[1] = Native.Entity_CreateQuad(0, 0, 0.08f, 0.08f, 0, 0, 0);
+		_eyes[0] = Entity.CreateQuad(0, 0, 0.08f, 0.08f, 0, 0, 0);
+		_eyes[1] = Entity.CreateQuad(0, 0, 0.08f, 0.08f, 0, 0, 0);
 
-		_compassId = Native.Entity_CreateQuad(0, 0, 1.0f, 1.0f, 1, 1, 0); // Small yellow dot
+		// Eyes should render above the head tile
+		_eyes[0].SetLayer(10);
+		_eyes[1].SetLayer(10);
+		// Use centered anchors so position offsets are relative to the eye centers
+		_eyes[0].SetAnchor(0.5f, 0.5f);
+		_eyes[1].SetAnchor(0.5f, 0.5f);
+
+		// Create dedicated head quad so we can scale/anchor the head independently
+		_head = Entity.CreateQuad(0, 0, _cellSize * 1.15f, _cellSize * 1.15f, COL_SNAKE.X, COL_SNAKE.Y, COL_SNAKE.Z);
+		_head.SetLayer(5); // above tiles but below eyes
+		_head.SetAnchor(0.5f, 0.5f);
+
+		_compass = Entity.CreateQuad(0, 0, 0.1f, 0.1f, 1, 1, 0); // Small yellow dot
+		_compass.SetLayer(20); // keep compass above world tiles
+		_compass.SetAnchor(0.5f, 0.5f); // center anchor so orbiting uses the center of the dot
 	}
 
 	private static Int2 GetNearestFoodPos()
@@ -223,8 +244,8 @@ public static class SnakeGame
 				float px = (vx - VIEW_W / 2f - camFracX + shakeX) * _cellSpacing;
 				float py = (vy - VIEW_H / 2f - camFracY + shakeY) * _cellSpacing;
 
-				ulong id = _view[vx, vy];
-				Native.Transform_SetPosition(id, px, py);
+				var ent = _view[vx, vy];
+				ent.SetPosition(px, py);
 
 				Vec3 col = GetTileColor(wx, wy);
 				if (_world[wx, wy].Food) col = COL_FOOD * (0.8f + 0.2f * (float)Math.Sin(_time * 12f));
@@ -240,14 +261,19 @@ public static class SnakeGame
 
 					if (sIdx == 0)
 					{
-						UpdateEyes(px, py); // px/py here will match headScrX/Y when at the head index
-						Native.Transform_SetSize(id, _cellSize * 1.15f, _cellSize * 1.15f);
+						ent.SetSize(_cellSize, _cellSize);
+						// Update dedicated head entity so it can be sized and anchored independently
+						_head.SetSize(_cellSize * 1.15f, _cellSize * 1.15f);
+						_head.SetPosition(px, py);
+						_head.SetColor(col.X, col.Y, col.Z);
+						var (hw, hh) = _head.GetSize();
+						UpdateEyes(px, py, hw); // px/py here will match headScrX/Y when at the head index
 					}
-					else Native.Transform_SetSize(id, _cellSize, _cellSize);
+					else ent.SetSize(_cellSize, _cellSize);
 				}
-				else Native.Transform_SetSize(id, _cellSize, _cellSize);
+				else ent.SetSize(_cellSize, _cellSize);
 
-				Native.Visual_SetColor(id, col.X, col.Y, col.Z);
+				ent.SetColor(col.X, col.Y, col.Z);
 			}
 		}
 
@@ -270,33 +296,41 @@ public static class SnakeGame
 
 			// Get angle to food
 			float angle = (float)Math.Atan2(dy, dx);
-			float orbitDist = 0.4f; // Distance from head center
+			// Orbit distance is proportional to the cell spacing so it stays visually consistent
+			float orbitDist = _cellSpacing * 0.9f;
 
 			// Position the compass dot
-			Native.Transform_SetPosition(_compassId, hpx + (float)Math.Cos(angle) * orbitDist, hpy + (float)Math.Sin(angle) * orbitDist);
+			_compass.SetPosition(hpx + (float)Math.Cos(angle) * orbitDist, hpy + (float)Math.Sin(angle) * orbitDist);
 
 			// Pulse the color so it's visible
 			float pulse = 0.5f + 0.5f * (float)Math.Abs(Math.Sin(_time * 10f));
-			Native.Visual_SetColor(_compassId, pulse, pulse, 0); // Yellow pulse
+			_compass.SetColor(pulse, pulse, 0); // Yellow pulse
 		}
 		else
 		{
 			// Hide compass if no food exists (move it far away)
-			Native.Transform_SetPosition(_compassId, 999, 999);
+			_compass.SetPosition(999, 999);
 		}
 	}
 
-	private static void UpdateEyes(float hpx, float hpy)
+	private static void UpdateEyes(float hpx, float hpy, float headSize)
 	{
-		// Offset eyes based on direction
-		float ox = _dir.X * 0.1f;
-		float oy = _dir.Y * 0.1f;
-		// Perp vector for side-to-side spacing
-		float sx = -_dir.Y * 0.08f;
-		float sy = _dir.X * 0.08f;
+		// Offsets and eye size scale with the head size to maintain alignment when head is scaled
+		float forward = headSize * 0.22f; // how far forward from center the eyes sit
+		float side = headSize * 0.18f; // lateral separation
 
-		Native.Transform_SetPosition(_eyes[0], hpx + ox + sx, hpy + oy + sy);
-		Native.Transform_SetPosition(_eyes[1], hpx + ox - sx, hpy + oy - sy);
+		float ox = _dir.X * forward;
+		float oy = _dir.Y * forward;
+		float sx = -_dir.Y * side;
+		float sy = _dir.X * side;
+
+		// Make eyes a fraction of the head size (tuned to match previous visuals)
+		float eyeSize = headSize * 0.17f;
+		_eyes[0].SetSize(eyeSize, eyeSize);
+		_eyes[1].SetSize(eyeSize, eyeSize);
+
+		_eyes[0].SetPosition(hpx + ox + sx, hpy + oy + sy);
+		_eyes[1].SetPosition(hpx + ox - sx, hpy + oy - sy);
 	}
 
 	private static Vec3 GetTileColor(int x, int y)
