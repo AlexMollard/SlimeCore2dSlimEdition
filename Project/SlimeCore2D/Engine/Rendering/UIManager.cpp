@@ -2,6 +2,7 @@
 #include "Text.h"
 #include "Renderer2D.h"
 #include "Resources/ResourceManager.h"
+#include "Core/Input.h"
 
 #include <algorithm>
 #include <iostream>
@@ -122,9 +123,17 @@ void UIManager::Draw()
 	for (auto e : elems)
 	{
 		if (!e->visible) continue;
-		// Compute size in UI units - scale texture width/height to a reasonable UI size.
-		float sizeX = (float)e->texW * 0.01f; // heuristic scale factor
-		float sizeY = (float)e->texH * 0.01f;
+		// Compute size in UI units by mapping texture pixel size to UI-space
+		// UI ortho in Renderer2D uses a roughly 32x18 unit space (left/right/top/bottom),
+		// so convert pixels -> UI units using the current framebuffer size to avoid
+		// upscaling low-resolution glyph textures.
+		glm::vec2 win = Input::GetInstance()->GetWindowSize();
+		float winW = (win.x > 0.0f) ? win.x : 1920.0f;
+		float winH = (win.y > 0.0f) ? win.y : 1080.0f;
+		const float UI_UNITS_W = 32.0f; // matches Renderer2D::m_UIMatrix width (-16..16)
+		const float UI_UNITS_H = 18.0f; // matches Renderer2D::m_UIMatrix height (-9..9)
+		float sizeX = (float)e->texW * (UI_UNITS_W / winW);
+		float sizeY = (float)e->texH * (UI_UNITS_H / winH);
 		// Per-UI-element debug group
 		char dbg[128];
 		snprintf(dbg, sizeof(dbg), "UI Element ID=%llu Layer=%d Tex=%d", (unsigned long long)e->id, e->layer, (e->texture ? e->texture->GetID() : 0));

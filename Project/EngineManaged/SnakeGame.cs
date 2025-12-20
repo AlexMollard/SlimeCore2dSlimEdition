@@ -91,6 +91,9 @@ public static class SnakeGame
 		_score = UI.Text.Create("SCORE: 0", SCORE_FONT_SIZE, -30.5f, 8.5f);
 		_score.SetVisible(true);
 		_scoreCached = -1; // force initial text update
+
+		var btn = UI.Button.Create("Click me", x: 0.0f, y: 6.0f, w: 3.75f, h: 1.5f, r: 0.2f, g: 0.6f, b:0.9f, layer: 100, fontSize: 42);
+		btn.Clicked += () => { Console.WriteLine("PRESSED!"); };
 	}
 
 	private static Int2 GetNearestFoodPos()
@@ -159,6 +162,8 @@ public static class SnakeGame
 
 	public static void Update(float dt)
 	{
+		UI.Update();
+		
 		_time += dt;
 		_shake = Math.Max(0, _shake - dt * 2.0f);
 

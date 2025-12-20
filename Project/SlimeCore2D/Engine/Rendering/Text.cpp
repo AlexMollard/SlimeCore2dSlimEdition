@@ -202,7 +202,12 @@ unsigned int Text::CreateTextureFromLoadedFont(Text::FontHandle* f, const std::s
 	if (!f || !f->valid || text.empty() || pixelHeight <= 0) return 0;
 
 	FT_Face face = f->face;
-	FT_Set_Pixel_Sizes(face, 0, pixelHeight);
+
+	// Generate at a higher internal resolution to improve quality when the
+	// texture is later sampled and scaled down on-screen (e.g. 2x)
+	const int HIGHRES_SCALE = 2; // set to 3 for even higher detail
+	int genPixelHeight = pixelHeight * HIGHRES_SCALE;
+	FT_Set_Pixel_Sizes(face, 0, genPixelHeight);
 
 	int width = 0;
 	int ascent = 0, descent = 0;
@@ -224,7 +229,10 @@ unsigned int Text::CreateTextureFromLoadedFont(Text::FontHandle* f, const std::s
 	width = std::max(1, width);
 	int height = std::max(1, ascent + descent);
 
-	outW = width; outH = height;
+	// The generated texture is HIGHRES_SCALE times larger in each dimension. Report
+	// logical (requested) pixel size back to callers so UI layout doesn't need to
+	// change: outW/outH are in the requested pixel coordinate space.
+	outW = width / HIGHRES_SCALE; outH = height / HIGHRES_SCALE;
 
 	std::vector<unsigned char> alpha(width * height);
 	std::memset(alpha.data(), 0, alpha.size());
@@ -278,9 +286,11 @@ unsigned int Text::CreateTextureFromLoadedFont(Text::FontHandle* f, const std::s
 	GLuint tex;
 	glGenTextures(1, &tex);
 	glBindTexture(GL_TEXTURE_2D, tex);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	// Use trilinear filtering and generate mipmaps for better downscaling
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba.data());
+	glGenerateMipmap(GL_TEXTURE_2D);
 
 	return (unsigned int)tex;
 }
