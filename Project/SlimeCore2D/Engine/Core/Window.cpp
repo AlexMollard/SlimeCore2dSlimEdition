@@ -1,4 +1,5 @@
 #include "Window.h"
+#include "Scripting/EngineExports.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 
@@ -16,6 +17,11 @@ Window::Window(int width, int height, char* name)
 Window::~Window()
 {
 	Window_destroy();
+}
+
+SLIME_EXPORT void __cdecl Engine_SetClearColor(float r, float g, float b)
+{ 
+	glClearColor(r, g, b, 1.0f);
 }
 
 int Window::Window_intit(int width, int height, char* name)

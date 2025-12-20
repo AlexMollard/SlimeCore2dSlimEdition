@@ -25,6 +25,17 @@ static const char PATH_SEP = '\\';
 static const char PATH_SEP = '/';
 #endif
 
+static bool FileExists(const std::string& path)
+{
+#if defined(_WIN32)
+	DWORD attrs = GetFileAttributesA(path.c_str());
+	return (attrs != INVALID_FILE_ATTRIBUTES) && !(attrs & FILE_ATTRIBUTE_DIRECTORY);
+#else
+	struct stat st;
+	return (stat(path.c_str(), &st) == 0) && !S_ISDIR(st.st_mode);
+#endif
+}
+
 static std::string ToLower(const std::string& s)
 {
 	std::string out = s;
@@ -343,6 +354,48 @@ std::string ResourceManager::GetResourcePath(const std::string& relativePath)
 		}
 #endif
 	}
+
+	return std::string();
+}
+
+std::string ResourceManager::GetManagedRuntimeConfigPath()
+{
+#if defined(_DEBUG)
+	const char* cfg = "Debug";
+#else
+	const char* cfg = "Release";
+#endif
+
+	const std::string rel = std::string("Scripting\\Publish\\") + cfg + "\\EngineManaged.runtimeconfig.json";
+
+	std::vector<std::string> candidates;
+
+	std::string exeDir = GetExecutableDir();
+	if (!exeDir.empty())
+	{
+		// Common layout: <Project>\x64\Debug  -> go up to <Project>
+		candidates.push_back(exeDir + "\\..\\..\\" + rel);
+
+		// Fallbacks if output folder differs
+		candidates.push_back(exeDir + "\\..\\" + rel);
+		candidates.push_back(exeDir + "\\" + rel);
+
+		// If you ever run from a packaged folder where Scripting sits next to exe:
+		candidates.push_back(exeDir + "\\Scripting\\Publish\\" + cfg + "\\EngineManaged.runtimeconfig.json");
+	}
+
+	// Also allow running from repo root (working dir based)
+	candidates.push_back(rel);
+
+	for (const auto& p: candidates)
+	{
+		if (FileExists(p))
+			return p;
+	}
+
+	std::cout << "ResourceManager: EngineManaged.runtimeconfig.json not found. Tried:\n";
+	for (const auto& p: candidates)
+		std::cout << "  " << p << "\n";
 
 	return std::string();
 }

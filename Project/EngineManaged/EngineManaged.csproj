@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+
+    <!-- Make sure hosting files are generated on Build -->
+    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+    <GenerateDependencyFile>true</GenerateDependencyFile>
+
+    <!-- Publish-like drop location for your native host -->
+    <ScriptPublishDir>$(MSBuildProjectDirectory)\..\Scripting\Publish\$(Configuration)\</ScriptPublishDir>
+  </PropertyGroup>
+
+    <Target Name="StageForNativeHost"
+        AfterTargets="Build"
+        Condition="'$(Configuration)' == 'Debug' Or '$(Configuration)' == 'Release'">
+
+    <MakeDir Directories="$(ScriptPublishDir)" />
+
+    <!-- Copy the managed payload your native host needs -->
+    <Copy SourceFiles="$(TargetPath)"
+          DestinationFolder="$(ScriptPublishDir)" />
+
+    <Copy SourceFiles="$(TargetDir)$(AssemblyName).deps.json"
+          DestinationFolder="$(ScriptPublishDir)"
+          Condition="Exists('$(TargetDir)$(AssemblyName).deps.json')" />
+
+    <Copy SourceFiles="$(TargetDir)$(AssemblyName).runtimeconfig.json"
+          DestinationFolder="$(ScriptPublishDir)"
+          Condition="Exists('$(TargetDir)$(AssemblyName).runtimeconfig.json')" />
+
+    <!-- Optional: copy pdb for debugging -->
+    <Copy SourceFiles="$(TargetDir)$(AssemblyName).pdb"
+          DestinationFolder="$(ScriptPublishDir)"
+          Condition="Exists('$(TargetDir)$(AssemblyName).pdb')" />
+
+  </Target>
+
+</Project>

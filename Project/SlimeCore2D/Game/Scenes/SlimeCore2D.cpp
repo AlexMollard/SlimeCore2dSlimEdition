@@ -1,10 +1,20 @@
 #include "Core/Window.h"
 #include "Game2D.h"
+#include "Scripting/DotNetHost.h"
 
 Input* Input::instance = 0;
 
 int main()
 {
+	DotNetHost dotnet;
+	if (!dotnet.Init())
+	{
+		// log, MessageBox, etc
+		return -1;
+	}
+
+	dotnet.CallInit();
+
 	Window* app = new Window(1536, 852, (char*) "SlimeCore2D");
 	Game2D* game = new Game2D();
 	Input* inputManager = Input::GetInstance();
@@ -14,17 +24,18 @@ int main()
 		inputManager->Update();
 		app->Update_Window();
 
-		game->Update(app->GetDeltaTime());
+		float dt = app->GetDeltaTime();
+
+		dotnet.CallUpdate(dt);
+
+		game->Update(dt);
 		game->Draw();
 	}
 
 	delete app;
-	app = nullptr;
-
 	delete game;
-	game = nullptr;
-
 	delete Input::GetInstance();
 
+	dotnet.Shutdown();
 	return 0;
 }

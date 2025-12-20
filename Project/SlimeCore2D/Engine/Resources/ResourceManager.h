@@ -26,6 +26,11 @@ public:
 	// Returns empty string if the resource isn't found.
 	std::string GetResourcePath(const std::string& relativePath);
 
+	// Return full path to EngineManaged.runtimeconfig.json in the staged folder.
+	// Returns empty string if not found.
+	std::string GetManagedRuntimeConfigPath();
+	std::string GetScriptingPath(const std::string& relativeToPublishRoot);
+
 	// Remove all loaded resources
 	void Clear();
 
