@@ -177,6 +177,8 @@ public class SnakeGame : IGameMode
 
     public static void Update(float dt)
     {
+        UI.Update();
+
         _time += dt;
         _shake = Math.Max(0, _shake - dt * 2.0f);
 
