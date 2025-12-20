@@ -9,30 +9,22 @@
 
     <!-- Publish-like drop location for your native host -->
     <ScriptPublishDir>$(MSBuildProjectDirectory)\..\Scripting\Publish\$(Configuration)\</ScriptPublishDir>
+    <RootNamespace>SlimeCore</RootNamespace>
   </PropertyGroup>
 
-    <Target Name="StageForNativeHost"
-        AfterTargets="Build"
-        Condition="'$(Configuration)' == 'Debug' Or '$(Configuration)' == 'Release'">
+    <Target Name="StageForNativeHost" AfterTargets="Build" Condition="'$(Configuration)' == 'Debug' Or '$(Configuration)' == 'Release'">
 
     <MakeDir Directories="$(ScriptPublishDir)" />
 
     <!-- Copy the managed payload your native host needs -->
-    <Copy SourceFiles="$(TargetPath)"
-          DestinationFolder="$(ScriptPublishDir)" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(ScriptPublishDir)" />
 
-    <Copy SourceFiles="$(TargetDir)$(AssemblyName).deps.json"
-          DestinationFolder="$(ScriptPublishDir)"
-          Condition="Exists('$(TargetDir)$(AssemblyName).deps.json')" />
+    <Copy SourceFiles="$(TargetDir)$(AssemblyName).deps.json" DestinationFolder="$(ScriptPublishDir)" Condition="Exists('$(TargetDir)$(AssemblyName).deps.json')" />
 
-    <Copy SourceFiles="$(TargetDir)$(AssemblyName).runtimeconfig.json"
-          DestinationFolder="$(ScriptPublishDir)"
-          Condition="Exists('$(TargetDir)$(AssemblyName).runtimeconfig.json')" />
+    <Copy SourceFiles="$(TargetDir)$(AssemblyName).runtimeconfig.json" DestinationFolder="$(ScriptPublishDir)" Condition="Exists('$(TargetDir)$(AssemblyName).runtimeconfig.json')" />
 
     <!-- Optional: copy pdb for debugging -->
-    <Copy SourceFiles="$(TargetDir)$(AssemblyName).pdb"
-          DestinationFolder="$(ScriptPublishDir)"
-          Condition="Exists('$(TargetDir)$(AssemblyName).pdb')" />
+    <Copy SourceFiles="$(TargetDir)$(AssemblyName).pdb" DestinationFolder="$(ScriptPublishDir)" Condition="Exists('$(TargetDir)$(AssemblyName).pdb')" />
 
   </Target>
 
