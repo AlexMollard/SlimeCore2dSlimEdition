@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using static SlimeCore.Core.Numeric.Floats;
 using static SlimeCore.Core.Numeric.Integrals;
+using System.Security.Cryptography;
 
 public class SnakeGame : IGameMode
 {
@@ -30,6 +31,7 @@ public class SnakeGame : IGameMode
     // Food
     private static int _foodCount = 0;
     private const int MAX_FOOD = 15; // Keep 15 pieces on map at once
+    private const int START_FORWARD_CLEAR = 3; // Require this many clear tiles in front of spawn
 
     // Camera & Smoothing
     private static float _camX, _camY;
@@ -50,13 +52,15 @@ public class SnakeGame : IGameMode
 
     // Score UI
     private static UI.Text _score;
+    private static UI.Text _seedLabel;
     private static int _scoreCached = -1;
     private const int SCORE_FONT_SIZE = 52;
 
     private enum Terrain : byte { Grass, Rock, Water }
 
     private static Tile<Terrain>[,] _world = new Tile<Terrain>[WORLD_W, WORLD_H];
-    private static readonly Random _rng = new();
+    private static Random _rng = new Random();
+    private static int _seed = 0;
 
     // Palette
     // --- Midnight Neon Palette ---
@@ -70,7 +74,10 @@ public class SnakeGame : IGameMode
 
     public static void Init()
     {
-        GenerateOrganicWorld();
+        // Create seed label first so ResetGame can update it
+        _seedLabel = UI.Text.Create($"SEED: {_seed}", 28, -13.0f, 8.0f);
+        _seedLabel.SetVisible(true);
+
         ResetGame();
 
         // Build Grid (use overload to set color, anchor, and layer in one step)
@@ -95,6 +102,7 @@ public class SnakeGame : IGameMode
         _score = UI.Text.Create("SCORE: 0", SCORE_FONT_SIZE, -30.5f, 8.5f);
         _score.SetVisible(true);
         _scoreCached = -1; // force initial text update
+
 
         var btn = UI.Button.Create("Click me", x: 0.0f, y: 6.0f, w: 3.75f, h: 1.5f, r: 0.2f, g: 0.6f, b:0.9f, layer: 100, fontSize: 42);
 		btn.Clicked += () => { Console.WriteLine("PRESSED!"); };
@@ -133,46 +141,150 @@ public class SnakeGame : IGameMode
 
     private static void GenerateOrganicWorld()
     {
+        // Use seeded random to vary the noise parameters so the world changes per seed
+        float ph1 = (float)(_rng.NextDouble() * Math.PI * 2.0);
+        float ph2 = (float)(_rng.NextDouble() * Math.PI * 2.0);
+        float ph3 = (float)(_rng.NextDouble() * Math.PI * 2.0);
+
+        float f1 = 0.15f + (float)(_rng.NextDouble() - 0.5f) * 0.05f;
+        float f2 = -0.1f + (float)(_rng.NextDouble() - 0.5f) * 0.05f;
+        float f3 = 0.3f + (float)(_rng.NextDouble() - 0.5f) * 0.05f;
+        float a3 = 0.5f + (float)(_rng.NextDouble() - 0.5f) * 0.3f;
+
         for (int y = 0; y < WORLD_H; y++)
         {
             for (int x = 0; x < WORLD_W; x++)
             {
                 // Layer multiple sine waves at different angles to create "Noise"
                 float n = 0;
-                n += (float)Math.Sin(x * 0.15f + y * 0.05f);
-                n += (float)Math.Sin(x * -0.1f + y * 0.22f);
-                n += (float)Math.Sin(x * 0.3f + y * 0.3f) * 0.5f;
+                n += (float)Math.Sin(x * f1 + y * 0.05f + ph1);
+                n += (float)Math.Sin(x * f2 + y * 0.22f + ph2);
+                n += (float)Math.Sin(x * f3 + y * 0.3f + ph3) * a3;
 
-                _world[x, y] = new Tile<Terrain> 
-                { 
-                    Type = Terrain.Grass 
+                _world[x, y] = new Tile<Terrain>
+                {
+                    Type = Terrain.Grass
                 };
                 if (n > 1.2f)
                 {
                     _world[x, y].Type = Terrain.Rock;
                     _world[x, y].Blocked = true;
                 }
-                else if (n < -1.4f) 
-                { 
-                    _world[x, y].Type = Terrain.Water; 
-                    _world[x, y].Blocked = true; 
+                else if (n < -1.4f)
+                {
+                    _world[x, y].Type = Terrain.Water;
+                    _world[x, y].Blocked = true;
                 }
             }
         }
     }
 
-    private static void ResetGame()
+    private static void ResetGame(int? seed = null)
     {
+        // Create a reproducible seed (or use provided) and reseed the RNG so each game start is repeatable
+        if (seed.HasValue) _seed = seed.Value;
+        else
+        {
+            using var rngc = RandomNumberGenerator.Create();
+            var b = new byte[4];
+            rngc.GetBytes(b);
+            _seed = BitConverter.ToInt32(b, 0);
+        }
+        _rng = new Random(_seed);
+        Console.WriteLine($"Seed: {_seed}");
+        _seedLabel.SetText($"SEED: {_seed}");
+        // Rebuild world and reset counters
+        GenerateOrganicWorld();
+        _foodCount = 0;
+
+        // Reset timing and some states so the game starts fresh
+        _accum = 0f;
+        _time = 0f;
+        _tick = TICK_NORMAL;
+        _isSprinting = false;
+
+        // Find a safe place to spawn (head + tail must be on non-blocked tiles)
+        var center = new Int2(WORLD_W / 2, WORLD_H / 2);
+        var (start, dir) = FindSafeStart(center, 60, START_FORWARD_CLEAR);
+
         _snake.Clear();
-        Int2 start = new Int2(WORLD_W / 2, WORLD_H / 2);
         _snake.Add(start);
-        _snake.Add(new Int2(start.X - 1, start.Y));
-        _dir = new Int2(1, 0);
+        // place tail one tile behind the head
+        _snake.Add(new Int2(Wrap(start.X - dir.X, WORLD_W), Wrap(start.Y - dir.Y, WORLD_H)));
+        _dir = dir;
         _nextDir = _dir;
         _grow = 4;
         _isDead = false;
         _camX = start.X; _camY = start.Y;
         SpawnFood();
+    }
+
+    private static (Int2 head, Int2 dir) FindSafeStart(Int2 center, int maxRadius = 60, int requiredForwardClear = 3)
+    {
+        Int2[] dirs = new[] { new Int2(1, 0), new Int2(0, 1), new Int2(-1, 0), new Int2(0, -1) };
+
+        for (int r = 0; r <= maxRadius; r++)
+        {
+            for (int dx = -r; dx <= r; dx++)
+            {
+                for (int dy = -r; dy <= r; dy++)
+                {
+                    // only check the perimeter of the current square to emulate a spiral
+                    if (Math.Abs(dx) != r && Math.Abs(dy) != r) continue;
+
+                    int x = Wrap(center.X + dx, WORLD_W);
+                    int y = Wrap(center.Y + dy, WORLD_H);
+
+                    if (_world[x, y].Blocked) continue;
+
+                    foreach (var d in dirs)
+                    {
+                        int tx = Wrap(x - d.X, WORLD_W);
+                        int ty = Wrap(y - d.Y, WORLD_H);
+                        if (_world[tx, ty].Blocked) continue; // tail must fit
+
+                        // ensure requiredForwardClear tiles ahead are not blocked
+                        bool ok = true;
+                        for (int i = 1; i <= requiredForwardClear; i++)
+                        {
+                            int fx = Wrap(x + d.X * i, WORLD_W);
+                            int fy = Wrap(y + d.Y * i, WORLD_H);
+                            if (_world[fx, fy].Blocked) { ok = false; break; }
+                        }
+                        if (!ok) continue;
+
+                        return (new Int2(x, y), d);
+                    }
+                }
+            }
+        }
+
+        // Fallback: scan whole map for any non-blocked head + free neighbor + forward clear
+        for (int x = 0; x < WORLD_W; x++)
+        {
+            for (int y = 0; y < WORLD_H; y++)
+            {
+                if (_world[x, y].Blocked) continue;
+                foreach (var d in dirs)
+                {
+                    int tx = Wrap(x - d.X, WORLD_W);
+                    int ty = Wrap(y - d.Y, WORLD_H);
+                    if (_world[tx, ty].Blocked) continue;
+
+                    bool ok = true;
+                    for (int i = 1; i <= requiredForwardClear; i++)
+                    {
+                        int fx = Wrap(x + d.X * i, WORLD_W);
+                        int fy = Wrap(y + d.Y * i, WORLD_H);
+                        if (_world[fx, fy].Blocked) { ok = false; break; }
+                    }
+                    if (ok) return (new Int2(x, y), d);
+                }
+            }
+        }
+
+        // Final fallback: force center and right-facing direction (will rarely be hit)
+        return (center, new Int2(1, 0));
     }
 
     public static void Update(float dt)
