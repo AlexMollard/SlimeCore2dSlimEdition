@@ -1,14 +1,14 @@
 #include "Renderer2D.h"
-#include "UIManager.h"
 
 #include <algorithm>
 #include <array>
+#include <cstdio>
 #include <iostream>
 #include <map>
-#include <cstdio>
 
 #include "Math.h"
 #include "Resources/ResourceManager.h"
+#include "UIManager.h"
 
 std::vector<glm::vec2> Renderer2D::m_UVs;
 Camera* Renderer2D::m_camera;
@@ -176,10 +176,14 @@ void Renderer2D::Draw()
 	glm::vec2 camPos = m_camera->GetPosition();
 
 	// Sort objects by layer first, then by z (stable to preserve relative order within equal keys)
-	std::stable_sort(m_objectPool.begin(), m_objectPool.end(), [](GameObject* a, GameObject* b) {
-		if (a->GetLayer() != b->GetLayer()) return a->GetLayer() > b->GetLayer();
-		return a->GetPos().z < b->GetPos().z;
-	});
+	std::stable_sort(m_objectPool.begin(),
+	        m_objectPool.end(),
+	        [](GameObject* a, GameObject* b)
+	        {
+		        if (a->GetLayer() != b->GetLayer())
+			        return a->GetLayer() > b->GetLayer();
+		        return a->GetPos().z < b->GetPos().z;
+	        });
 
 	for (int i = 0; i < m_objectPool.size(); i++)
 	{
@@ -217,10 +221,13 @@ void Renderer2D::DrawUI()
 	glGetBooleanv(GL_DEPTH_WRITEMASK, &prevDepthMask);
 
 	// Disable depth/stencil/culling for UI so it always appears on top
-	if (depthTestEnabled) glDisable(GL_DEPTH_TEST);
+	if (depthTestEnabled)
+		glDisable(GL_DEPTH_TEST);
 	glDepthMask(GL_FALSE);
-	if (stencilTestEnabled) glDisable(GL_STENCIL_TEST);
-	if (cullFaceEnabled) glDisable(GL_CULL_FACE);
+	if (stencilTestEnabled)
+		glDisable(GL_STENCIL_TEST);
+	if (cullFaceEnabled)
+		glDisable(GL_CULL_FACE);
 
 	BeginBatch();
 
@@ -236,10 +243,16 @@ void Renderer2D::DrawUI()
 	Flush();
 
 	// restore GL state
-	if (prevDepthMask) glDepthMask(GL_TRUE); else glDepthMask(GL_FALSE);
-	if (depthTestEnabled) glEnable(GL_DEPTH_TEST);
-	if (stencilTestEnabled) glEnable(GL_STENCIL_TEST);
-	if (cullFaceEnabled) glEnable(GL_CULL_FACE);
+	if (prevDepthMask)
+		glDepthMask(GL_TRUE);
+	else
+		glDepthMask(GL_FALSE);
+	if (depthTestEnabled)
+		glEnable(GL_DEPTH_TEST);
+	if (stencilTestEnabled)
+		glEnable(GL_STENCIL_TEST);
+	if (cullFaceEnabled)
+		glEnable(GL_CULL_FACE);
 
 	glPopDebugGroup();
 }
@@ -270,12 +283,10 @@ void Renderer2D::DrawQuad(glm::vec3 position, glm::vec2 size, glm::vec4 color, g
 
 	// Anchor is normalized (0..1). position is the anchor point in world space.
 	// corners: (0,0) bottom-left, (1,0) bottom-right, (1,1) top-right, (0,1) top-left
-	glm::vec3 positions[4] = {
-		glm::vec3(position.x + (0.0f - anchor.x) * size.x, position.y + (0.0f - anchor.y) * size.y, position.z),
+	glm::vec3 positions[4] = { glm::vec3(position.x + (0.0f - anchor.x) * size.x, position.y + (0.0f - anchor.y) * size.y, position.z),
 		glm::vec3(position.x + (1.0f - anchor.x) * size.x, position.y + (0.0f - anchor.y) * size.y, position.z),
 		glm::vec3(position.x + (1.0f - anchor.x) * size.x, position.y + (1.0f - anchor.y) * size.y, position.z),
-		glm::vec3(position.x + (0.0f - anchor.x) * size.x, position.y + (1.0f - anchor.y) * size.y, position.z)
-	};
+		glm::vec3(position.x + (0.0f - anchor.x) * size.x, position.y + (1.0f - anchor.y) * size.y, position.z) };
 
 	for (int i = 0; i < 4; i++)
 	{
@@ -328,12 +339,10 @@ void Renderer2D::DrawQuad(glm::vec3 position, glm::vec2 size, glm::vec4 color, T
 	}
 
 	// Anchor is normalized (0..1).
-	glm::vec3 positions[4] = {
-		glm::vec3(position.x + (0.0f - anchor.x) * size.x, position.y + (0.0f - anchor.y) * size.y, position.z),
+	glm::vec3 positions[4] = { glm::vec3(position.x + (0.0f - anchor.x) * size.x, position.y + (0.0f - anchor.y) * size.y, position.z),
 		glm::vec3(position.x + (1.0f - anchor.x) * size.x, position.y + (0.0f - anchor.y) * size.y, position.z),
 		glm::vec3(position.x + (1.0f - anchor.x) * size.x, position.y + (1.0f - anchor.y) * size.y, position.z),
-		glm::vec3(position.x + (0.0f - anchor.x) * size.x, position.y + (1.0f - anchor.y) * size.y, position.z)
-	};
+		glm::vec3(position.x + (0.0f - anchor.x) * size.x, position.y + (1.0f - anchor.y) * size.y, position.z) };
 
 	for (int i = 0; i < 4; i++)
 	{
@@ -487,7 +496,7 @@ void Renderer2D::Flush()
 {
 	// Label and report the upcoming draw to the debug stream
 	char dbg[128];
-	snprintf(dbg, sizeof(dbg), "Renderer2D::Flush - indices=%u textures=%u", (uint32_t)data.indexCount, (uint32_t)data.textureSlotIndex);
+	snprintf(dbg, sizeof(dbg), "Renderer2D::Flush - indices=%u textures=%u", (uint32_t) data.indexCount, (uint32_t) data.textureSlotIndex);
 	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, dbg);
 
 	for (uint32_t i = 0; i < data.textureSlotIndex; i++)

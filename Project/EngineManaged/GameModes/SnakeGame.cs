@@ -1,539 +1,600 @@
 ﻿using SlimeCore.Core.Grid;
+using SlimeCore.Core.World;
 using SlimeCore.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using static SlimeCore.Core.Numeric.Floats;
 using static SlimeCore.Core.Numeric.Integrals;
-using System.Security.Cryptography;
 
 public class SnakeGame : IGameMode
 {
-    private const int VIEW_W = 100;
-    private const int VIEW_H = 75;
-    private const int WORLD_W = 240;
-    private const int WORLD_H = 240;
+	private const int VIEW_W = 100;
+	private const int VIEW_H = 75;
+	private const int WORLD_W = 240;
+	private const int WORLD_H = 240;
 
-    private static float _cellSize = 0.4f;
-    private static float _cellSpacing = 0.4f;
+	private static float _cellSize = 0.4f;
+	private static float _cellSpacing = 0.4f;
 
-    // Logic constants
-    private const float TICK_NORMAL = 0.12f;
-    private const float TICK_SPRINT = 0.05f; // Faster tick rate
+	// Logic constants
+	private const float TICK_NORMAL = 0.12f;
+	private const float TICK_SPRINT = 0.05f;
 
-    // Game Logic
-    private static float _tick = TICK_NORMAL;
-    private static float _accum = 0f;
-    private static float _time = 0f;
-    private static bool _isDead = false;
-    private static float _shake = 0f;
-    private static bool _isSprinting = false;
+	// Game Logic
+	private static float _tick = TICK_NORMAL;
+	private static float _accum = 0f;
+	private static float _time = 0f;
+	private static bool _isDead = false;
+	private static float _shake = 0f;
+	private static bool _isSprinting = false;
 
-    // Food
-    private static int _foodCount = 0;
-    private const int MAX_FOOD = 15; // Keep 15 pieces on map at once
-    private const int START_FORWARD_CLEAR = 3; // Require this many clear tiles in front of spawn
+	// NEW: Chili Speed Boost Logic
+	private static float _speedBoostTimer = 0f;
 
-    // Camera & Smoothing
-    private static float _camX, _camY;
-    private static List<Int2> _snake = new();
-    private static Int2 _dir = new(1, 0);
-    private static Int2 _nextDir = new(1, 0);
-    private static int _grow = 0;
+	// Food
+	private static int _foodCount = 0;
+	private const int MAX_FOOD = 25; // Increased count for more variety
+	private const int START_FORWARD_CLEAR = 3;
 
-    // Visual Handles
-    private static Entity[,] _view = new Entity[VIEW_W, VIEW_H];
-    private static Entity[] _eyes = new Entity[2];
+	// NEW: Food System
+	private enum FoodType { None, Apple, Gold, Plum, Chili }
+	private static FoodType[,] _foodMap = new FoodType[WORLD_W, WORLD_H];
 
-    // Compass
-    private static Entity _compass;
+	// Camera & Smoothing
+	private static float _camX, _camY;
+	private static List<Int2> _snake = new();
+	private static Int2 _dir = new(1, 0);
+	private static Int2 _nextDir = new(1, 0);
+	private static int _grow = 0;
 
-    // Dedicated head quad (separate from underlying tile)
-    private static Entity _head;
+	// Visual Handles
+	private static Entity[,] _view = new Entity[VIEW_W, VIEW_H];
+	private static Entity[] _eyes = new Entity[2];
+	private static Entity _compass;
+	private static Entity _head;
 
-    // Score UI
-    private static UI.Text _score;
-    private static UI.Text _seedLabel;
-    private static int _scoreCached = -1;
-    private const int SCORE_FONT_SIZE = 52;
+	// UI
+	private static UI.Text _score;
+	private static UI.Text _seedLabel;
+	private static int _scoreCached = -1;
+	private const int SCORE_FONT_SIZE = 52;
+	private static int _currentScore = 0; // Track score separately for non-length points
 
-    private enum Terrain : byte { Grass, Rock, Water }
+	private static Tile<Terrain>[,] _world = new Tile<Terrain>[WORLD_W, WORLD_H];
+	private static Random _rng = new Random();
+	private static int _seed = 0;
 
-    private static Tile<Terrain>[,] _world = new Tile<Terrain>[WORLD_W, WORLD_H];
-    private static Random _rng = new Random();
-    private static int _seed = 0;
+	// --- Palette ---
+	private static readonly VecFloat3 COL_GRASS_1 = new(0.05f, 0.05f, 0.12f);
+	private static readonly VecFloat3 COL_GRASS_2 = new(0.03f, 0.03f, 0.10f);
+	private static readonly VecFloat3 COL_ROCK = new(0.20f, 0.20f, 0.35f);
+	private static readonly VecFloat3 COL_WATER = new(0.10f, 0.60f, 0.80f);
+	private static readonly VecFloat3 COL_LAVA = new(1.00f, 0.20f, 0.00f);
+	private static readonly VecFloat3 COL_MUD_1 = new(0.12f, 0.06f, 0.06f);
+	private static readonly VecFloat3 COL_MUD_2 = new(0.08f, 0.04f, 0.04f);
+	private static readonly VecFloat3 COL_ICE_1 = new(0.60f, 0.90f, 1.00f);
+	private static readonly VecFloat3 COL_ICE_2 = new(0.45f, 0.75f, 0.95f);
+	private static readonly VecFloat3 COL_SPEED_1 = new(0.80f, 0.80f, 0.40f);
+	private static readonly VecFloat3 COL_SPEED_2 = new(0.60f, 0.60f, 0.30f);
 
-    // Palette
-    // --- Midnight Neon Palette ---
-    private static readonly VecFloat3 COL_GRASS_1 = new(0.05f, 0.05f, 0.12f); // Deep Midnight
-    private static readonly VecFloat3 COL_GRASS_2 = new(0.03f, 0.03f, 0.10f); // Darker Blue/Black
-    private static readonly VecFloat3 COL_ROCK = new(0.20f, 0.20f, 0.35f);    // Muted Purple Rock
-    private static readonly VecFloat3 COL_WATER = new(0.10f, 0.60f, 0.80f);   // Glowing Cyan Water
-    private static readonly VecFloat3 COL_SNAKE = new(0.00f, 1.00f, 0.50f);   // Neon Mint
-    private static readonly VecFloat3 COL_FOOD = new(1.00f, 0.00f, 0.90f);    // Hot Pink
-    private static readonly VecFloat3 COL_SNAKE_SPRINT = new(0.30f, 0.80f, 1.00f); // Electric Blue
+	private static readonly VecFloat3 COL_TINT_ICE = new(0.80f, 1.00f, 1.00f);
+	private static readonly VecFloat3 COL_TINT_MUD = new(0.30f, 0.20f, 0.15f);
+	private static readonly VecFloat3 COL_TINT_SPEED = new(1.00f, 1.00f, 0.50f);
 
-    public static void Init()
-    {
-        // Create seed label first so ResetGame can update it
-        _seedLabel = UI.Text.Create($"SEED: {_seed}", 28, -13.0f, 8.0f);
-        _seedLabel.SetVisible(true);
+	private static readonly VecFloat3 COL_SNAKE = new(0.00f, 1.00f, 0.50f);
+	private static readonly VecFloat3 COL_SNAKE_SPRINT = new(0.30f, 0.80f, 1.00f);
 
-        ResetGame();
+	// --- NEW: Food Colors ---
+	private static readonly VecFloat3 COL_FOOD_APPLE = new(1.00f, 0.00f, 0.90f);  // Neon Pink
+	private static readonly VecFloat3 COL_FOOD_GOLD = new(1.00f, 0.85f, 0.00f);   // Gold
+	private static readonly VecFloat3 COL_FOOD_PLUM = new(0.60f, 0.20f, 0.90f);   // Purple
+	private static readonly VecFloat3 COL_FOOD_CHILI = new(1.00f, 0.20f, 0.00f);  // Red
 
-        // Build Grid (use overload to set color, anchor, and layer in one step)
-        for (int x = 0; x < VIEW_W; x++)
-            for (int y = 0; y < VIEW_H; y++)
-            {
-                _view[x, y] = Entity.CreateQuad(0, 0, _cellSize, _cellSize, 1f, 1f, 1f, 0.5f, 0.5f, 0);
-            }
+	public static void Init()
+	{
+		_seedLabel = UI.Text.Create($"SEED: {_seed}", 28, -13.0f, 8.0f);
+		_seedLabel.SetVisible(true);
 
-        // Build Eyes (attached to head)
-        _eyes[0] = Entity.CreateQuad(0, 0, 0.08f, 0.08f, 0f, 0f, 0f, 0.5f, 0.5f, 10);
-        _eyes[1] = Entity.CreateQuad(0, 0, 0.08f, 0.08f, 0f, 0f, 0f, 0.5f, 0.5f, 10);
+		ResetGame();
 
-        // Create dedicated head quad so we can scale/anchor the head independently
-        _head = Entity.CreateQuad(0, 0, _cellSize * 1.15f, _cellSize * 1.15f, COL_SNAKE.X, COL_SNAKE.Y, COL_SNAKE.Z, 0.5f, 0.5f, 5);
-        _head.SetVisible(true);
+		for (int x = 0; x < VIEW_W; x++)
+			for (int y = 0; y < VIEW_H; y++)
+				_view[x, y] = Entity.CreateQuad(0, 0, _cellSize, _cellSize, 1f, 1f, 1f, 0.5f, 0.5f, 0);
 
-        _compass = Entity.CreateQuad(0, 0, 0.1f, 0.1f, 1f, 1f, 0f, 0.5f, 0.5f, 20); // Small yellow dot
-        _compass.SetVisible(true); // show by default
+		_eyes[0] = Entity.CreateQuad(0, 0, 0.08f, 0.08f, 0f, 0f, 0f, 0.5f, 0.5f, 10);
+		_eyes[1] = Entity.CreateQuad(0, 0, 0.08f, 0.08f, 0f, 0f, 0f, 0.5f, 0.5f, 10);
 
-        // Score UI (use new UI system). Position near top-left in UI coords.
-        _score = UI.Text.Create("SCORE: 0", SCORE_FONT_SIZE, -30.5f, 8.5f);
-        _score.SetVisible(true);
-        _scoreCached = -1; // force initial text update
+		_head = Entity.CreateQuad(0, 0, _cellSize * 1.15f, _cellSize * 1.15f, COL_SNAKE.X, COL_SNAKE.Y, COL_SNAKE.Z, 0.5f, 0.5f, 5);
+		_head.SetVisible(true);
 
+		_compass = Entity.CreateQuad(0, 0, 0.1f, 0.1f, 1f, 1f, 0f, 0.5f, 0.5f, 20);
+		_compass.SetVisible(true);
 
-        var btn = UI.Button.Create("Click me", x: 0.0f, y: 6.0f, w: 3.75f, h: 1.5f, r: 0.2f, g: 0.6f, b:0.9f, layer: 100, fontSize: 42);
+		_score = UI.Text.Create("SCORE: 0", SCORE_FONT_SIZE, -0.0f, 7.5f);
+		_score.SetVisible(true);
+		_scoreCached = -1;
+
+		var btn = UI.Button.Create("Click me", x: 0.0f, y: 6.0f, w: 3.75f, h: 1.5f, r: 0.2f, g: 0.6f, b: 0.9f, layer: 100, fontSize: 42);
 		btn.Clicked += () => { Console.WriteLine("PRESSED!"); };
-    }
-
-    private static Int2 GetNearestFoodPos()
-    {
-        Int2 head = _snake[0];
-        Int2 bestFood = new Int2(-1, -1);
-        float minDist = float.MaxValue;
-
-        for (int x = 0; x < WORLD_W; x++)
-        {
-            for (int y = 0; y < WORLD_H; y++)
-            {
-                if (_world[x, y].Food)
-                {
-                    // Calculate distance considering world wrap
-                    float dx = Math.Abs(x - head.X);
-                    if (dx > WORLD_W / 2) dx = WORLD_W - dx;
-
-                    float dy = Math.Abs(y - head.Y);
-                    if (dy > WORLD_H / 2) dy = WORLD_H - dy;
-
-                    float distSq = dx * dx + dy * dy;
-                    if (distSq < minDist)
-                    {
-                        minDist = distSq;
-                        bestFood = new Int2(x, y);
-                    }
-                }
-            }
-        }
-        return bestFood;
-    }
-
-    private static void GenerateOrganicWorld()
-    {
-        // Use seeded random to vary the noise parameters so the world changes per seed
-        float ph1 = (float)(_rng.NextDouble() * Math.PI * 2.0);
-        float ph2 = (float)(_rng.NextDouble() * Math.PI * 2.0);
-        float ph3 = (float)(_rng.NextDouble() * Math.PI * 2.0);
-
-        float f1 = 0.15f + (float)(_rng.NextDouble() - 0.5f) * 0.05f;
-        float f2 = -0.1f + (float)(_rng.NextDouble() - 0.5f) * 0.05f;
-        float f3 = 0.3f + (float)(_rng.NextDouble() - 0.5f) * 0.05f;
-        float a3 = 0.5f + (float)(_rng.NextDouble() - 0.5f) * 0.3f;
-
-        for (int y = 0; y < WORLD_H; y++)
-        {
-            for (int x = 0; x < WORLD_W; x++)
-            {
-                // Layer multiple sine waves at different angles to create "Noise"
-                float n = 0;
-                n += (float)Math.Sin(x * f1 + y * 0.05f + ph1);
-                n += (float)Math.Sin(x * f2 + y * 0.22f + ph2);
-                n += (float)Math.Sin(x * f3 + y * 0.3f + ph3) * a3;
-
-                _world[x, y] = new Tile<Terrain>
-                {
-                    Type = Terrain.Grass
-                };
-                if (n > 1.2f)
-                {
-                    _world[x, y].Type = Terrain.Rock;
-                    _world[x, y].Blocked = true;
-                }
-                else if (n < -1.4f)
-                {
-                    _world[x, y].Type = Terrain.Water;
-                    _world[x, y].Blocked = true;
-                }
-            }
-        }
-    }
-
-    private static void ResetGame(int? seed = null)
-    {
-        // Create a reproducible seed (or use provided) and reseed the RNG so each game start is repeatable
-        if (seed.HasValue) _seed = seed.Value;
-        else
-        {
-            using var rngc = RandomNumberGenerator.Create();
-            var b = new byte[4];
-            rngc.GetBytes(b);
-            _seed = BitConverter.ToInt32(b, 0);
-        }
-        _rng = new Random(_seed);
-        Console.WriteLine($"Seed: {_seed}");
-        _seedLabel.SetText($"SEED: {_seed}");
-        // Rebuild world and reset counters
-        GenerateOrganicWorld();
-        _foodCount = 0;
-
-        // Reset timing and some states so the game starts fresh
-        _accum = 0f;
-        _time = 0f;
-        _tick = TICK_NORMAL;
-        _isSprinting = false;
-
-        // Find a safe place to spawn (head + tail must be on non-blocked tiles)
-        var center = new Int2(WORLD_W / 2, WORLD_H / 2);
-        var (start, dir) = FindSafeStart(center, 60, START_FORWARD_CLEAR);
-
-        _snake.Clear();
-        _snake.Add(start);
-        // place tail one tile behind the head
-        _snake.Add(new Int2(Wrap(start.X - dir.X, WORLD_W), Wrap(start.Y - dir.Y, WORLD_H)));
-        _dir = dir;
-        _nextDir = _dir;
-        _grow = 4;
-        _isDead = false;
-        _camX = start.X; _camY = start.Y;
-        SpawnFood();
-    }
-
-    private static (Int2 head, Int2 dir) FindSafeStart(Int2 center, int maxRadius = 60, int requiredForwardClear = 3)
-    {
-        Int2[] dirs = new[] { new Int2(1, 0), new Int2(0, 1), new Int2(-1, 0), new Int2(0, -1) };
-
-        for (int r = 0; r <= maxRadius; r++)
-        {
-            for (int dx = -r; dx <= r; dx++)
-            {
-                for (int dy = -r; dy <= r; dy++)
-                {
-                    // only check the perimeter of the current square to emulate a spiral
-                    if (Math.Abs(dx) != r && Math.Abs(dy) != r) continue;
-
-                    int x = Wrap(center.X + dx, WORLD_W);
-                    int y = Wrap(center.Y + dy, WORLD_H);
-
-                    if (_world[x, y].Blocked) continue;
-
-                    foreach (var d in dirs)
-                    {
-                        int tx = Wrap(x - d.X, WORLD_W);
-                        int ty = Wrap(y - d.Y, WORLD_H);
-                        if (_world[tx, ty].Blocked) continue; // tail must fit
-
-                        // ensure requiredForwardClear tiles ahead are not blocked
-                        bool ok = true;
-                        for (int i = 1; i <= requiredForwardClear; i++)
-                        {
-                            int fx = Wrap(x + d.X * i, WORLD_W);
-                            int fy = Wrap(y + d.Y * i, WORLD_H);
-                            if (_world[fx, fy].Blocked) { ok = false; break; }
-                        }
-                        if (!ok) continue;
-
-                        return (new Int2(x, y), d);
-                    }
-                }
-            }
-        }
-
-        // Fallback: scan whole map for any non-blocked head + free neighbor + forward clear
-        for (int x = 0; x < WORLD_W; x++)
-        {
-            for (int y = 0; y < WORLD_H; y++)
-            {
-                if (_world[x, y].Blocked) continue;
-                foreach (var d in dirs)
-                {
-                    int tx = Wrap(x - d.X, WORLD_W);
-                    int ty = Wrap(y - d.Y, WORLD_H);
-                    if (_world[tx, ty].Blocked) continue;
-
-                    bool ok = true;
-                    for (int i = 1; i <= requiredForwardClear; i++)
-                    {
-                        int fx = Wrap(x + d.X * i, WORLD_W);
-                        int fy = Wrap(y + d.Y * i, WORLD_H);
-                        if (_world[fx, fy].Blocked) { ok = false; break; }
-                    }
-                    if (ok) return (new Int2(x, y), d);
-                }
-            }
-        }
-
-        // Final fallback: force center and right-facing direction (will rarely be hit)
-        return (center, new Int2(1, 0));
-    }
-
-    public static void Update(float dt)
-    {
-        UI.Update();
-
-        _time += dt;
-        _shake = Math.Max(0, _shake - dt * 2.0f);
-
-        if (!_isDead)
-        {
-            HandleInput();
-
-            // Adjust speed based on sprint state
-            _tick = _isSprinting ? TICK_SPRINT : TICK_NORMAL;
-
-            _accum += dt;
-            while (_accum >= _tick)
-            {
-                _accum -= _tick;
-                _dir = _nextDir;
-                Step();
-            }
-        }
-        else if (Input.GetKeyDown(Keycode.SPACE)) ResetGame();
-
-        // Smooth Camera following the fractional movement of the snake
-        float interp = _accum / _tick;
-        float targetX = _snake[0].X + (_dir.X * interp);
-        float targetY = _snake[0].Y + (_dir.Y * interp);
-
-        // Handle World Wrap for Camera
-        if (Math.Abs(targetX - _camX) > 5) _camX = targetX;
-        if (Math.Abs(targetY - _camY) > 5) _camY = targetY;
-        _camX = Lerp(_camX, targetX, dt * 10.0f);
-        _camY = Lerp(_camY, targetY, dt * 10.0f);
-
-        Render(interp);
-    }
-
-    private static void Step()
-    {
-        Int2 head = _snake[0];
-        Int2 next = new Int2(Wrap(head.X + _dir.X, WORLD_W), Wrap(head.Y + _dir.Y, WORLD_H));
-
-        if (_world[next.X, next.Y].Blocked || IsSnakeAt(next.X, next.Y))
-        {
-            _isDead = true;
-            _shake = 0.4f;
-            return;
-        }
-
-        _snake.Insert(0, next);
-        if (_world[next.X, next.Y].Food)
-        {
-            _world[next.X, next.Y].Food = false;
-            _grow += 3;
-            _shake = 0.15f;
-            _foodCount--;
-            SpawnFood();
-        }
-
-        if (_grow > 0) _grow--;
-        else _snake.RemoveAt(_snake.Count - 1);
-    }
-
-    private static void Render(float interp)
-    {
-        float camFracX = _camX - (float)Math.Floor(_camX);
-        float camFracY = _camY - (float)Math.Floor(_camY);
-
-        float shakeX = ((float)_rng.NextDouble() - 0.5f) * _shake;
-        float shakeY = ((float)_rng.NextDouble() - 0.5f) * _shake;
-
-        // --- NEW: Calculate the head's screen position once ---
-        // Since the camera centers on the head, its screen position is 
-        // always the offset from the center of the view grid.
-        float headScrX = (-camFracX + shakeX) * _cellSpacing;
-        float headScrY = (-camFracY + shakeY) * _cellSpacing;
-
-        for (int vx = 0; vx < VIEW_W; vx++)
-        {
-            for (int vy = 0; vy < VIEW_H; vy++)
-            {
-                int wx = Wrap((int)Math.Floor(_camX) - VIEW_W / 2 + vx, WORLD_W);
-                int wy = Wrap((int)Math.Floor(_camY) - VIEW_H / 2 + vy, WORLD_H);
-
-                float px = (vx - VIEW_W / 2f - camFracX + shakeX) * _cellSpacing;
-                float py = (vy - VIEW_H / 2f - camFracY + shakeY) * _cellSpacing;
-
-                var ent = _view[vx, vy];
-                ent.SetPosition(px, py);
-
-                VecFloat3 col = GetTileColor(wx, wy);
-                if (_world[wx, wy].Food) col = COL_FOOD * (0.8f + 0.2f * (float)Math.Sin(_time * 12f));
-
-                int sIdx = GetSnakeIndexAt(wx, wy);
-                if (sIdx != -1)
-                {
-                    // Use the sprint color if sprinting
-                    VecFloat3 baseCol = _isSprinting ? COL_SNAKE_SPRINT : COL_SNAKE;
-                    col = baseCol * (1.0f - (sIdx * 0.03f));
-
-                    if (_isDead) col = new VecFloat3(0.4f, 0.1f, 0.1f);
-
-                    if (sIdx == 0)
-                    {
-                        ent.SetSize(_cellSize, _cellSize);
-                        // Update dedicated head entity so it can be sized and anchored independently
-                        _head.SetSize(_cellSize * 1.15f, _cellSize * 1.15f);
-                        _head.SetPosition(px, py);
-                        _head.SetColor(col.X, col.Y, col.Z);
-                        var (hw, hh) = _head.GetSize();
-                        UpdateEyes(px, py, hw); // px/py here will match headScrX/Y when at the head index
-                    }
-                    else ent.SetSize(_cellSize, _cellSize);
-                }
-                else ent.SetSize(_cellSize, _cellSize);
-
-                ent.SetColor(col.X, col.Y, col.Z);
-            }
-        }
-
-        UpdateFoodCompass(headScrX, headScrY);
-
-        int score = Math.Max(0, _snake.Count - 1);
-        if (score != _scoreCached)
-        {
-            _scoreCached = score;
-            _score.SetText($"SCORE: {score}");
-        }
-
-        // Position score near top-left in UI coords (account for small camera shake in world, but keep UI mostly fixed)
-        float uiOffsetX = 0.0f;
-        float uiOffsetY = 8.5f - 0.5f + ((float)_rng.NextDouble() - 0.5f) * _shake;
-        _score.SetPosition(uiOffsetX, uiOffsetY);
-    }
-
-    private static void UpdateFoodCompass(float hpx, float hpy)
-    {
-        Int2 nearest = GetNearestFoodPos();
-        if (nearest.X != -1)
-        {
-            Int2 head = _snake[0];
-
-            // Calculate vector to food with World Wrap correction
-            float dx = nearest.X - head.X;
-            if (Math.Abs(dx) > WORLD_W / 2) dx = -Math.Sign(dx) * (WORLD_W - Math.Abs(dx));
-
-            float dy = nearest.Y - head.Y;
-            if (Math.Abs(dy) > WORLD_H / 2) dy = -Math.Sign(dy) * (WORLD_H - Math.Abs(dy));
-
-            // Get angle to food
-            float angle = (float)Math.Atan2(dy, dx);
-            // Orbit distance is proportional to the cell spacing so it stays visually consistent
-            float orbitDist = _cellSpacing * 0.9f;
-
-            // Position the compass dot (and ensure it's visible)
-            _compass.SetVisible(true);
-            _compass.SetPosition(hpx + (float)Math.Cos(angle) * orbitDist, hpy + (float)Math.Sin(angle) * orbitDist);
-
-            // Pulse the color so it's visible
-            float pulse = 0.5f + 0.5f * (float)Math.Abs(Math.Sin(_time * 10f));
-            _compass.SetColor(pulse, pulse, 0); // Yellow pulse
-        }
-        else
-        {
-            // Hide compass if no food exists
-            _compass.SetVisible(false);
-        }
-    }
-
-    private static void UpdateEyes(float hpx, float hpy, float headSize)
-    {
-        // Offsets and eye size scale with the head size to maintain alignment when head is scaled
-        float forward = headSize * 0.22f; // how far forward from center the eyes sit
-        float side = headSize * 0.18f; // lateral separation
-
-        float ox = _dir.X * forward;
-        float oy = _dir.Y * forward;
-        float sx = -_dir.Y * side;
-        float sy = _dir.X * side;
-
-        // Make eyes a fraction of the head size (tuned to match previous visuals)
-        float eyeSize = headSize * 0.17f;
-        _eyes[0].SetSize(eyeSize, eyeSize);
-        _eyes[1].SetSize(eyeSize, eyeSize);
-
-        _eyes[0].SetPosition(hpx + ox + sx, hpy + oy + sy);
-        _eyes[1].SetPosition(hpx + ox - sx, hpy + oy - sy);
-    }
-
-    private static VecFloat3 GetTileColor(int x, int y)
-    {
-        var t = _world[x, y].Type;
-        if (t == Terrain.Rock) return COL_ROCK;
-        if (t == Terrain.Water) return COL_WATER;
-        return ((x + y) % 2 == 0) ? COL_GRASS_1 : COL_GRASS_2;
-    }
-
-    private static void HandleInput()
-    {
-        // I should get enums for these keycodes...
-        _isSprinting = Input.GetKeyDown(Keycode.LEFT_SHIFT);
-
-        if ((Input.GetKeyDown(Keycode.W) || Input.GetKeyDown(Keycode.UP)) && _dir.Y == 0) _nextDir = new Int2(0, 1);
-        if ((Input.GetKeyDown(Keycode.S) || Input.GetKeyDown(Keycode.DOWN)) && _dir.Y == 0) _nextDir = new Int2(0, -1);
-        if ((Input.GetKeyDown(Keycode.A) || Input.GetKeyDown(Keycode.LEFT)) && _dir.X == 0) _nextDir = new Int2(-1, 0);
-        if ((Input.GetKeyDown(Keycode.D) || Input.GetKeyDown(Keycode.RIGHT)) && _dir.X == 0) _nextDir = new Int2(1, 0);
-    }
-
-    private static void SpawnFood()
-    {
-        while (_foodCount < MAX_FOOD)
-        {
-            // Try to spawn one piece
-            bool spawned = false;
-            for (int i = 0; i < 100; i++) // Limit attempts to prevent infinite loops
-            {
-                int range = 40; // Max distance from head
-                int rx = _rng.Next(-range, range);
-                int ry = _rng.Next(-range, range);
-
-                int x = Wrap(_snake[0].X + rx, WORLD_W);
-                int y = Wrap(_snake[0].Y + ry, WORLD_H);
-
-                if (!_world[x, y].Blocked && !_world[x, y].Food && GetSnakeIndexAt(x, y) == -1)
-                {
-                    _world[x, y].Food = true;
-                    _foodCount++;
-                    spawned = true;
-                    break;
-                }
-            }
-            if (!spawned) break; // Board is too full
-        }
-    }
-
-    private static int GetSnakeIndexAt(int x, int y)
-    {
-        for (int i = 0; i < _snake.Count; i++) if (_snake[i].X == x && _snake[i].Y == y) return i;
-        return -1;
-    }
-    private static bool IsSnakeAt(int x, int y) => GetSnakeIndexAt(x, y) != -1;
-    private static int Wrap(int v, int m) => (v % m + m) % m;
-    private static float Lerp(float a, float b, float t) => a + (b - a) * t;
-
-    public static void Shutdown()
-    {
-        throw new NotImplementedException();
-    }
+	}
+
+	private static void ResetGame(int? seed = null)
+	{
+		if (seed.HasValue) _seed = seed.Value;
+		else
+		{
+			using var rngc = RandomNumberGenerator.Create();
+			var b = new byte[4];
+			rngc.GetBytes(b);
+			_seed = BitConverter.ToInt32(b, 0);
+		}
+		_rng = new Random(_seed);
+		Console.WriteLine($"Seed: {_seed}");
+		_seedLabel.SetText($"SEED: {_seed}");
+
+		var gen = new SlimeCore.Core.World.WorldGenerator(_seed);
+		gen.Generate(_world);
+
+		// Reset Food Map
+		_foodMap = new FoodType[WORLD_W, WORLD_H];
+		_foodCount = 0;
+		_currentScore = 0;
+
+		_accum = 0f;
+		_time = 0f;
+		_tick = TICK_NORMAL;
+		_isSprinting = false;
+		_speedBoostTimer = 0f;
+
+		var center = new Int2(WORLD_W / 2, WORLD_H / 2);
+		var (start, dir) = FindSafeStart(center, 60, START_FORWARD_CLEAR);
+
+		_snake.Clear();
+		_snake.Add(start);
+		_snake.Add(new Int2(Wrap(start.X - dir.X, WORLD_W), Wrap(start.Y - dir.Y, WORLD_H)));
+		_dir = dir;
+		_nextDir = _dir;
+		_grow = 4;
+		_isDead = false;
+		_camX = start.X; _camY = start.Y;
+		SpawnFood();
+	}
+
+	// [FindSafeStart method remains the same]
+	private static (Int2 head, Int2 dir) FindSafeStart(Int2 center, int maxRadius = 60, int requiredForwardClear = 3)
+	{
+		Int2[] dirs = new[] { new Int2(1, 0), new Int2(0, 1), new Int2(-1, 0), new Int2(0, -1) };
+		for (int r = 0; r <= maxRadius; r++)
+		{
+			for (int dx = -r; dx <= r; dx++)
+			{
+				for (int dy = -r; dy <= r; dy++)
+				{
+					if (Math.Abs(dx) != r && Math.Abs(dy) != r) continue;
+					int x = Wrap(center.X + dx, WORLD_W);
+					int y = Wrap(center.Y + dy, WORLD_H);
+					if (_world[x, y].Blocked) continue;
+					foreach (var d in dirs)
+					{
+						int tx = Wrap(x - d.X, WORLD_W);
+						int ty = Wrap(y - d.Y, WORLD_H);
+						if (_world[tx, ty].Blocked) continue;
+						bool ok = true;
+						for (int i = 1; i <= requiredForwardClear; i++)
+						{
+							int fx = Wrap(x + d.X * i, WORLD_W);
+							int fy = Wrap(y + d.Y * i, WORLD_H);
+							if (_world[fx, fy].Blocked) { ok = false; break; }
+						}
+						if (ok) return (new Int2(x, y), d);
+					}
+				}
+			}
+		}
+		return (center, new Int2(1, 0));
+	}
+
+	public static void Update(float dt)
+	{
+		UI.Update();
+
+		_time += dt;
+		_shake = Math.Max(0, _shake - dt * 2.0f);
+
+		// Handle Speed Boost Timer
+		if (_speedBoostTimer > 0)
+		{
+			_speedBoostTimer -= dt;
+			if (_speedBoostTimer < 0) _speedBoostTimer = 0;
+		}
+
+		if (!_isDead)
+		{
+			HandleInput();
+
+			var headTile = _world[_snake[0].X, _snake[0].Y].Type;
+			float speedMultiplier = 1.0f;
+
+			if (headTile == Terrain.Mud) speedMultiplier = 1.8f;
+			if (headTile == Terrain.Speed) speedMultiplier = 0.5f;
+
+			// Apply Sprint input OR Speed Boost Powerup
+			bool effectivelySprinting = _isSprinting || _speedBoostTimer > 0;
+			float baseTick = effectivelySprinting ? TICK_SPRINT : TICK_NORMAL;
+
+			_tick = baseTick * speedMultiplier;
+
+			_accum += dt;
+			while (_accum >= _tick)
+			{
+				_accum -= _tick;
+				_dir = _nextDir;
+				Step();
+			}
+		}
+		else
+		{
+			if (Input.GetKeyDown(Keycode.SPACE))
+			{
+				ResetGame();
+			}
+			if (_snake.Count > 1)
+			{
+				_accum += dt;
+				while (_accum >= _tick)
+				{
+					_accum -= _tick;
+					// Dead snake just shrinks
+					_snake.RemoveAt(_snake.Count - 1);
+				}
+			}
+		}
+		// Smooth Camera
+		float interp = _accum / _tick;
+		float targetX = _snake[0].X + (_dir.X * interp);
+		float targetY = _snake[0].Y + (_dir.Y * interp);
+
+		float dx = targetX - _camX;
+		if (dx > WORLD_W * 0.5f) dx -= WORLD_W;
+		else if (dx < -WORLD_W * 0.5f) dx += WORLD_W;
+
+		float dy = targetY - _camY;
+		if (dy > WORLD_H * 0.5f) dy -= WORLD_H;
+		else if (dy < -WORLD_H * 0.5f) dy += WORLD_H;
+
+		float smoothSpeed = dt * 10.0f;
+		if (smoothSpeed > 1f) smoothSpeed = 1f;
+
+		_camX += dx * smoothSpeed;
+		_camY += dy * smoothSpeed;
+		_camX = (_camX % WORLD_W + WORLD_W) % WORLD_W;
+		_camY = (_camY % WORLD_H + WORLD_H) % WORLD_H;
+
+		Render(interp);
+	}
+
+	private static void Step()
+	{
+		Int2 head = _snake[0];
+		Int2 next = new Int2(Wrap(head.X + _dir.X, WORLD_W), Wrap(head.Y + _dir.Y, WORLD_H));
+
+		if (_world[next.X, next.Y].Blocked || IsSnakeAt(next.X, next.Y))
+		{
+			_isDead = true;
+			_shake = 0.4f;
+			return;
+		}
+
+		_snake.Insert(0, next);
+
+		// NEW: Food Interaction Logic
+		if (_world[next.X, next.Y].Food)
+		{
+			_world[next.X, next.Y].Food = false;
+			FoodType type = _foodMap[next.X, next.Y];
+			_foodMap[next.X, next.Y] = FoodType.None; // Clear map
+			_foodCount--;
+
+			// Apply specific food effects
+			switch (type)
+			{
+				case FoodType.Gold:
+					_grow += 5;
+					_currentScore += 5;
+					_shake = 0.3f; // Big shake for treasure
+					break;
+				case FoodType.Plum:
+					_grow -= 2; // Shrink!
+					_currentScore += 2;
+					_shake = 0.15f;
+					break;
+				case FoodType.Chili:
+					_grow += 3;
+					_currentScore += 1;
+					_speedBoostTimer += 3.0f; // 3 seconds of speed
+					_shake = 0.2f;
+					break;
+				case FoodType.Apple:
+				default:
+					_grow += 3;
+					_currentScore += 1;
+					_shake = 0.15f;
+					break;
+			}
+
+			SpawnFood();
+		}
+
+		// Handle Growth / Shrinking
+		if (_grow > 0)
+		{
+			_grow--;
+		}
+		else if (_grow < 0)
+		{
+			// Shrink mechanism: remove tail, then remove another tail for the negative grow
+			if (_snake.Count > 1) _snake.RemoveAt(_snake.Count - 1); // Normal movement remove
+			if (_snake.Count > 1) _snake.RemoveAt(_snake.Count - 1); // Extra shrink remove
+			_grow++;
+		}
+		else
+		{
+			if (_snake.Count > 0) _snake.RemoveAt(_snake.Count - 1);
+		}
+
+		// Safety: Don't let snake vanish completely
+		if (_snake.Count == 0) _snake.Add(next);
+	}
+
+	private static void SpawnFood()
+	{
+		while (_foodCount < MAX_FOOD)
+		{
+			bool spawned = false;
+			for (int i = 0; i < 100; i++)
+			{
+				int range = 60;
+				int rx = _rng.Next(-range, range);
+				int ry = _rng.Next(-range, range);
+				int x = Wrap(_snake[0].X + rx, WORLD_W);
+				int y = Wrap(_snake[0].Y + ry, WORLD_H);
+
+				if (!_world[x, y].Blocked && !_world[x, y].Food && GetSnakeIndexAt(x, y) == -1)
+				{
+					_world[x, y].Food = true;
+					_foodCount++;
+					spawned = true;
+
+					// Food Rarity Logic
+					double roll = _rng.NextDouble();
+					if (roll < 0.10) _foodMap[x, y] = FoodType.Gold;       // 10% Gold
+					else if (roll < 0.20) _foodMap[x, y] = FoodType.Chili; // 10% Chili
+					else if (roll < 0.35) _foodMap[x, y] = FoodType.Plum;  // 15% Plum
+					else _foodMap[x, y] = FoodType.Apple;                  // 65% Apple
+
+					break;
+				}
+			}
+			if (!spawned) break;
+		}
+	}
+
+	private static void Render(float interp)
+	{
+		// ... [Camera calculations same as before] ...
+		float camFracX = _camX - (float)Math.Floor(_camX);
+		float camFracY = _camY - (float)Math.Floor(_camY);
+		float shakeX = ((float)_rng.NextDouble() - 0.5f) * _shake;
+		float shakeY = ((float)_rng.NextDouble() - 0.5f) * _shake;
+
+		float headScrX = (-camFracX + shakeX) * _cellSpacing;
+		float headScrY = (-camFracY + shakeY) * _cellSpacing;
+
+		Int2 headPos = _snake[0];
+		Terrain headTerrain = _world[headPos.X, headPos.Y].Type;
+
+		VecFloat3 snakeBase = (_isSprinting || _speedBoostTimer > 0) ? COL_SNAKE_SPRINT : COL_SNAKE;
+		VecFloat3 activeSnakeColor = snakeBase;
+
+		if (headTerrain == Terrain.Ice) activeSnakeColor = LerpColor(snakeBase, COL_TINT_ICE, 0.6f);
+		else if (headTerrain == Terrain.Mud) activeSnakeColor = LerpColor(snakeBase, COL_TINT_MUD, 0.5f) * 0.7f;
+
+		for (int vx = 0; vx < VIEW_W; vx++)
+		{
+			for (int vy = 0; vy < VIEW_H; vy++)
+			{
+				int wx = Wrap((int)Math.Floor(_camX) - VIEW_W / 2 + vx, WORLD_W);
+				int wy = Wrap((int)Math.Floor(_camY) - VIEW_H / 2 + vy, WORLD_H);
+
+				float px = (vx - VIEW_W / 2f - camFracX + shakeX) * _cellSpacing;
+				float py = (vy - VIEW_H / 2f - camFracY + shakeY) * _cellSpacing;
+
+				var ent = _view[vx, vy];
+				ent.SetPosition(px, py);
+
+				VecFloat3 tileCol = GetTileColor(wx, wy);
+
+				// NEW: Render specific food colors
+				if (_world[wx, wy].Food)
+				{
+					FoodType f = _foodMap[wx, wy];
+					VecFloat3 fCol = COL_FOOD_APPLE;
+					if (f == FoodType.Gold) fCol = COL_FOOD_GOLD;
+					else if (f == FoodType.Plum) fCol = COL_FOOD_PLUM;
+					else if (f == FoodType.Chili) fCol = COL_FOOD_CHILI;
+
+					// Pulse effect
+					tileCol = fCol * (0.8f + 0.2f * (float)Math.Sin(_time * 12f));
+				}
+
+				int sIdx = GetSnakeIndexAt(wx, wy);
+				if (sIdx != -1)
+				{
+					float tailFade = (1.0f - (sIdx * 0.02f));
+					VecFloat3 finalSnakeCol = activeSnakeColor * tailFade;
+					if (_isDead) finalSnakeCol = new VecFloat3(0.4f, 0.1f, 0.1f);
+
+					if (sIdx == 0)
+					{
+						_head.SetSize(_cellSize * 1.15f, _cellSize * 1.15f);
+						_head.SetPosition(px, py);
+						_head.SetColor(finalSnakeCol.X, finalSnakeCol.Y, finalSnakeCol.Z);
+						UpdateEyes(px, py, _cellSize * 1.15f);
+					}
+					ent.SetColor(finalSnakeCol.X, finalSnakeCol.Y, finalSnakeCol.Z);
+				}
+				else
+				{
+					ent.SetColor(tileCol.X, tileCol.Y, tileCol.Z);
+				}
+				ent.SetSize(_cellSize, _cellSize);
+			}
+		}
+
+		UpdateFoodCompass(headScrX, headScrY);
+
+		if (_currentScore != _scoreCached)
+		{
+			_scoreCached = _currentScore;
+			_score.SetText($"SCORE: {_currentScore}");
+		}
+	}
+
+	// [Compass, Eyes, HandleInput, Utils remain same as previous]
+	private static void UpdateFoodCompass(float hpx, float hpy)
+	{
+		Int2 nearest = GetNearestFoodPos();
+		if (nearest.X != -1)
+		{
+			Int2 head = _snake[0];
+			float dx = nearest.X - head.X;
+			if (Math.Abs(dx) > WORLD_W / 2) dx = -Math.Sign(dx) * (WORLD_W - Math.Abs(dx));
+			float dy = nearest.Y - head.Y;
+			if (Math.Abs(dy) > WORLD_H / 2) dy = -Math.Sign(dy) * (WORLD_H - Math.Abs(dy));
+			float angle = (float)Math.Atan2(dy, dx);
+			float orbitDist = _cellSpacing * 0.9f;
+			_compass.SetVisible(true);
+			_compass.SetPosition(hpx + (float)Math.Cos(angle) * orbitDist, hpy + (float)Math.Sin(angle) * orbitDist);
+			float pulse = 0.5f + 0.5f * (float)Math.Abs(Math.Sin(_time * 10f));
+
+			// Tint compass based on nearest food type
+			VecFloat3 cCol = new VecFloat3(pulse, pulse, 0); // Default Yellow
+			FoodType ft = _foodMap[nearest.X, nearest.Y];
+			if (ft == FoodType.Plum) cCol = new VecFloat3(pulse, 0, pulse);
+			if (ft == FoodType.Chili) cCol = new VecFloat3(pulse, 0, 0);
+
+			_compass.SetColor(cCol.X, cCol.Y, cCol.Z);
+		}
+		else _compass.SetVisible(false);
+	}
+
+	private static void UpdateEyes(float hpx, float hpy, float headSize)
+	{
+		float forward = headSize * 0.22f;
+		float side = headSize * 0.18f;
+		float ox = _dir.X * forward;
+		float oy = _dir.Y * forward;
+		float sx = -_dir.Y * side;
+		float sy = _dir.X * side;
+		float eyeSize = headSize * 0.17f;
+		_eyes[0].SetSize(eyeSize, eyeSize);
+		_eyes[1].SetSize(eyeSize, eyeSize);
+		_eyes[0].SetPosition(hpx + ox + sx, hpy + oy + sy);
+		_eyes[1].SetPosition(hpx + ox - sx, hpy + oy - sy);
+	}
+
+	private static VecFloat3 GetTileColor(int x, int y)
+	{
+		var tile = _world[x, y];
+		var t = tile.Type;
+		bool isAlt = (x + y) % 2 == 0;
+		return t switch
+		{
+			Terrain.Rock => COL_ROCK,
+			Terrain.Water => COL_WATER,
+			Terrain.Lava => COL_LAVA,
+			Terrain.Ice => isAlt ? COL_ICE_1 : COL_ICE_2,
+			Terrain.Mud => isAlt ? COL_MUD_1 : COL_MUD_2,
+			Terrain.Speed => (isAlt ? COL_SPEED_1 : COL_SPEED_2) * (0.8f + 0.2f * (float)Math.Sin(_time * 15f)),
+			_ => isAlt ? COL_GRASS_1 : COL_GRASS_2
+		};
+	}
+
+	private static void HandleInput()
+	{
+		var headPos = _snake[0];
+		if (_world[headPos.X, headPos.Y].Type == Terrain.Ice) return;
+		_isSprinting = Input.GetKeyDown(Keycode.LEFT_SHIFT);
+		if ((Input.GetKeyDown(Keycode.W) || Input.GetKeyDown(Keycode.UP)) && _dir.Y == 0) _nextDir = new Int2(0, 1);
+		if ((Input.GetKeyDown(Keycode.S) || Input.GetKeyDown(Keycode.DOWN)) && _dir.Y == 0) _nextDir = new Int2(0, -1);
+		if ((Input.GetKeyDown(Keycode.A) || Input.GetKeyDown(Keycode.LEFT)) && _dir.X == 0) _nextDir = new Int2(-1, 0);
+		if ((Input.GetKeyDown(Keycode.D) || Input.GetKeyDown(Keycode.RIGHT)) && _dir.X == 0) _nextDir = new Int2(1, 0);
+	}
+
+	private static int GetSnakeIndexAt(int x, int y)
+	{
+		for (int i = 0; i < _snake.Count; i++) if (_snake[i].X == x && _snake[i].Y == y) return i;
+		return -1;
+	}
+
+	private static Int2 GetNearestFoodPos()
+	{
+		Int2 head = _snake[0];
+		Int2 bestFood = new Int2(-1, -1);
+
+		// Initialize with a high value
+		float minWeightedDist = float.MaxValue;
+
+		for (int x = 0; x < WORLD_W; x++)
+		{
+			for (int y = 0; y < WORLD_H; y++)
+			{
+				if (_world[x, y].Food)
+				{
+					// 1. Calculate Real World-Wrap Distance
+					float dx = Math.Abs(x - head.X);
+					if (dx > WORLD_W / 2) dx = WORLD_W - dx;
+
+					float dy = Math.Abs(y - head.Y);
+					if (dy > WORLD_H / 2) dy = WORLD_H - dy;
+
+					float distSq = dx * dx + dy * dy;
+					float dist = (float)Math.Sqrt(distSq);
+
+					// 2. Apply "Magnetism" based on Food Type
+					// We subtract from the distance to make valuable food "seem" closer to the compass
+					FoodType type = _foodMap[x, y];
+					float priorityBonus = 0f;
+
+					switch (type)
+					{
+						case FoodType.Gold: priorityBonus = 25.0f; break; // Huge draw to Gold
+						case FoodType.Chili: priorityBonus = 15.0f; break; // Strong draw to Speed
+						case FoodType.Apple: priorityBonus = 0.0f; break; // Neutral
+						case FoodType.Plum: priorityBonus = -5.0f; break; // Compass slightly avoids shrink fruit
+					}
+
+					// The "Weighted Distance" is what the compass decides on
+					float weightedDist = dist - priorityBonus;
+
+					if (weightedDist < minWeightedDist)
+					{
+						minWeightedDist = weightedDist;
+						bestFood = new Int2(x, y);
+					}
+				}
+			}
+		}
+		return bestFood;
+	}
+
+	private static bool IsSnakeAt(int x, int y) => GetSnakeIndexAt(x, y) != -1;
+	private static int Wrap(int v, int m) => (v % m + m) % m;
+	private static float Lerp(float a, float b, float t) => a + (b - a) * t;
+	private static VecFloat3 LerpColor(VecFloat3 a, VecFloat3 b, float t) => new VecFloat3(Lerp(a.X, b.X, t), Lerp(a.Y, b.Y, t), Lerp(a.Z, b.Z, t));
+	public static void Shutdown()
+	{
+		throw new NotImplementedException();
+	}
 }
