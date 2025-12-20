@@ -50,7 +50,7 @@ int Window::Window_intit(int width, int height, char* name)
 	glfwGetFramebufferSize(window, &fbW, &fbH);
 	framebuffer_size_callback(window, fbW, fbH);
 
-	glClearColor(0.16f, 0.16f, 0.16f, 1.0f);
+	glClearColor(0.06f, 0.06f, 0.06f, 1.0f);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);

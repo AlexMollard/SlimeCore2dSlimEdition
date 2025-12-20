@@ -4,11 +4,11 @@ using System.Collections.Generic;
 public static class SnakeGame
 {
 	private const int VIEW_W = 100;
-	private const int VIEW_H = 50;
+	private const int VIEW_H = 75;
 	private const int WORLD_W = 240;
 	private const int WORLD_H = 240;
 
-	private static float _cellSize = 0.35f;
+	private static float _cellSize = 0.4f;
 	private static float _cellSpacing = 0.4f;
 
 	// Logic constants
@@ -47,13 +47,14 @@ public static class SnakeGame
 	private static readonly Random _rng = new();
 
 	// Palette
-	private static readonly Vec3 COL_GRASS_1 = new(0.14f, 0.22f, 0.14f);
-	private static readonly Vec3 COL_GRASS_2 = new(0.12f, 0.20f, 0.12f);
-	private static readonly Vec3 COL_ROCK = new(0.25f, 0.25f, 0.28f);
-	private static readonly Vec3 COL_WATER = new(0.10f, 0.18f, 0.35f);
-	private static readonly Vec3 COL_SNAKE = new(0.40f, 0.90f, 0.30f);
-	private static readonly Vec3 COL_FOOD = new(1.00f, 0.20f, 0.30f);
-	private static readonly Vec3 COL_SNAKE_SPRINT = new(0.60f, 1.00f, 0.50f);
+	// --- Midnight Neon Palette ---
+	private static readonly Vec3 COL_GRASS_1 = new(0.05f, 0.05f, 0.12f); // Deep Midnight
+	private static readonly Vec3 COL_GRASS_2 = new(0.03f, 0.03f, 0.10f); // Darker Blue/Black
+	private static readonly Vec3 COL_ROCK = new(0.20f, 0.20f, 0.35f);    // Muted Purple Rock
+	private static readonly Vec3 COL_WATER = new(0.10f, 0.60f, 0.80f);   // Glowing Cyan Water
+	private static readonly Vec3 COL_SNAKE = new(0.00f, 1.00f, 0.50f);   // Neon Mint
+	private static readonly Vec3 COL_FOOD = new(1.00f, 0.00f, 0.90f);    // Hot Pink
+	private static readonly Vec3 COL_SNAKE_SPRINT = new(0.30f, 0.80f, 1.00f); // Electric Blue
 
 	public static void Init()
 	{
