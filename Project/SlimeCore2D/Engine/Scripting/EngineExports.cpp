@@ -3,6 +3,9 @@
 #include <cstdio>
 
 #include "Utils/ObjectManager.h"
+#include "Resources/ResourceManager.h"
+#include "Rendering/Text.h"
+#include "Rendering/Texture.h"
 
 SLIME_EXPORT void __cdecl Engine_Log(const char* msg)
 {
@@ -83,4 +86,77 @@ SLIME_EXPORT bool __cdecl Input_GetKeyDown(int key)
 SLIME_EXPORT bool __cdecl Input_GetKeyReleased(int key)
 {
 	return Input::GetInstance()->GetKeyRelease(Keycode(key));
+}
+
+SLIME_EXPORT unsigned int __cdecl Text_CreateTextureFromFontFile(const char* fontPath, const char* text, int pixelHeight, int* outWidth, int* outHeight)
+{
+	if (!text) return 0;
+	std::string path;
+	if (fontPath)
+		path = std::string(fontPath);
+	else
+	{
+		// try default resource
+		path = ResourceManager::GetInstance().GetResourcePath("Fonts\\Chilanka-Regular.ttf");
+		if (path.empty())
+			path = "..\\Fonts\\Chilanka-Regular.ttf";
+	}
+
+	int w = 0, h = 0;
+	unsigned int tex = Text::CreateTextureFromString(path, std::string(text), pixelHeight, w, h);
+	if (outWidth) *outWidth = w;
+	if (outHeight) *outHeight = h;
+	return tex;
+}
+
+SLIME_EXPORT void* __cdecl Font_LoadFromFile(const char* path)
+{
+	if (!path) return nullptr;
+	Text::FontHandle* fh = Text::LoadFontFromFile(std::string(path));
+	return reinterpret_cast<void*>(fh);
+}
+
+SLIME_EXPORT void __cdecl Font_Free(void* font)
+{
+	if (!font) return;
+	Text::FreeFont(reinterpret_cast<Text::FontHandle*>(font));
+}
+
+SLIME_EXPORT unsigned int __cdecl Text_RenderToEntity(void* font, EntityId id, const char* text, int pixelHeight)
+{
+	if (!font || !text || id == 0 || pixelHeight <= 0) return 0;
+
+	Text::FontHandle* fh = reinterpret_cast<Text::FontHandle*>(font);
+	int w=0,h=0;
+	unsigned int tex = Text::CreateTextureFromLoadedFont(fh, std::string(text), pixelHeight, w, h);
+	if (tex == 0) return 0;
+
+	// attach texture to the entity
+	if (!ObjectManager::IsCreated()) return tex;
+	GameObject* obj = ObjectManager::Get().Get((ObjectId)id);
+	if (!obj) return tex;
+
+	unsigned int tu = tex;
+	Texture* t = new Texture(&tu);
+	if (w > 0) obj->SetTextureWidth(w);
+	obj->SetHasAnimation(false);
+	obj->SetSpriteWidth(w);
+	obj->SetTexture(t);
+
+	return tex;
+}
+
+SLIME_EXPORT void __cdecl Entity_SetTexture(EntityId id, unsigned int texId, int width, int height)
+{
+	if (!ObjectManager::IsCreated() || id == 0 || texId == 0)
+		return;
+
+	GameObject* obj = ObjectManager::Get().Get((ObjectId) id);
+	if (!obj) return;
+
+	unsigned int tu = texId;
+	Texture* t = new Texture(&tu);
+	if (width > 0)
+		obj->SetTextureWidth(width);
+	obj->SetTexture(t);
 }

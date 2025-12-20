@@ -36,4 +36,20 @@ internal static class Native
 	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
 	internal static extern bool Input_GetKeyReleased(int key);
 
+	// TEXT / FONT
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern uint Text_CreateTextureFromFontFile([MarshalAs(UnmanagedType.LPUTF8Str)] string fontPath, [MarshalAs(UnmanagedType.LPUTF8Str)] string text, int pixelHeight, out int outWidth, out int outHeight);
+
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern IntPtr Font_LoadFromFile([MarshalAs(UnmanagedType.LPUTF8Str)] string path);
+
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern void Font_Free(IntPtr font);
+
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern uint Text_RenderToEntity(IntPtr font, ulong id, [MarshalAs(UnmanagedType.LPUTF8Str)] string text, int pixelHeight);
+
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern void Entity_SetTexture(ulong id, uint texId, int width, int height);
+
 }

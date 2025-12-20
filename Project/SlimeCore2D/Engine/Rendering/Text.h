@@ -21,6 +21,16 @@ public:
 
 	void RenderText(Shader& s, std::string text, float x, float y, float scale, glm::vec3 color);
 
+	// Create an RGBA GL texture containing `text` rendered at `pixelHeight` pixels high.
+	// Returns GL texture id (0 on failure). outW/outH set on success.
+	static unsigned int CreateTextureFromString(const std::string& fontPath, const std::string& text, int pixelHeight, int& outW, int& outH);
+
+	// Font handle API: load a font into memory for repeated rendering operations
+	struct FontHandle;
+	static FontHandle* LoadFontFromFile(const std::string& path);
+	static void FreeFont(FontHandle* f);
+	static unsigned int CreateTextureFromLoadedFont(FontHandle* f, const std::string& text, int pixelHeight, int& outW, int& outH);
+
 protected:
 	unsigned int VAO, VBO;
 

@@ -25,3 +25,16 @@ SLIME_EXPORT void __cdecl Visual_SetColor(EntityId id, float r, float g, float b
 // Input
 SLIME_EXPORT bool __cdecl Input_GetKeyDown(int key);
 SLIME_EXPORT bool __cdecl Input_GetKeyReleased(int key);
+
+// Text/Font helpers
+SLIME_EXPORT unsigned int __cdecl Text_CreateTextureFromFontFile(const char* fontPath, const char* text, int pixelHeight, int* outWidth, int* outHeight);
+
+// Load font file into memory and return an opaque handle (free with Font_Free)
+SLIME_EXPORT void* __cdecl Font_LoadFromFile(const char* path);
+SLIME_EXPORT void __cdecl Font_Free(void* font);
+
+// Render text using a loaded font and attach resulting texture to an entity.
+// Returns GL texture id (0 on failure).
+SLIME_EXPORT unsigned int __cdecl Text_RenderToEntity(void* font, EntityId id, const char* text, int pixelHeight);
+
+SLIME_EXPORT void __cdecl Entity_SetTexture(EntityId id, unsigned int texId, int width, int height);

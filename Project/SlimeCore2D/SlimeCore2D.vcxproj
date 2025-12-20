@@ -122,7 +122,8 @@
       <AdditionalDependencies>glfw3.lib;glew32.lib;opengl32.lib;nethost.lib;Shlwapi.lib;Pathcch.lib;Kernel32.lib;Ole32.lib;freetype.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy /Y "C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Host.win-x64\10.0.1\runtimes\win-x64\native\nethost.dll" "$(TargetDir)"
+      <Command>copy /Y "C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Host.win-x64\10.0.1\runtimes\win-x64\native\nethost.dll" "$(TargetDir)" ;
+
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -170,7 +171,8 @@
       <AdditionalDependencies>glfw3.lib;glew32.lib;opengl32.lib;nethost.lib;Shlwapi.lib;Pathcch.lib;Kernel32.lib;Ole32.lib;freetype.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy /Y "C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Host.win-x64\10.0.1\runtimes\win-x64\native\nethost.dll" "$(TargetDir)"
+      <Command>copy /Y "C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Host.win-x64\10.0.1\runtimes\win-x64\native\nethost.dll" "$(TargetDir)" ;
+
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>

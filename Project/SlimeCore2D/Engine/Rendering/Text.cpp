@@ -135,3 +135,152 @@ void Text::RenderText(Shader& shader, std::string text, float x, float y, float 
 	glBindVertexArray(0);
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
+
+// Helper: create a white (255,255,255) RGBA texture with glyph alpha composed into alpha channel
+unsigned int Text::CreateTextureFromString(const std::string& fontPath, const std::string& text, int pixelHeight, int& outW, int& outH)
+{
+	if (text.empty() || pixelHeight <= 0)
+		return 0;
+
+	// This implementation delegates to a memory-based font load to reuse the same code path
+	FontHandle* fh = LoadFontFromFile(fontPath);
+	if (!fh) return 0;
+
+	int w = 0, h = 0;
+	unsigned int tex = CreateTextureFromLoadedFont(fh, text, pixelHeight, w, h);
+	outW = w; outH = h;
+	FreeFont(fh);
+	return tex;
+}
+
+// FontHandle implementation
+struct Text::FontHandle
+{
+	std::vector<unsigned char> buffer;
+	FT_Library ft = nullptr;
+	FT_Face face = nullptr;
+	bool valid = false;
+};
+
+Text::FontHandle* Text::LoadFontFromFile(const std::string& path)
+{
+	// read file
+	FILE* f = nullptr;
+#if defined(_MSC_VER)
+	if (fopen_s(&f, path.c_str(), "rb") != 0 || !f) return nullptr;
+#else
+	f = std::fopen(path.c_str(), "rb");
+	if (!f) return nullptr;
+#endif
+	std::fseek(f, 0, SEEK_END);
+	long sz = std::ftell(f);
+	std::fseek(f, 0, SEEK_SET);
+	if (sz <= 0) { std::fclose(f); return nullptr; }
+
+	Text::FontHandle* fh = new Text::FontHandle();
+	fh->buffer.resize(sz);
+	if (std::fread(fh->buffer.data(), 1, sz, f) != (size_t)sz) { std::fclose(f); delete fh; return nullptr; }
+	std::fclose(f);
+
+	if (FT_Init_FreeType(&fh->ft)) { delete fh; return nullptr; }
+	if (FT_New_Memory_Face(fh->ft, fh->buffer.data(), (FT_Long)fh->buffer.size(), 0, &fh->face)) { FT_Done_FreeType(fh->ft); delete fh; return nullptr; }
+
+	fh->valid = true;
+	return fh;
+}
+
+void Text::FreeFont(Text::FontHandle* f)
+{
+	if (!f) return;
+	if (f->face) FT_Done_Face(f->face);
+	if (f->ft) FT_Done_FreeType(f->ft);
+	delete f;
+}
+
+unsigned int Text::CreateTextureFromLoadedFont(Text::FontHandle* f, const std::string& text, int pixelHeight, int& outW, int& outH)
+{
+	if (!f || !f->valid || text.empty() || pixelHeight <= 0) return 0;
+
+	FT_Face face = f->face;
+	FT_Set_Pixel_Sizes(face, 0, pixelHeight);
+
+	int width = 0;
+	int ascent = 0, descent = 0;
+
+	for (const unsigned char* p = (const unsigned char*)text.c_str(); *p; )
+	{
+		int codepoint = 0;
+		if (*p < 0x80) { codepoint = *p; ++p; }
+		else { codepoint = '?'; ++p; }
+		if (FT_Load_Char(face, codepoint, FT_LOAD_RENDER)) continue;
+		width += (face->glyph->advance.x >> 6);
+	}
+
+	FT_Fixed a = face->size->metrics.ascender;
+	FT_Fixed d = face->size->metrics.descender;
+	ascent = (a >> 6);
+	descent = (-(d >> 6));
+
+	width = std::max(1, width);
+	int height = std::max(1, ascent + descent);
+
+	outW = width; outH = height;
+
+	std::vector<unsigned char> alpha(width * height);
+	std::memset(alpha.data(), 0, alpha.size());
+
+	int penX = 0;
+	int baseline = ascent;
+
+	for (const unsigned char* p = (const unsigned char*)text.c_str(); *p; )
+	{
+		int codepoint = 0;
+		if (*p < 0x80) { codepoint = *p; ++p; }
+		else { codepoint = '?'; ++p; }
+
+		if (FT_Load_Char(face, codepoint, FT_LOAD_RENDER)) continue;
+
+		FT_GlyphSlot g = face->glyph;
+		int gbW = g->bitmap.width;
+		int gbH = g->bitmap.rows;
+		int gbX = g->bitmap_left;
+		int gbY = -g->bitmap_top;
+
+		int x0 = penX + gbX;
+		int y0 = baseline + gbY;
+
+		for (int gy = 0; gy < gbH; ++gy)
+		{
+			for (int gx = 0; gx < gbW; ++gx)
+			{
+				int tx = x0 + gx;
+				int ty = y0 + gy;
+				if (tx >= 0 && tx < width && ty >= 0 && ty < height)
+				{
+					unsigned char v = g->bitmap.buffer[gy * gbW + gx];
+					alpha[ty * width + tx] = std::max(alpha[ty * width + tx], v);
+				}
+			}
+		}
+
+		penX += (g->advance.x >> 6);
+	}
+
+	std::vector<unsigned char> rgba(width * height * 4);
+	for (int i = 0; i < width * height; ++i)
+	{
+		rgba[i * 4 + 0] = 255;
+		rgba[i * 4 + 1] = 255;
+		rgba[i * 4 + 2] = 255;
+		rgba[i * 4 + 3] = alpha[i];
+	}
+
+	GLuint tex;
+	glGenTextures(1, &tex);
+	glBindTexture(GL_TEXTURE_2D, tex);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba.data());
+
+	return (unsigned int)tex;
+}

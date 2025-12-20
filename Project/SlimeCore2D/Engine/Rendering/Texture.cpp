@@ -1,6 +1,7 @@
 #include "Texture.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#include <string>
 
 Texture::Texture(std::string dir)
 {
@@ -33,6 +34,25 @@ Texture::Texture(std::string dir)
 Texture::Texture(unsigned int* id)
 {
 	this->m_textureID = *id;
+
+	// Get texture properties
+	glBindTexture(GL_TEXTURE_2D, m_textureID);
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &m_width);
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &m_height);
+	GLint format;
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &format);
+	if (format == GL_RGB)
+		m_nrChannels = 3;
+	else if (format == GL_RGBA)
+		m_nrChannels = 4;
+	else
+		m_nrChannels = 0;
+
+
+	// Name texture so render doc has info
+	std::string name = "Copied Texture " + std::to_string(m_textureID);
+	glObjectLabel(GL_TEXTURE, m_textureID, -1, name.c_str());
+
 }
 
 Texture::~Texture()

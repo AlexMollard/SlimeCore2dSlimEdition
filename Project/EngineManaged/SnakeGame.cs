@@ -60,6 +60,33 @@ public static class SnakeGame
 
 		BuildViewportVisuals();
 		PaintViewport();
+
+		try
+		{
+			string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+			string fontPath = System.IO.Path.Combine(baseDir, "Fonts\\Chilanka-Regular.ttf");
+			if (!System.IO.File.Exists(fontPath))
+			{
+				string winFont = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Fonts), "arial.ttf");
+				if (System.IO.File.Exists(winFont)) fontPath = winFont;
+			}
+
+			if (System.IO.File.Exists(fontPath))
+			{
+				IntPtr font = Native.Font_LoadFromFile(fontPath);
+				if (font != IntPtr.Zero)
+				{
+					ulong id = Native.Entity_CreateQuad(0.0f, 0.0f, 100.0f, 100.0f, 1f, 1f, 1f);
+					uint tex = Native.Text_RenderToEntity(font, id, "Hello from C# (render)", 48);
+					Native.Font_Free(font);
+				}
+			}
+		}
+		catch (Exception ex)
+		{
+			Native.Engine_Log("Text test failed: " + ex.Message);
+		}
+
 		Native.Engine_Log("SnakeGame.Init OK");
 	}
 
