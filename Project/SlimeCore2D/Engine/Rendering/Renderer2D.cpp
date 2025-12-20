@@ -1,9 +1,11 @@
 #include "Renderer2D.h"
+#include "UIManager.h"
 
 #include <algorithm>
 #include <array>
 #include <iostream>
 #include <map>
+#include <cstdio>
 
 #include "Math.h"
 #include "Resources/ResourceManager.h"
@@ -72,11 +74,18 @@ Renderer2D::Renderer2D(Camera* camera)
 
 	glUniform1iv(loc, maxTextures, samplers);
 
+	// Label shader program for RenderDoc
+	if (basicShader)
+		glObjectLabel(GL_PROGRAM, basicShader->GetID(), -1, "Renderer2D BasicShader");
+
 	m_UIShader->Use();
 
 	loc = glGetUniformLocation(m_UIShader->GetID(), "Textures");
 
 	glUniform1iv(loc, maxTextures, samplers);
+
+	if (m_UIShader)
+		glObjectLabel(GL_PROGRAM, m_UIShader->GetID(), -1, "Renderer2D UIShader");
 
 	Init();
 }
@@ -140,11 +149,22 @@ Texture* Renderer2D::LoadTexture(std::string dir)
 	Texture* tempTex = new Texture(dir);
 
 	m_texturePool.push_back(tempTex);
+
+	// Name texture for RenderDoc debugging
+	if (tempTex && tempTex->GetID() != 0)
+	{
+		std::string name = "Texture: " + dir;
+		glObjectLabel(GL_TEXTURE, tempTex->GetID(), -1, name.c_str());
+	}
+
 	return tempTex;
 }
 
 void Renderer2D::Draw()
 {
+	// Debug group for world draw
+	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Renderer2D::Draw - World");
+
 	BeginBatch();
 
 	basicShader->Use();
@@ -178,11 +198,30 @@ void Renderer2D::Draw()
 
 	EndBatch();
 	Flush();
+	// End world draw debug group
+	glPopDebugGroup();
+
 	DrawUI();
 }
 
 void Renderer2D::DrawUI()
 {
+	// Debug group for UI draw
+	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Renderer2D::Draw - UI");
+
+	// Save GL depth, stencil, and cull state so we can restore after UI draw
+	GLboolean depthTestEnabled = glIsEnabled(GL_DEPTH_TEST);
+	GLboolean stencilTestEnabled = glIsEnabled(GL_STENCIL_TEST);
+	GLboolean cullFaceEnabled = glIsEnabled(GL_CULL_FACE);
+	GLboolean prevDepthMask = GL_TRUE;
+	glGetBooleanv(GL_DEPTH_WRITEMASK, &prevDepthMask);
+
+	// Disable depth/stencil/culling for UI so it always appears on top
+	if (depthTestEnabled) glDisable(GL_DEPTH_TEST);
+	glDepthMask(GL_FALSE);
+	if (stencilTestEnabled) glDisable(GL_STENCIL_TEST);
+	if (cullFaceEnabled) glDisable(GL_CULL_FACE);
+
 	BeginBatch();
 
 	m_UIShader->Use();
@@ -190,10 +229,19 @@ void Renderer2D::DrawUI()
 	m_UIShader->setMat4("OrthoMatrix", m_UIMatrix);
 	m_UIShader->setMat4("Model", glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)));
 
-	//DrawUIQuad();
+	// Let the UIManager draw all UI elements
+	UIManager::Get().Draw();
 
 	EndBatch();
 	Flush();
+
+	// restore GL state
+	if (prevDepthMask) glDepthMask(GL_TRUE); else glDepthMask(GL_FALSE);
+	if (depthTestEnabled) glEnable(GL_DEPTH_TEST);
+	if (stencilTestEnabled) glEnable(GL_STENCIL_TEST);
+	if (cullFaceEnabled) glEnable(GL_CULL_FACE);
+
+	glPopDebugGroup();
 }
 
 Shader* Renderer2D::GetBasicShader()
@@ -343,10 +391,14 @@ void Renderer2D::Init()
 
 	glCreateVertexArrays(1, &data.quadVA);
 	glBindVertexArray(data.quadVA);
+	// Label VAO for RenderDoc
+	glObjectLabel(GL_VERTEX_ARRAY, data.quadVA, -1, "Renderer2D Quad VA");
 
 	glCreateBuffers(1, &data.quadVB);
 	glBindBuffer(GL_ARRAY_BUFFER, data.quadVB);
 	glBufferData(GL_ARRAY_BUFFER, maxVertexCount * sizeof(Vertex), nullptr, GL_DYNAMIC_DRAW);
+	// Label vertex buffer
+	glObjectLabel(GL_BUFFER, data.quadVB, -1, "Renderer2D Quad VB");
 
 	glEnableVertexArrayAttrib(data.quadVA, 0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*) offsetof(Vertex, position));
@@ -378,6 +430,8 @@ void Renderer2D::Init()
 	glCreateBuffers(1, &data.quadIB);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, data.quadIB);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+	// Label index buffer
+	glObjectLabel(GL_BUFFER, data.quadIB, -1, "Renderer2D Quad IB");
 
 	glCreateTextures(GL_TEXTURE_2D, 1, &data.whiteTexture);
 	glBindTexture(GL_TEXTURE_2D, data.whiteTexture);
@@ -388,6 +442,8 @@ void Renderer2D::Init()
 
 	uint32_t color = 0xffffffff;
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, &color);
+	// Label white texture
+	glObjectLabel(GL_TEXTURE, data.whiteTexture, -1, "Renderer2D WhiteTexture");
 
 	data.textureSlots[0] = data.whiteTexture;
 	for (size_t i = 1; i < maxTextures; i++)
@@ -429,11 +485,28 @@ void Renderer2D::EndBatch()
 
 void Renderer2D::Flush()
 {
+	// Label and report the upcoming draw to the debug stream
+	char dbg[128];
+	snprintf(dbg, sizeof(dbg), "Renderer2D::Flush - indices=%u textures=%u", (uint32_t)data.indexCount, (uint32_t)data.textureSlotIndex);
+	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, dbg);
+
 	for (uint32_t i = 0; i < data.textureSlotIndex; i++)
-		glBindTextureUnit(i, data.textureSlots[i]);
+	{
+		uint32_t tid = data.textureSlots[i];
+		if (tid != 0)
+		{
+			// ensure texture has a label for RenderDoc
+			char tname[64];
+			snprintf(tname, sizeof(tname), "Renderer2D TextureSlot %u - ID %u", i, tid);
+			glObjectLabel(GL_TEXTURE, tid, -1, tname);
+		}
+		glBindTextureUnit(i, tid);
+	}
 
 	glBindVertexArray(data.quadVA);
 	glDrawElements(GL_TRIANGLES, data.indexCount, GL_UNSIGNED_INT, nullptr);
+
+	glPopDebugGroup();
 
 	data.indexCount = 0;
 	data.textureSlotIndex = 1;

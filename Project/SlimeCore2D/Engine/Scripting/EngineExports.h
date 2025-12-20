@@ -95,3 +95,15 @@ SLIME_EXPORT void __cdecl ObjectManager_Destroy(EntityId id);
 SLIME_EXPORT bool __cdecl ObjectManager_IsAlive(EntityId id);
 SLIME_EXPORT int __cdecl ObjectManager_GetSize();
 SLIME_EXPORT EntityId __cdecl ObjectManager_GetIdAtIndex(int index);
+
+// -----------------------------
+// UI helpers
+// -----------------------------
+SLIME_EXPORT EntityId __cdecl UI_CreateText(const char* text, int fontSize, float x, float y);
+SLIME_EXPORT void __cdecl UI_Destroy(EntityId id);
+SLIME_EXPORT void __cdecl UI_SetText(EntityId id, const char* text);
+SLIME_EXPORT void __cdecl UI_SetPosition(EntityId id, float x, float y);
+SLIME_EXPORT void __cdecl UI_SetAnchor(EntityId id, float ax, float ay);
+SLIME_EXPORT void __cdecl UI_SetColor(EntityId id, float r, float g, float b);
+SLIME_EXPORT void __cdecl UI_SetVisible(EntityId id, bool visible);
+SLIME_EXPORT void __cdecl UI_SetLayer(EntityId id, int layer);

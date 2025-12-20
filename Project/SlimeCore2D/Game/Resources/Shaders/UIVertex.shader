@@ -19,7 +19,9 @@ void main()
 	TexIndex = aTexIndex;
 
 	TexCoord = aTexCoord;
-	TexCoord.y = -1 * TexCoord.y;
+	// Flip Y coordinate for texture sampling (0..1 space)
+	TexCoord.y = 1.0 - TexCoord.y;
 
-	gl_Position = OrthoMatrix * Model * vec4(-aPos.xyz, 1.0);
+	// Use provided position directly (UI quads are positioned in UI-space)
+	gl_Position = OrthoMatrix * Model * vec4(aPos.xyz, 1.0);
 }

@@ -44,6 +44,11 @@ public static class SnakeGame
 	// Dedicated head quad (separate from underlying tile)
 	private static Entity _head;
 
+	// Score UI
+	private static UI.Text _score;
+	private static int _scoreCached = -1;
+	private const int SCORE_FONT_SIZE = 52;
+
 	private enum Terrain : byte { Grass, Rock, Water }
 	private struct Tile { public Terrain Terrain; public bool Blocked; public bool Food; }
 	private static Tile[,] _world = new Tile[WORLD_W, WORLD_H];
@@ -81,6 +86,11 @@ public static class SnakeGame
 
 		_compass = Entity.CreateQuad(0, 0, 0.1f, 0.1f, 1f, 1f, 0f, 0.5f, 0.5f, 20); // Small yellow dot
 		_compass.SetVisible(true); // show by default
+
+		// Score UI (use new UI system). Position near top-left in UI coords.
+		_score = UI.Text.Create("SCORE: 0", SCORE_FONT_SIZE, -30.5f, 8.5f);
+		_score.SetVisible(true);
+		_scoreCached = -1; // force initial text update
 	}
 
 	private static Int2 GetNearestFoodPos()
@@ -267,8 +277,20 @@ public static class SnakeGame
 		}
 
 		UpdateFoodCompass(headScrX, headScrY);
-	}
 
+		int score = Math.Max(0, _snake.Count - 1);
+		if (score != _scoreCached)
+		{
+			_scoreCached = score;
+			_score.SetText($"SCORE: {score}");
+		}
+
+		// Position score near top-left in UI coords (account for small camera shake in world, but keep UI mostly fixed)
+		float uiOffsetX = 0.0f;
+		float uiOffsetY = 8.5f - 0.5f + ((float)_rng.NextDouble() - 0.5f) * _shake;
+		_score.SetPosition(uiOffsetX, uiOffsetY);
+	}
+	
 	private static void UpdateFoodCompass(float hpx, float hpy)
 	{
 		Int2 nearest = GetNearestFoodPos();

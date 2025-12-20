@@ -198,6 +198,7 @@
     <ClCompile Include="Engine\Rendering\Sprite.cpp" />
     <ClCompile Include="Engine\Rendering\Text.cpp" />
     <ClCompile Include="Engine\Rendering\Texture.cpp" />
+    <ClCompile Include="Engine\Rendering\UIManager.cpp" />
     <ClCompile Include="Engine\Core\Window.cpp" />
     <ClCompile Include="Game\Scenes\World.cpp" />
   </ItemGroup>
@@ -224,6 +225,7 @@
     <ClInclude Include="Engine\Rendering\Sprite.h" />
     <ClInclude Include="Engine\Rendering\Text.h" />
     <ClInclude Include="Engine\Rendering\Texture.h" />
+    <ClInclude Include="Engine\Rendering\UIManager.h" />
     <ClInclude Include="Engine\Core\Window.h" />
     <ClInclude Include="Game\Scenes\World.h" />
     <ClInclude Include="Game\Scenes\WorldTypes.h" />

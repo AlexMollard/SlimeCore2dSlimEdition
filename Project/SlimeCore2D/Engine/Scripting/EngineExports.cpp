@@ -6,6 +6,7 @@
 #include "Resources/ResourceManager.h"
 #include "Rendering/Text.h"
 #include "Rendering/Texture.h"
+#include "Rendering/UIManager.h"
 
 // -----------------------------
 // Core / Logging
@@ -306,6 +307,56 @@ SLIME_EXPORT void __cdecl Entity_SetTexture(EntityId id, unsigned int texId, int
 	obj->SetTexture(t);
 }
 
+// -----------------------------
+// UI helpers
+// -----------------------------
+SLIME_EXPORT EntityId __cdecl UI_CreateText(const char* text, int fontSize, float x, float y)
+{
+	if (!text) return 0;
+	return (EntityId) UIManager::Get().CreateText(std::string(text), fontSize, x, y);
+}
+
+SLIME_EXPORT void __cdecl UI_Destroy(EntityId id)
+{
+	if (id == 0) return;
+	UIManager::Get().Destroy((UIId)id);
+}
+
+SLIME_EXPORT void __cdecl UI_SetText(EntityId id, const char* text)
+{
+	if (id == 0 || !text) return;
+	UIManager::Get().SetText((UIId)id, std::string(text));
+}
+
+SLIME_EXPORT void __cdecl UI_SetPosition(EntityId id, float x, float y)
+{
+	if (id == 0) return;
+	UIManager::Get().SetPosition((UIId)id, x, y);
+}
+
+SLIME_EXPORT void __cdecl UI_SetAnchor(EntityId id, float ax, float ay)
+{
+	if (id == 0) return;
+	UIManager::Get().SetAnchor((UIId)id, ax, ay);
+}
+
+SLIME_EXPORT void __cdecl UI_SetColor(EntityId id, float r, float g, float b)
+{
+	if (id == 0) return;
+	UIManager::Get().SetColor((UIId)id, r, g, b);
+}
+
+SLIME_EXPORT void __cdecl UI_SetVisible(EntityId id, bool visible)
+{
+	if (id == 0) return;
+	UIManager::Get().SetVisible((UIId)id, visible);
+}
+
+SLIME_EXPORT void __cdecl UI_SetLayer(EntityId id, int layer)
+{
+	if (id == 0) return;
+	UIManager::Get().SetLayer((UIId)id, layer);
+}
 SLIME_EXPORT void __cdecl Entity_SetRender(EntityId id, bool value)
 {
 	if (!ObjectManager::IsCreated() || id == 0) return;
