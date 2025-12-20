@@ -75,9 +75,6 @@
     <ClCompile Include="Engine\Rendering\Sprite.cpp">
       <Filter>Source Files\EngineCore</Filter>
     </ClCompile>
-    <ClCompile Include="Game\Entities\Snake.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Game\Entities\Cell.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -150,9 +147,6 @@
       <Filter>Header Files\EngineCore</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Core\Math.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Game\Entities\Snake.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Game\Entities\Cell.h">

@@ -62,3 +62,25 @@ SLIME_EXPORT void __cdecl Transform_GetPosition(EntityId id, float* outX, float*
 	*outX = p.x;
 	*outY = p.y;
 }
+
+SLIME_EXPORT void __cdecl Visual_SetColor(EntityId id, float r, float g, float b)
+{
+	if (!ObjectManager::IsCreated() || id == 0)
+		return;
+
+	GameObject* obj = ObjectManager::Get().Get((ObjectId) id);
+	if (!obj)
+		return;
+
+	obj->SetColor(r, g, b);
+}
+
+SLIME_EXPORT bool __cdecl Input_GetKeyDown(int key)
+{
+	return Input::GetInstance()->GetKeyPress(Keycode(key));
+}
+
+SLIME_EXPORT bool __cdecl Input_GetKeyReleased(int key)
+{
+	return Input::GetInstance()->GetKeyRelease(Keycode(key));
+}

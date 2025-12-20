@@ -19,3 +19,9 @@ SLIME_EXPORT bool __cdecl Entity_IsAlive(EntityId id);
 // Transform-ish API (position)
 SLIME_EXPORT void __cdecl Transform_SetPosition(EntityId id, float x, float y);
 SLIME_EXPORT void __cdecl Transform_GetPosition(EntityId id, float* outX, float* outY);
+
+SLIME_EXPORT void __cdecl Visual_SetColor(EntityId id, float r, float g, float b);
+
+// Input
+SLIME_EXPORT bool __cdecl Input_GetKeyDown(int key);
+SLIME_EXPORT bool __cdecl Input_GetKeyReleased(int key);
