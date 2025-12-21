@@ -24,25 +24,20 @@ namespace GameModes.Dude
 	internal enum HaterType { Normal, Chonker }
 	internal class Hater { public Entity Ent; public Vec2 Pos; public HaterType Type; }
 
-	internal enum CollectableType { Coffee, Shield, ChillPill }
-	internal class Collectable { public Entity Ent; public Vec2 Pos; public CollectableType Type; }
+	// Collectable now holds a reference to its Definition from the Registry
+	internal class Collectable { public Entity Ent; public Vec2 Pos; public PowerupDef Definition; }
 
 	internal class GhostTrail { public Entity Ent; public float Alpha; public float InitW; public float InitH; }
 	internal class Particle { public Entity Ent; public Vec2 Pos; public Vec2 Vel; public float Life; public float InitSize; }
 	internal class XPGem { public Entity Ent; public Vec2 Pos; public int Value; }
 
-	// --- THE GAME CONTEXT ---
+	// --- GAME CONTEXT ---
 	public class DudeGame : IGameMode
 	{
-		// Settings
-		public const float PLAYER_ACCEL = 85.0f;
-		public const float PLAYER_MAX_SPEED = 32.0f;
-		public const float PLAYER_DRAG = 0.92f;
-
 		// State Machine
 		private IDudeState _currentState;
 
-		// Shared Data (Internal so States can access)
+		// Shared Data
 		internal Entity Dude;
 		internal Vec2 DudePos;
 		internal Vec2 DudeVel;
@@ -50,20 +45,20 @@ namespace GameModes.Dude
 		internal Entity DarkOverlay;
 		internal Entity CardBgBackdrop;
 
-		// Stats
+		// --- NEW: STATS CONTAINER ---
+		internal DudeStats Stats = new DudeStats();
+
+		// --- NEW: EVENT SYSTEM ---
+		internal GameEvents Events = new GameEvents();
+
+		// Core Values
 		internal int Level;
 		internal float XP;
 		internal float XPToNextLevel;
 		internal float Score;
 		internal float TimeAlive;
 
-		// Upgrades
-		internal float StatMagnetRange = 2.5f;
-		internal float StatDashCooldown = 0.8f;
-		internal float StatSpeedMult = 1.0f;
-		internal float StatShieldDuration = 4.0f;
-		internal float StatPickupBonus = 1.0f;
-
+		// Track upgrade counts for UI
 		internal Dictionary<string, int> UpgradeCounts = new();
 
 		// Timers
@@ -91,7 +86,10 @@ namespace GameModes.Dude
 
 		public void Init()
 		{
-			// Reset Data
+			// 1. Initialize Content Registry (Load Upgrades/Powerups)
+			ContentRegistry.Init();
+
+			// 2. Reset Data
 			Level = 1;
 			XP = 0;
 			XPToNextLevel = 100;
@@ -100,14 +98,11 @@ namespace GameModes.Dude
 			DudePos = Vec2.Zero;
 			DudeVel = Vec2.Zero;
 
-			// Reset Stats
-			StatMagnetRange = 2.5f;
-			StatDashCooldown = 0.8f;
-			StatSpeedMult = 1.0f;
-			StatShieldDuration = 4.0f;
-			StatPickupBonus = 1.0f;
+			Stats.Reset();
+			Events.Clear();
+			UpgradeCounts.Clear();
 
-			// Entities
+			// 3. Create Entities
 			Bg = SceneFactory.CreateQuad(0, 0, 100, 100, 0.05f, 0.05f, 0.1f, layer: -10);
 			Bg.SetAnchor(0.5f, 0.5f);
 
@@ -132,7 +127,7 @@ namespace GameModes.Dude
 			ScoreText = UIText.Create("0", 48, -13.5f, 7.5f);
 			LevelText = UIText.Create("LVL 1", 32, -13.0f, -6.25f);
 
-			// Start Game
+			// 4. Start Gameplay
 			ChangeState(new StatePlaying());
 		}
 
@@ -166,10 +161,12 @@ namespace GameModes.Dude
 			foreach (var g in Gems) g.Ent.Destroy(); Gems.Clear();
 			foreach (var t in Trails) t.Ent.Destroy(); Trails.Clear();
 			foreach (var p in Particles) p.Ent.Destroy(); Particles.Clear();
+
+			Events.Clear();
+			UpgradeCounts.Clear();
 		}
 
-		// --- PUBLIC HELPERS (Used by states) ---
-
+		// --- PUBLIC HELPER (Used by upgrades/states) ---
 		internal void SpawnExplosion(Vec2 pos, int count, float r, float g, float b)
 		{
 			for (int i = 0; i < count; i++)
@@ -183,9 +180,19 @@ namespace GameModes.Dude
 				Particles.Add(new Particle { Ent = ent, Pos = pos, Vel = vel, Life = 1.0f, InitSize = size });
 			}
 		}
+
+		// --- STAT ACCESSORS (Used by upgrade lambdas) ---
+		internal float StatMagnetRange { get => Stats.MagnetRange; set => Stats.MagnetRange = value; }
+		internal float StatSpeedMult { get => Stats.SpeedMult; set => Stats.SpeedMult = value; }
+		internal float StatDashCooldown { get => Stats.DashCooldown; set => Stats.DashCooldown = value; }
+		internal float StatShieldDuration { get => Stats.ShieldDuration; set => Stats.ShieldDuration = value; }
+		internal float StatPickupBonus { get => Stats.PickupBonus; set => Stats.PickupBonus = value; }
+		internal float StatAccelMult { get => Stats.AccelMult; set => Stats.AccelMult = value; }
+		internal float StatChillDuration { get => Stats.ChillDuration; set => Stats.ChillDuration = value; }
+		internal float StatLuck { get => Stats.Luck; set => Stats.Luck = value; }
+		internal float StatSize { get => Stats.PlayerSize; set => Stats.PlayerSize = value; }
 	}
 
-	// State Interface
 	public interface IDudeState
 	{
 		void Enter(DudeGame game);

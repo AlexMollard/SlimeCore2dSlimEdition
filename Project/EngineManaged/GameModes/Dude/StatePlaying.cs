@@ -12,8 +12,8 @@ namespace GameModes.Dude
 		public void Enter(DudeGame game)
 		{
 			game.DarkOverlay.IsVisible = false;
+			game.CardBgBackdrop.IsVisible = false;
 
-			// Show HUD
 			game.ScoreText.SetVisible(true);
 			game.LevelText.SetVisible(true);
 			game.XPBarBg.IsVisible = true;
@@ -30,6 +30,9 @@ namespace GameModes.Dude
 
 		public void Update(DudeGame game, float dt)
 		{
+			// 1. EVENT HOOK: OnUpdate
+			game.Events.OnUpdate?.Invoke(game, dt);
+
 			UpdateDiscoLights(game, dt);
 			UpdateShake(game, dt);
 			UpdateParticles(game, dt);
@@ -91,19 +94,26 @@ namespace GameModes.Dude
 
 			if (input.LengthSquared() > 0) input = input.Normalized();
 
-			game.DudeVel += input * DudeGame.PLAYER_ACCEL * dt;
-			float dragPower = MathF.Pow(DudeGame.PLAYER_DRAG, dt * 60.0f);
+			// Apply Stats: Acceleration * Multiplier
+			game.DudeVel += input * game.Stats.Acceleration * game.Stats.AccelMult * dt;
+
+			// Apply Drag
+			float dragPower = MathF.Pow(game.Stats.Drag, dt * 60.0f);
 			game.DudeVel *= dragPower;
 
-			float maxSpd = DudeGame.PLAYER_MAX_SPEED * game.StatSpeedMult;
+			// Clamp Max Speed (Base * Multiplier)
+			float maxSpd = game.Stats.MoveSpeed * game.Stats.SpeedMult;
 			if (game.DudeVel.LengthSquared() > maxSpd * maxSpd)
 				game.DudeVel = game.DudeVel.Normalized() * maxSpd;
 
 			if (Input.GetKeyDown(Keycode.SPACE) && game.DashTimer <= 0)
 			{
+				// 2. EVENT HOOK: OnDash
+				game.Events.OnDash?.Invoke(game);
+
 				Vec2 dashDir = input.LengthSquared() > 0 ? input : new Vec2(1, 0);
 				game.DudeVel += dashDir * 40.0f;
-				game.DashTimer = game.StatDashCooldown;
+				game.DashTimer = game.Stats.DashCooldown;
 				game.ShakeAmount = 0.3f;
 				SpawnTrail(game, 1.0f);
 			}
@@ -113,7 +123,6 @@ namespace GameModes.Dude
 		{
 			game.DudePos += game.DudeVel * dt;
 
-			// Bounds
 			if (game.DudePos.X > 14) { game.DudePos.X = 14; game.DudeVel.X *= -0.8f; game.ShakeAmount += 0.1f; }
 			if (game.DudePos.X < -14) { game.DudePos.X = -14; game.DudeVel.X *= -0.8f; game.ShakeAmount += 0.1f; }
 			if (game.DudePos.Y > 9) { game.DudePos.Y = 9; game.DudeVel.Y *= -0.8f; game.ShakeAmount += 0.1f; }
@@ -126,8 +135,14 @@ namespace GameModes.Dude
 			float speed = game.DudeVel.Length();
 			float stretch = 1.0f + (speed * 0.02f);
 			float squash = 1.0f / stretch;
-			if (MathF.Abs(game.DudeVel.X) > MathF.Abs(game.DudeVel.Y)) game.Dude.SetSize(stretch, squash);
-			else game.Dude.SetSize(squash, stretch);
+
+			// Apply Stats: Player Size
+			float baseScale = 0.9f * game.Stats.PlayerSize;
+
+			if (MathF.Abs(game.DudeVel.X) > MathF.Abs(game.DudeVel.Y))
+				game.Dude.SetSize(stretch * baseScale, squash * baseScale);
+			else
+				game.Dude.SetSize(squash * baseScale, stretch * baseScale);
 
 			if (speed > 15.0f) SpawnTrail(game, 0.4f);
 		}
@@ -180,11 +195,16 @@ namespace GameModes.Dude
 				float pulse = baseSize + 0.1f * MathF.Sin(game.TimeAlive * pulseSpeed + i);
 				me.Ent.SetSize(pulse, pulse);
 
-				float killDist = me.Type == HaterType.Chonker ? 1.5f : 0.7f;
+				// Hitbox adjusted by Player Size
+				float killDist = (me.Type == HaterType.Chonker ? 1.5f : 0.7f) * game.Stats.PlayerSize;
+
 				if ((game.DudePos - me.Pos).LengthSquared() < killDist * killDist)
 				{
 					if (game.ShieldTimer > 0)
 					{
+						// 3. EVENT HOOK: OnEnemyKilled
+						game.Events.OnEnemyKilled?.Invoke(game, me.Pos);
+
 						SpawnGem(game, me.Pos, me.Type == HaterType.Chonker ? 50 : 10);
 						me.Ent.Destroy();
 						game.Haters.RemoveAt(i);
@@ -194,6 +214,8 @@ namespace GameModes.Dude
 					}
 					else
 					{
+						// 4. EVENT HOOK: OnDeath
+						game.Events.OnDeath?.Invoke(game);
 						game.ChangeState(new StateGameOver());
 					}
 				}
@@ -202,36 +224,38 @@ namespace GameModes.Dude
 
 		private void HandleCollectables(DudeGame game, float dt)
 		{
-			if (game.Rng.NextDouble() < 0.005) SpawnCollectable(game, CollectableType.Coffee);
-			else if (game.Rng.NextDouble() < 0.001) SpawnCollectable(game, CollectableType.Shield);
-			else if (game.Rng.NextDouble() < 0.002) SpawnCollectable(game, CollectableType.ChillPill);
+			// Use Registry + Luck Stat
+			var def = ContentRegistry.GetRandomPowerup(game.Rng, game.Stats.Luck);
+			if (def != null)
+			{
+				SpawnCollectable(game, def);
+			}
 
 			for (int i = game.Collectables.Count - 1; i >= 0; i--)
 			{
 				var c = game.Collectables[i];
 				float distSq = (game.DudePos - c.Pos).LengthSquared();
-				if (distSq < game.StatMagnetRange * game.StatMagnetRange)
+
+				// Use Stat: Magnet Range
+				if (distSq < game.Stats.MagnetRange * game.Stats.MagnetRange)
 					c.Pos += (game.DudePos - c.Pos).Normalized() * 10.0f * dt;
 
 				c.Ent.SetPosition(c.Pos.X, c.Pos.Y);
 				c.Ent.SetSize(0.6f + 0.1f * MathF.Sin(game.TimeAlive * 8), 0.6f);
 
-				if (distSq < 1.0f)
+				// Use Stat: Player Size for pickup radius
+				if (distSq < 1.0f * game.Stats.PlayerSize)
 				{
-					switch (c.Type)
-					{
-						case CollectableType.Coffee:
-							game.Score += 250; game.DudeVel *= 1.2f;
-							game.XP += 20 * game.StatPickupBonus;
-							CheckLevelUp(game);
-							break;
-						case CollectableType.Shield: game.ShieldTimer = game.StatShieldDuration; game.Score += 100; break;
-						case CollectableType.ChillPill: game.ChillTimer = 4.0f; game.Score += 100; break;
-					}
+					// 5. REGISTRY HOOK: OnPickup
+					c.Definition.OnPickup(game, c.Pos);
+
 					game.ShakeAmount += 0.1f;
-					game.SpawnExplosion(c.Pos, 8, 1f, 1f, 1f);
+					game.SpawnExplosion(c.Pos, 8, c.Definition.R, c.Definition.G, c.Definition.B);
 					c.Ent.Destroy();
 					game.Collectables.RemoveAt(i);
+
+					// Always check level up after pickup (in case it gave XP)
+					CheckLevelUp(game);
 				}
 			}
 		}
@@ -242,15 +266,17 @@ namespace GameModes.Dude
 			{
 				var g = game.Gems[i];
 				float distSq = (game.DudePos - g.Pos).LengthSquared();
-				if (distSq < game.StatMagnetRange * game.StatMagnetRange)
+
+				if (distSq < game.Stats.MagnetRange * game.Stats.MagnetRange)
 				{
 					g.Pos += (game.DudePos - g.Pos).Normalized() * 18.0f * dt;
 				}
 				g.Ent.SetPosition(g.Pos.X, g.Pos.Y);
 
-				if (distSq < 0.5f)
+				if (distSq < 0.5f * game.Stats.PlayerSize)
 				{
-					game.XP += g.Value * game.StatPickupBonus;
+					// Use Stat: Pickup Bonus
+					game.XP += g.Value * game.Stats.PickupBonus;
 					g.Ent.Destroy();
 					game.Gems.RemoveAt(i);
 					CheckLevelUp(game);
@@ -272,6 +298,7 @@ namespace GameModes.Dude
 		}
 
 		// --- SPAWNERS ---
+
 		private void SpawnTrail(DudeGame game, float alphaStart)
 		{
 			var ghost = SceneFactory.CreateQuad(game.DudePos.X, game.DudePos.Y, 0.9f, 0.9f, 0.2f, 1.0f, 0.2f, layer: 15);
@@ -295,19 +322,12 @@ namespace GameModes.Dude
 			game.Haters.Add(new Hater { Ent = ent, Pos = pos, Type = type });
 		}
 
-		private void SpawnCollectable(DudeGame game, CollectableType type)
+		private void SpawnCollectable(DudeGame game, PowerupDef def)
 		{
 			Vec2 pos = new Vec2((game.Rng.NextSingle() * 24) - 12, (game.Rng.NextSingle() * 14) - 7);
-			float r = 0, g = 0, b = 0;
-			switch (type)
-			{
-				case CollectableType.Coffee: r = 0.6f; g = 0.4f; b = 0.2f; break;
-				case CollectableType.Shield: r = 1.0f; g = 0.5f; b = 0.8f; break;
-				case CollectableType.ChillPill: r = 0.0f; g = 1.0f; b = 1.0f; break;
-			}
-			var ent = SceneFactory.CreateQuad(pos.X, pos.Y, 0.6f, 0.6f, r, g, b, layer: 8);
+			var ent = SceneFactory.CreateQuad(pos.X, pos.Y, 0.6f, 0.6f, def.R, def.G, def.B, layer: 8);
 			ent.SetAnchor(0.5f, 0.5f);
-			game.Collectables.Add(new Collectable { Ent = ent, Pos = pos, Type = type });
+			game.Collectables.Add(new Collectable { Ent = ent, Pos = pos, Definition = def });
 		}
 
 		private void SpawnGem(DudeGame game, Vec2 pos, int value)
@@ -322,6 +342,7 @@ namespace GameModes.Dude
 		}
 
 		// --- EFFECTS ---
+
 		private void UpdateTrails(DudeGame game, float dt)
 		{
 			for (int i = game.Trails.Count - 1; i >= 0; i--)
