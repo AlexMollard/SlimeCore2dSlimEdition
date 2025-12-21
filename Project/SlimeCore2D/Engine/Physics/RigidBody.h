@@ -3,7 +3,7 @@
 #include <vector>
 
 #include "BoundingBox.h"
-#include "glm.hpp"
+#include <glm/glm.hpp> 
 
 class RigidBody
 {

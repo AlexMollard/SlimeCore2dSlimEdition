@@ -3,7 +3,7 @@
 #include FT_FREETYPE_H
 #include <map>
 
-#include "glm.hpp"
+#include <glm/glm.hpp> 
 #include "Shader.h"
 
 struct Character

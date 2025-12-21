@@ -1,8 +1,8 @@
 #include "UIManager.h"
 #include "Text.h"
 #include "Renderer2D.h"
-#include "Resources/ResourceManager.h"
-#include "Core/Input.h"
+#include "Engine/Resources/ResourceManager.h"
+#include "Engine/Core/Input.h"
 
 #include <algorithm>
 #include <iostream>

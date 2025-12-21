@@ -4,7 +4,7 @@
 #include <vector>
 
 #include "CollisionManager.h"
-#include "glm.hpp"
+#include <glm/glm.hpp> 
 #include "RigidBody.h"
 
 class PhysicsScene

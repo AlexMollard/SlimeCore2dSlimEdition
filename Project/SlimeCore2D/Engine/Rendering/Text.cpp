@@ -2,12 +2,16 @@
 
 #include <iostream>
 
-#include "glew.h"
-#include "glfw3.h"
-#include "glm.hpp"
-#include "matrix.hpp"
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#include <glm/glm.hpp> 
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/transform.hpp>
 #include "Renderer2D.h"
-#include "Resources/ResourceManager.h"
+#include "Engine/Resources/ResourceManager.h"
 
 Text::Text()
 {

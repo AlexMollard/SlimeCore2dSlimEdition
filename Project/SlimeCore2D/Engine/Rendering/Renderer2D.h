@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 
-#include "Core/Camera.h"
+#include "Engine/Core/Camera.h"
 #include "Quad.h"
 #include "Texture.h"
 

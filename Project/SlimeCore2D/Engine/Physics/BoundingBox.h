@@ -1,6 +1,6 @@
 #pragma once
-#include "Core/Input.h"
-#include "glm.hpp"
+#include <glm/glm.hpp> 
+#include "Engine/Core/Input.h"
 
 class BoundingBox
 {

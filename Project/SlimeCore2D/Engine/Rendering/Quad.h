@@ -1,5 +1,5 @@
 #pragma once
-#include "Entities/GameObject.h"
+#include "Game/Entities/GameObject.h"
 
 class Quad : public GameObject
 {

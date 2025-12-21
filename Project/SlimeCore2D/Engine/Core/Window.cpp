@@ -1,5 +1,5 @@
 #include "Window.h"
-#include "Scripting/EngineExports.h"
+#include "Engine/Scripting/EngineExports.h"
 #include "Input.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -7,7 +7,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 Window::Window(int width, int height, char* name)
 {
 	// Check for Memory Leaks
-	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+	//_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 
 	if (!Window_intit(width, height, name))
 	{
@@ -20,7 +20,7 @@ Window::~Window()
 	Window_destroy();
 }
 
-SLIME_EXPORT void __cdecl Engine_SetClearColor(float r, float g, float b)
+SLIME_API void SLIME_CALL Engine_SetClearColor(float r, float g, float b)
 { 
 	glClearColor(r, g, b, 1.0f);
 }

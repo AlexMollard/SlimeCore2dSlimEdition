@@ -1,6 +1,6 @@
 #include "ResourceManager.h"
 
-#include "Rendering/Shader.h"
+#include "Engine/Rendering/Shader.h"
 
 #if defined(_WIN32)
 #	include <windows.h>
@@ -217,7 +217,7 @@ bool ResourceManager::LoadShadersFromDir(const std::string& dir)
 	FindClose(hFind);
 #else
 	DIR* dir = opendir(chosen.c_str());
-	if (!dir)
+	if (chosen.empty())
 	{
 		std::cout << "ResourceManager: directory exists but could not open: " << chosen << " (" << strerror(errno) << ")" << std::endl;
 		return false;

@@ -6,8 +6,8 @@
 #include <iostream>
 #include <map>
 
-#include "Math.h"
-#include "Resources/ResourceManager.h"
+#include "Engine/Core/Math.h"
+#include "Engine/Resources/ResourceManager.h"
 #include "UIManager.h"
 
 std::vector<glm::vec2> Renderer2D::m_UVs;

@@ -1,9 +1,9 @@
 #pragma once
 #include <string>
 
-#include "glew.h"
-#include "glfw3.h"
-#include "glm.hpp"
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#include <glm/glm.hpp> 
 
 class Shader
 {
