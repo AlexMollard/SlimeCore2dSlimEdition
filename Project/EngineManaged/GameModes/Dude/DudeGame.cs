@@ -64,6 +64,8 @@ namespace GameModes.Dude
 		internal float StatShieldDuration = 4.0f;
 		internal float StatPickupBonus = 1.0f;
 
+		internal Dictionary<string, int> UpgradeCounts = new();
+
 		// Timers
 		internal float DashTimer;
 		internal float ShieldTimer;
@@ -127,7 +129,7 @@ namespace GameModes.Dude
 			XPBarFill.SetAnchor(0.0f, 0.5f);
 
 			// UI
-			ScoreText = UIText.Create("0", 48, -13.5f, 8.5f);
+			ScoreText = UIText.Create("0", 48, -13.5f, 7.5f);
 			LevelText = UIText.Create("LVL 1", 32, -13.0f, -6.25f);
 
 			// Start Game

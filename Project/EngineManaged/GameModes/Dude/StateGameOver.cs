@@ -22,7 +22,7 @@ namespace GameModes.Dude
 			game.SpawnExplosion(game.DudePos, 15, 1.0f, 0.0f, 0.0f);
 
 			// Hide Game UI
-			game.Dude.Destroy(); // Actually destroy/hide player
+			game.Dude.Destroy();
 			game.ScoreText.SetVisible(false);
 			game.LevelText.SetVisible(false);
 			game.XPBarBg.IsVisible = false;
@@ -41,8 +41,14 @@ namespace GameModes.Dude
 			_finalScoreText.SetColor(1, 1, 1);
 			_finalScoreText.SetAnchor(0.5f, 0.5f);
 
+			// --- FIX IS HERE ---
 			_retryBtn = UIButton.Create("AGAIN", 0, -2.5f, 6, 2, 0.2f, 0.8f, 0.2f);
-			_retryBtn.Clicked += () => game.Init(); // Restart
+			_retryBtn.Clicked += () =>
+			{
+				// We must destroy the old Red Overlay (and BG/Player) before making new ones!
+				game.Shutdown();
+				game.Init();
+			};
 
 			_quitBtn = UIButton.Create("MENU", 0, -5.5f, 6, 2, 0.8f, 0.2f, 0.2f);
 			_quitBtn.Clicked += () => GameManager.LoadMode(new GameModes.Snake.SnakeGame());
@@ -54,6 +60,11 @@ namespace GameModes.Dude
 			_finalScoreText.Destroy();
 			_retryBtn.Destroy();
 			_quitBtn.Destroy();
+
+			// Optional Safety: Hide the overlay when leaving this state
+			// (Though Shutdown() destroys it anyway, this helps if you switch states without full shutdown)
+			if (game.DarkOverlay.IsAlive)
+				game.DarkOverlay.IsVisible = false;
 
 			// Clean up entities now so Init can start fresh
 			foreach (var h in game.Haters) h.Ent.Destroy(); game.Haters.Clear();
@@ -76,10 +87,6 @@ namespace GameModes.Dude
 			float shakeY = (float)(game.Rng.NextDouble() - 0.5f) * 4.0f;
 			_gameOverText.SetPosition(shakeX, 3 + shakeY);
 
-			// Keep updating particles so explosion finishes
-			// We have to call the logic manually or expose UpdateParticles from StatePlaying
-			// For now, let's just duplicate the particle update logic here or make it a public static helper
-			// Simple inline update:
 			for (int i = game.Particles.Count - 1; i >= 0; i--)
 			{
 				var p = game.Particles[i];

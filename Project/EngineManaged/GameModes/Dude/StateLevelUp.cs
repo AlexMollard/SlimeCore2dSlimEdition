@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using EngineManaged.Scene;
 using EngineManaged.UI;
-using EngineManaged;
+using EngineManaged; // For Input
 
 namespace GameModes.Dude
 {
@@ -11,6 +11,11 @@ namespace GameModes.Dude
 		private UIText _upgradeTitle;
 		private UIText _subTitle;
 		private List<UpgradeCard> _cards = new();
+
+		// Sidebar UI
+		private List<UIText> _sidebarText = new();
+		private UIText _sidebarHeader;
+
 		private float _animTime = 0f;
 
 		public void Enter(DudeGame game)
@@ -26,6 +31,7 @@ namespace GameModes.Dude
 			_subTitle.SetAnchor(0.5f, 0.5f);
 			_subTitle.SetColor(0.8f, 0.8f, 0.8f);
 
+			CreateSidebar(game);
 			SpawnCards(game);
 		}
 
@@ -35,6 +41,11 @@ namespace GameModes.Dude
 			_subTitle.Destroy();
 			foreach (var c in _cards) c.Destroy();
 			_cards.Clear();
+
+			// Destroy Sidebar
+			_sidebarHeader.Destroy();
+			foreach (var t in _sidebarText) t.Destroy();
+			_sidebarText.Clear();
 
 			game.CardBgBackdrop.IsVisible = false;
 
@@ -78,10 +89,38 @@ namespace GameModes.Dude
 				// Click
 				if (hovered && mouseDown)
 				{
+					// Track Logic: Increment Level
+					if (!game.UpgradeCounts.ContainsKey(card.Def.Title))
+						game.UpgradeCounts[card.Def.Title] = 0;
+					game.UpgradeCounts[card.Def.Title]++;
+
+					// Gameplay Logic
 					card.Def.Action.Invoke();
+
 					game.ChangeState(new StatePlaying());
 					return;
 				}
+			}
+		}
+
+		private void CreateSidebar(DudeGame game)
+		{
+			float xPos = 13.0f;
+			float yStart = 5.0f;
+
+			_sidebarHeader = UIText.Create("CURRENT BUILD", 32, xPos, yStart);
+			_sidebarHeader.SetAnchor(0.5f, 0.5f);
+			_sidebarHeader.SetColor(0.6f, 1.0f, 0.6f);
+
+			int i = 0;
+			foreach (var kvp in game.UpgradeCounts)
+			{
+				string text = $"{kvp.Key} x{kvp.Value}";
+				var ui = UIText.Create(text, 24, xPos, yStart - 1.5f - (i * 1.0f));
+				ui.SetAnchor(0.5f, 0.5f);
+				ui.SetColor(1, 1, 1);
+				_sidebarText.Add(ui);
+				i++;
 			}
 		}
 
@@ -104,14 +143,18 @@ namespace GameModes.Dude
 				new UpgradeDef("GREED", "+20% XP Gain", 1.0f, 0.9f, 0.1f, () => game.StatPickupBonus *= 1.2f)
 			};
 
-			float startX = -7.0f;
+			float startX = -7.0f; // Shifted left slightly to make room for sidebar
 			float gap = 7.0f;
 
 			for (int i = 0; i < 3; i++)
 			{
 				var def = pool[game.Rng.Next(pool.Count)];
 				float xPos = startX + (i * gap);
-				var card = new UpgradeCard(xPos, 0, def);
+
+				// Determine current level for this specific card
+				int currentLvl = game.UpgradeCounts.ContainsKey(def.Title) ? game.UpgradeCounts[def.Title] : 0;
+
+				var card = new UpgradeCard(xPos, 0, def, currentLvl + 1);
 				_cards.Add(card);
 			}
 		}
@@ -139,11 +182,12 @@ namespace GameModes.Dude
 			private Entity _bg;
 			private UIText _title;
 			private UIText _desc;
+			private UIText _lvlLabel; // NEW
 
 			private const float W = 6.0f;
 			private const float H = 9.0f;
 
-			public UpgradeCard(float x, float y, UpgradeDef def)
+			public UpgradeCard(float x, float y, UpgradeDef def, int nextLevel)
 			{
 				BaseX = x;
 				Def = def;
@@ -167,8 +211,12 @@ namespace GameModes.Dude
 				_desc.SetColor(0.1f, 0.1f, 0.1f);
 				_desc.SetLayer(95);
 
-				// --- FIX: Force initial position off-screen immediately ---
-				// This prevents the "flash" at Y=0 before the update loop runs
+				// LVL LABEL
+				_lvlLabel = UIText.Create($"LVL {nextLevel}", 32, x, y - 3.0f);
+				_lvlLabel.SetAnchor(0.5f, 0.5f);
+				_lvlLabel.SetColor(0.1f, 0.1f, 0.1f);
+				_lvlLabel.SetLayer(95);
+
 				SetPosition(x, -15.0f);
 			}
 
@@ -178,7 +226,8 @@ namespace GameModes.Dude
 				_border.SetPosition(x, y);
 				_bg.SetPosition(x, y);
 				_title.SetPosition(x, y + 2.0f * Scale);
-				_desc.SetPosition(x, y - 1.0f * Scale);
+				_desc.SetPosition(x, y - 0.5f * Scale);
+				_lvlLabel.SetPosition(x, y - 3.5f * Scale);
 			}
 
 			public void SetScale(float s)
@@ -202,6 +251,7 @@ namespace GameModes.Dude
 				_bg.Destroy();
 				_title.Destroy();
 				_desc.Destroy();
+				_lvlLabel.Destroy();
 			}
 		}
 	}
