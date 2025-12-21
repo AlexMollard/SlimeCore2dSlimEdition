@@ -1,4 +1,5 @@
-﻿using GameModes.Snake;
+﻿using GameModes.Dude;
+using GameModes.Snake;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -8,7 +9,7 @@ public static class GameHost
     [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
     public static void Init()
     {
-        GameManager.LoadMode(new SnakeGame());
+        GameManager.LoadMode(new DudeGame());
     }
 
     // The C++ Engine calls this every frame

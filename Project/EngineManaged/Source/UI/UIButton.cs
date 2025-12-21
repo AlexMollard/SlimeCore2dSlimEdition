@@ -1,13 +1,12 @@
-﻿using EngineManaged.Scene;
-using System;
-using System.Reflection.PortableExecutable;
+﻿using System;
+using EngineManaged.Scene;
 
 namespace EngineManaged.UI
 {
 	public class UIButton
 	{
-		public Entity Background { get; }
-		public UIText Label { get; }
+		public readonly Entity Background;
+		public readonly UIText Label;
 
 		public bool Enabled { get; set; } = true;
 		public int Layer { get; private set; }
@@ -25,7 +24,6 @@ namespace EngineManaged.UI
 
 		private const float ColorLerp = 0.18f;
 
-		// Constructor is private; use Create factory
 		private UIButton(Entity bg, UIText label, int layer, float r, float g, float b)
 		{
 			Background = bg;
@@ -39,17 +37,15 @@ namespace EngineManaged.UI
 
 		public static UIButton Create(string text, float x, float y, float w, float h, float r = 0.2f, float g = 0.2f, float b = 0.2f, int layer = 100, int fontSize = 42)
 		{
-			// Update: Use the new SceneFactory
 			var bg = SceneFactory.CreateQuad(x, y, w, h, r, g, b, layer);
 			bg.SetAnchor(0.5f, 0.5f);
 
 			var lbl = UIText.Create(text, fontSize, x, y);
 			lbl.SetAnchor(0.5f, 0.5f);
-			lbl.SetLayer(layer + 1); // Text always on top of button
+			lbl.SetLayer(layer + 1);
 
 			var btn = new UIButton(bg, lbl, layer, r, g, b);
 
-			// Register with the System automatically
 			UISystem.Register(btn);
 
 			return btn;
@@ -62,6 +58,31 @@ namespace EngineManaged.UI
 			UISystem.Unregister(this);
 		}
 
+		// ---------------------------------------------------------------------
+		// Wrapper Methods (Fixes 'does not contain definition' errors)
+		// ---------------------------------------------------------------------
+
+		public void SetVisible(bool visible)
+		{
+			Background.IsVisible = visible;
+			Label.SetVisible(visible);
+		}
+
+		public void SetText(string text)
+		{
+			Label.Text = text;
+		}
+
+		public void SetPosition(float x, float y)
+		{
+			Background.SetPosition(x, y);
+			Label.SetPosition(x, y);
+		}
+
+		// ---------------------------------------------------------------------
+		// Events & Visuals
+		// ---------------------------------------------------------------------
+
 		public event Action Clicked
 		{
 			add => _onClick += value;
@@ -73,7 +94,6 @@ namespace EngineManaged.UI
 		public void SetBaseColor(float r, float g, float b)
 		{
 			_baseR = r; _baseG = g; _baseB = b;
-			// Auto-calculate states
 			_hoverR = Math.Min(1f, r * 1.2f); _hoverG = Math.Min(1f, g * 1.2f); _hoverB = Math.Min(1f, b * 1.2f);
 			_pressR = Math.Max(0f, r * 0.8f); _pressG = Math.Max(0f, g * 0.8f); _pressB = Math.Max(0f, b * 0.8f);
 		}
@@ -82,7 +102,6 @@ namespace EngineManaged.UI
 		{
 			var (bx, by) = Background.GetPosition();
 			var (w, h) = Background.GetSize();
-			// Simple AABB check
 			return (mx > bx - w / 2 && mx < bx + w / 2 && my > by - h / 2 && my < by + h / 2);
 		}
 
