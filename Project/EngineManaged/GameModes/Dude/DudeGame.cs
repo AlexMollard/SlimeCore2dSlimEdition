@@ -7,17 +7,17 @@ namespace SlimeCore.GameModes;
 
 internal class DudeGame : IGameMode
 {
-    public static void Init()
+    public void Init()
     {
         throw new NotImplementedException();
     }
 
-    public static void Shutdown()
+    public void Shutdown()
     {
         throw new NotImplementedException();
     }
 
-    public static void Update(float deltaTime)
+    public void Update(float deltaTime)
     {
         throw new NotImplementedException();
     }
