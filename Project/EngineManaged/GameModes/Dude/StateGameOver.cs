@@ -1,72 +1,98 @@
 ﻿using System;
 using EngineManaged.Scene;
 using EngineManaged.UI;
+using EngineManaged; // For Input
 
 namespace GameModes.Dude
 {
 	public class StateGameOver : IDudeState
 	{
 		private UIText _gameOverText;
-		private UIText _finalScoreText;
+
+		// Stats Panel UI
+		private Entity _panelBg;
+		private Entity _panelBorder;
+		private UIText _scoreLabel;
+		private UIText _levelLabel;
+		private UIText _timeLabel;
+
 		private UIButton _retryBtn;
-		private UIButton _quitBtn;
 		private float _animTimer;
 
 		public void Enter(DudeGame game)
 		{
 			_animTimer = 0;
-			game.ShakeAmount = 1.5f;
+			game.ShakeAmount = 2.0f;
 
-			// Explosion
-			game.SpawnExplosion(game.DudePos, 30, 0.2f, 1.0f, 0.2f);
-			game.SpawnExplosion(game.DudePos, 15, 1.0f, 0.0f, 0.0f);
-
-			// Hide Game UI
+			// 1. Cleanup Gameplay
 			game.Dude.Destroy();
 			game.ScoreText.SetVisible(false);
 			game.LevelText.SetVisible(false);
 			game.XPBarBg.IsVisible = false;
 			game.XPBarFill.IsVisible = false;
 
-			// Show Death UI
-			game.DarkOverlay.SetColor(0.2f, 0, 0);
+			game.SpawnExplosion(game.DudePos, 50, 0.8f, 0.0f, 0.0f);
+			game.SpawnExplosion(game.DudePos, 20, 1.0f, 1.0f, 1.0f);
+
+			game.DarkOverlay.SetColor(0.2f, 0.0f, 0.0f);
 			game.DarkOverlay.IsVisible = true;
 			game.Bg.SetColor(0, 0, 0);
 
-			_gameOverText = UIText.Create("WASTED", 120, 0, 3);
+			// 2. UI Construction
+
+			_gameOverText = UIText.Create("WASTED", 100, 0, 6.0f);
 			_gameOverText.SetColor(1, 0, 0);
 			_gameOverText.SetAnchor(0.5f, 0.5f);
 
-			_finalScoreText = UIText.Create($"FINAL VIBE: {(int)game.Score}", 42, 0, 0.5f);
-			_finalScoreText.SetColor(1, 1, 1);
-			_finalScoreText.SetAnchor(0.5f, 0.5f);
+			// Panel Background (14x10 to fit button comfortably)
+			_panelBorder = SceneFactory.CreateQuad(0, -15, 14.5f, 10.5f, 0.8f, 0f, 0f, layer: 91);
+			_panelBorder.SetAnchor(0.5f, 0.5f);
 
-			// --- FIX IS HERE ---
-			_retryBtn = UIButton.Create("AGAIN", 0, -2.5f, 6, 2, 0.2f, 0.8f, 0.2f);
+			_panelBg = SceneFactory.CreateQuad(0, -15, 14.0f, 10.0f, 0.1f, 0.1f, 0.1f, layer: 92);
+			_panelBg.SetAnchor(0.5f, 0.5f);
+
+			// Stats Text
+			_scoreLabel = UIText.Create($"SCORE: {(int)game.Score}", 48, 0, -15);
+			_scoreLabel.SetAnchor(0.5f, 0.5f);
+			_scoreLabel.SetColor(1, 1, 1);
+			_scoreLabel.SetLayer(95);
+
+			_levelLabel = UIText.Create($"LEVEL REACHED: {game.Level}", 32, 0, -15);
+			_levelLabel.SetAnchor(0.5f, 0.5f);
+			_levelLabel.SetColor(0.2f, 1.0f, 1.0f);
+			_levelLabel.SetLayer(95);
+
+			_timeLabel = UIText.Create($"TIME ALIVE: {game.TimeAlive:F1}s", 32, 0, -15);
+			_timeLabel.SetAnchor(0.5f, 0.5f);
+			_timeLabel.SetColor(0.7f, 0.7f, 0.7f);
+			_timeLabel.SetLayer(95);
+
+			// --- STYLED RETRY BUTTON ---
+			// Bright Cyan Background
+			_retryBtn = UIButton.Create("TRY AGAIN", 0, -15, 10.0f, 2.0f, 0.0f, 0.8f, 1.0f, layer: 96, fontSize: 36);
+
+			// Set Text to Black for contrast
+			_retryBtn.Label.SetColor(0.1f, 0.1f, 0.1f);
+
 			_retryBtn.Clicked += () =>
 			{
-				// We must destroy the old Red Overlay (and BG/Player) before making new ones!
 				game.Shutdown();
 				game.Init();
 			};
-
-			_quitBtn = UIButton.Create("MENU", 0, -5.5f, 6, 2, 0.8f, 0.2f, 0.2f);
-			_quitBtn.Clicked += () => GameManager.LoadMode(new GameModes.Snake.SnakeGame());
 		}
 
 		public void Exit(DudeGame game)
 		{
 			_gameOverText.Destroy();
-			_finalScoreText.Destroy();
+			_panelBg.Destroy();
+			_panelBorder.Destroy();
+			_scoreLabel.Destroy();
+			_levelLabel.Destroy();
+			_timeLabel.Destroy();
 			_retryBtn.Destroy();
-			_quitBtn.Destroy();
 
-			// Optional Safety: Hide the overlay when leaving this state
-			// (Though Shutdown() destroys it anyway, this helps if you switch states without full shutdown)
-			if (game.DarkOverlay.IsAlive)
-				game.DarkOverlay.IsVisible = false;
+			if (game.DarkOverlay.IsAlive) game.DarkOverlay.IsVisible = false;
 
-			// Clean up entities now so Init can start fresh
 			foreach (var h in game.Haters) h.Ent.Destroy(); game.Haters.Clear();
 			foreach (var c in game.Collectables) c.Ent.Destroy(); game.Collectables.Clear();
 			foreach (var g in game.Gems) g.Ent.Destroy(); game.Gems.Clear();
@@ -77,27 +103,49 @@ namespace GameModes.Dude
 		public void Update(DudeGame game, float dt)
 		{
 			_animTimer += dt;
+			game.ShakeAmount = MathF.Max(0, game.ShakeAmount - dt);
 
-			// Animate Text Slam
-			float t = MathF.Min(1.0f, _animTimer * 1.0f);
-			float scale = 120.0f;
-			if (t < 1.0f) scale = 300.0f - (180.0f * t);
+			// 1. Animate Title
+			float shakeX = (float)(game.Rng.NextDouble() - 0.5f) * game.ShakeAmount * 5.0f;
+			float shakeY = (float)(game.Rng.NextDouble() - 0.5f) * game.ShakeAmount * 5.0f;
+			_gameOverText.SetPosition(shakeX, 6.0f + shakeY);
 
-			float shakeX = (float)(game.Rng.NextDouble() - 0.5f) * 4.0f;
-			float shakeY = (float)(game.Rng.NextDouble() - 0.5f) * 4.0f;
-			_gameOverText.SetPosition(shakeX, 3 + shakeY);
+			// 2. Animate Panel Slide Up
+			float slideT = MathF.Min(1.0f, _animTimer * 1.5f);
+			float panelY = Lerp(-18.0f, -1.0f, EaseOutBack(slideT)); // Target Y = -1 to center visually
 
+			_panelBg.SetPosition(0, panelY);
+			_panelBorder.SetPosition(0, panelY);
+
+			// Layout Elements inside Panel
+			_scoreLabel.SetPosition(0, panelY + 3.0f);
+			_levelLabel.SetPosition(0, panelY + 1.0f);
+			_timeLabel.SetPosition(0, panelY - 0.5f);
+
+			// Animate Button WITH the panel
+			_retryBtn.SetPosition(0, panelY - 3.5f);
+
+			// 3. Particles
 			for (int i = game.Particles.Count - 1; i >= 0; i--)
 			{
 				var p = game.Particles[i];
-				p.Life -= dt * 1.5f;
+				p.Life -= dt * 0.5f;
 				if (p.Life <= 0) { p.Ent.Destroy(); game.Particles.RemoveAt(i); }
 				else
 				{
-					p.Pos += p.Vel * dt; p.Vel *= 0.95f; p.Ent.SetPosition(p.Pos.X, p.Pos.Y);
+					p.Pos += p.Vel * dt; p.Vel *= 0.9f; p.Ent.SetPosition(p.Pos.X, p.Pos.Y);
 					float s = p.InitSize * p.Life; p.Ent.SetSize(s, s);
 				}
 			}
+		}
+
+		private float Lerp(float a, float b, float t) => a + (b - a) * t;
+
+		private float EaseOutBack(float x)
+		{
+			float c1 = 1.70158f;
+			float c3 = c1 + 1;
+			return 1 + c3 * MathF.Pow(x - 1, 3) + c1 * MathF.Pow(x - 1, 2);
 		}
 	}
 }
