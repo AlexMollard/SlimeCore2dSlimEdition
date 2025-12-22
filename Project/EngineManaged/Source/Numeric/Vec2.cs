@@ -28,7 +28,8 @@ namespace EngineManaged.Numeric
         public float Length() => MathF.Sqrt(X * X + Y * Y);
         public float LengthSquared() => X * X + Y * Y;
         public Vec2 Normalized() { float len = Length(); return len > 0.0001f ? this / len : new Vec2(0, 0); }
-        public static float Dot(in Vec2 a, in Vec2 b) => a.X * b.X + a.Y * b.Y;
+		public static Vec2 Lerp(in Vec2 a, in Vec2 b, float t) => a + (b - a) * t;
+		public static float Dot(in Vec2 a, in Vec2 b) => a.X * b.X + a.Y * b.Y;
         public static float Distance(in Vec2 a, in Vec2 b) => (a - b).Length();
 
         // -----------------------------------------------------------------

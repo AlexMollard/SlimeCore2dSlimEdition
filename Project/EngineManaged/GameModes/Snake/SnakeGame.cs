@@ -370,14 +370,11 @@ namespace GameModes.Snake
 
 		private void Render(float interp)
 		{
-			// FIX: Manually implemented Floor logic instead of calling missing .ToVec2Floor()
 			Vec2 camFloor = new Vec2((float)Math.Floor(_cam.X), (float)Math.Floor(_cam.Y));
 			Vec2 camFrac = _cam - camFloor;
 
-			Vec2 shakeVec = new Vec2(((float)_rng.NextDouble() - 0.5f) * _shake,
-									 ((float)_rng.NextDouble() - 0.5f) * _shake);
+			Vec2 shakeVec = new Vec2(((float)_rng.NextDouble() - 0.5f) * _shake, ((float)_rng.NextDouble() - 0.5f) * _shake);
 
-			// FIX: Used (-1.0f * vec) instead of unary operator (-vec)
 			Vec2 headScr = (camFrac * -1.0f + shakeVec) * _cellSpacing;
 
 			Vec2i headPos = _snake[0];

@@ -57,7 +57,7 @@ namespace GameModes.Dude
 			float targetWidth = (game.XP / game.XPToNextLevel) * 28.0f;
 			if (targetWidth > 28) targetWidth = 28;
 			var (curW, curH) = game.XPBarFill.GetSize();
-			float newW = curW + (targetWidth - curW) * 5.0f * dt;
+			float newW = Ease.Lerp(curW, targetWidth, 5.0f * dt);
 			game.XPBarFill.SetSize(newW, 0.6f);
 		}
 

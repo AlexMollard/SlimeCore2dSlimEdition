@@ -116,7 +116,7 @@ namespace GameModes.Dude
 
 			// 2. Animate Panel Slide Up
 			float slideT = MathF.Min(1.0f, _animTimer * 1.5f);
-			float panelY = Lerp(-18.0f, -1.0f, EaseOutBack(slideT)); // Target Y = -1 to center visually
+			float panelY = Ease.Lerp(-18.0f, -1.0f, Ease.OutBack(slideT));
 
 			_panelBg.SetPosition(0, panelY);
 			_panelBorder.SetPosition(0, panelY);
@@ -146,15 +146,6 @@ namespace GameModes.Dude
 					p.Ent.SetSize(s, s);
 				}
 			}
-		}
-
-		private float Lerp(float a, float b, float t) => a + (b - a) * t;
-
-		private float EaseOutBack(float x)
-		{
-			float c1 = 1.70158f;
-			float c3 = c1 + 1;
-			return 1 + c3 * MathF.Pow(x - 1, 3) + c1 * MathF.Pow(x - 1, 2);
 		}
 	}
 }
