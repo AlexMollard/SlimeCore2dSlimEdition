@@ -95,6 +95,8 @@ namespace GameModes.Snake
 			_seedLabel = UIText.Create($"SEED: {_seed}", 28, -13.0f, 8.0f);
 			_seedLabel.SetVisible(true);
 
+			_world = new GridSystem<Terrain>(WORLD_W, WORLD_H, Terrain.Grass);
+
 			ResetGameLogic();
 
 			for (int x = 0; x < VIEW_W; x++)
