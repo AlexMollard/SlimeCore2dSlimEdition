@@ -1,98 +1,97 @@
-﻿namespace EngineManaged.Scene
+﻿namespace EngineManaged.Scene;
+
+public readonly struct Entity
 {
-	public readonly struct Entity
+	public readonly ulong Id;
+
+	public Entity(ulong id) => Id = id;
+
+	// Valid check
+	public bool IsAlive => Id != 0 && Native.Entity_IsAlive(Id);
+
+	// ---------------------------------------------------------------------
+	// C# Properties (Syntactic sugar over Native Setters/Getters)
+	// ---------------------------------------------------------------------
+
+	public bool IsVisible
 	{
-		public readonly ulong Id;
+		get => Native.Entity_GetRender(Id);
+		set => Native.Entity_SetRender(Id, value);
+	}
 
-		public Entity(ulong id) => Id = id;
+	public int Layer
+	{
+		get => Native.Entity_GetLayer(Id);
+		set => Native.Entity_SetLayer(Id, value);
+	}
 
-		// Valid check
-		public bool IsAlive => Id != 0 && Native.Entity_IsAlive(Id);
+	public int Frame
+	{
+		get => Native.Entity_GetFrame(Id);
+		set => Native.Entity_SetFrame(Id, value);
+	}
 
-		// ---------------------------------------------------------------------
-		// C# Properties (Syntactic sugar over Native Setters/Getters)
-		// ---------------------------------------------------------------------
+	public float FrameRate
+	{
+		get => Native.Entity_GetFrameRate(Id);
+		set => Native.Entity_SetFrameRate(Id, value);
+	}
 
-		public bool IsVisible
-		{
-			get => Native.Entity_GetRender(Id);
-			set => Native.Entity_SetRender(Id, value);
-		}
+	public int SpriteWidth
+	{
+		get => Native.Entity_GetSpriteWidth(Id);
+		set => Native.Entity_SetSpriteWidth(Id, value);
+	}
 
-		public int Layer
-		{
-			get => Native.Entity_GetLayer(Id);
-			set => Native.Entity_SetLayer(Id, value);
-		}
+	// ---------------------------------------------------------------------
+	// Transform Methods
+	// ---------------------------------------------------------------------
 
-		public int Frame
-		{
-			get => Native.Entity_GetFrame(Id);
-			set => Native.Entity_SetFrame(Id, value);
-		}
+	public void SetPosition(float x, float y) => Native.Entity_SetPosition(Id, x, y);
 
-		public float FrameRate
-		{
-			get => Native.Entity_GetFrameRate(Id);
-			set => Native.Entity_SetFrameRate(Id, value);
-		}
+	public (float x, float y) GetPosition()
+	{
+		Native.Entity_GetPosition(Id, out var x, out var y);
+		return (x, y);
+	}
 
-		public int SpriteWidth
-		{
-			get => Native.Entity_GetSpriteWidth(Id);
-			set => Native.Entity_SetSpriteWidth(Id, value);
-		}
+	public void SetSize(float w, float h) => Native.Entity_SetSize(Id, w, h);
 
-		// ---------------------------------------------------------------------
-		// Transform Methods
-		// ---------------------------------------------------------------------
+	public (float w, float h) GetSize()
+	{
+		Native.Entity_GetSize(Id, out var w, out var h);
+		return (w, h);
+	}
 
-		public void SetPosition(float x, float y) => Native.Entity_SetPosition(Id, x, y);
+	public void SetAnchor(float ax, float ay) => Native.Entity_SetAnchor(Id, ax, ay);
 
-		public (float x, float y) GetPosition()
-		{
-			Native.Entity_GetPosition(Id, out var x, out var y);
-			return (x, y);
-		}
+	public (float x, float y) GetAnchor()
+	{
+		Native.Entity_GetAnchor(Id, out var x, out var y);
+		return (x, y);
+	}
 
-		public void SetSize(float w, float h) => Native.Entity_SetSize(Id, w, h);
+	// ---------------------------------------------------------------------
+	// Visual Methods
+	// ---------------------------------------------------------------------
 
-		public (float w, float h) GetSize()
-		{
-			Native.Entity_GetSize(Id, out var w, out var h);
-			return (w, h);
-		}
+	public void SetColor(float r, float g, float b) => Native.Entity_SetColor(Id, r, g, b);
 
-		public void SetAnchor(float ax, float ay) => Native.Entity_SetAnchor(Id, ax, ay);
+	public void SetTexture(uint texId, int width, int height) => Native.Entity_SetTexture(Id, texId, width, height);
 
-		public (float x, float y) GetAnchor()
-		{
-			Native.Entity_GetAnchor(Id, out var x, out var y);
-			return (x, y);
-		}
+	public void SetHasAnimation(bool value) => Native.Entity_SetHasAnimation(Id, value);
 
-		// ---------------------------------------------------------------------
-		// Visual Methods
-		// ---------------------------------------------------------------------
+	public void AdvanceFrame() => Native.Entity_AdvanceFrame(Id);
 
-		public void SetColor(float r, float g, float b) => Native.Entity_SetColor(Id, r, g, b);
+	// ---------------------------------------------------------------------
+	// Lifecycle
+	// ---------------------------------------------------------------------
 
-		public void SetTexture(uint texId, int width, int height) => Native.Entity_SetTexture(Id, texId, width, height);
-
-		public void SetHasAnimation(bool value) => Native.Entity_SetHasAnimation(Id, value);
-
-		public void AdvanceFrame() => Native.Entity_AdvanceFrame(Id);
-
-		// ---------------------------------------------------------------------
-		// Lifecycle
-		// ---------------------------------------------------------------------
-
-		/// <summary>
-		/// Marks the entity for destruction in the native engine.
-		/// </summary>
-		public void Destroy()
-		{
-			if (Id != 0) Native.ObjectManager_Destroy(Id);
-		}
+	/// <summary>
+	/// Marks the entity for destruction in the native engine.
+	/// </summary>
+	public void Destroy()
+	{
+		if (Id != 0) Native.ObjectManager_Destroy(Id);
 	}
 }

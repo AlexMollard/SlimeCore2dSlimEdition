@@ -1,4 +1,4 @@
-﻿using SlimeCore.Core.Grid;
+using SlimeCore.Core.Grid;
 using SlimeCore.Core.World;
 using SlimeCore.Interfaces;
 using EngineManaged.Scene;
@@ -11,10 +11,13 @@ namespace GameModes.Snake
 {
 	public class SnakeGame : IGameMode
 	{
-		private const int VIEW_W = 100;
+        private const int VIEW_W = 100;
 		private const int VIEW_H = 75;
+
 		private const int WORLD_W = 240;
 		private const int WORLD_H = 240;
+        private GridSystem<Terrain> _world { get; set; }
+
 
 		private static float _cellSize = 0.4f;
 		private static float _cellSpacing = 0.4f;
@@ -62,7 +65,7 @@ namespace GameModes.Snake
 		private const int SCORE_FONT_SIZE = 52;
 		private static int _currentScore = 0;
 
-		private static Tile<Terrain>[,] _world = new Tile<Terrain>[WORLD_W, WORLD_H];
+		
 		private static Random _rng = new Random();
 		private static int _seed = 0;
 
