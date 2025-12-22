@@ -5,12 +5,13 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 #include "Core/Input.h"
 #include "Rendering/Renderer2D.h"
 #include "Rendering/Text.h"
 #include "Rendering/Texture.h"
-#include "Rendering/UIManager.h" // Optional, if you still use it for setup
+#include "Rendering/UIManager.h"
 #include "Resources/ResourceManager.h"
 #include "Utils/ObjectManager.h"
 
@@ -40,6 +41,7 @@ struct PersistentUIElement
 
 // Global storage for UI and Fonts
 static std::map<int, PersistentUIElement> s_UIElements;
+static std::unordered_map<std::string, Texture*> s_TextureCache;
 static std::vector<Text*> s_LoadedFonts;
 static int s_NextUIID = 1;
 
@@ -204,6 +206,30 @@ SLIME_EXPORT int __cdecl Entity_GetLayer(EntityId id)
 	return 0;
 }
 
+SLIME_EXPORT void __cdecl Entity_SetRotation(EntityId id, float degrees)
+{
+	if (!ObjectManager::IsCreated() || id == 0)
+		return;
+
+	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
+	{
+		obj->SetRotation(degrees);
+	}
+}
+
+SLIME_EXPORT float __cdecl Entity_GetRotation(EntityId id)
+{
+	if (!ObjectManager::IsCreated() || id == 0)
+		return 0.0f;
+
+	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
+	{
+		return obj->GetRotation();
+	}
+
+	return 0.0f;
+}
+
 SLIME_EXPORT void __cdecl Entity_SetAnchor(EntityId id, float ax, float ay)
 {
 	if (!ObjectManager::IsCreated() || id == 0)
@@ -244,6 +270,59 @@ SLIME_EXPORT void __cdecl Entity_SetTexture(EntityId id, unsigned int texId, int
 	if (width > 0)
 		obj->SetSpriteWidth(width);
 	obj->SetTexture(t);
+}
+
+// Loads a texture from disk (or returns existing one) and returns a void* handle
+SLIME_EXPORT void* __cdecl Texture_Load(const char* path)
+{
+	if (!path)
+		return nullptr;
+
+	std::string filePath = path;
+
+	// Check if already loaded
+	if (s_TextureCache.find(filePath) != s_TextureCache.end())
+	{
+		return (void*) s_TextureCache[filePath];
+	}
+
+	// Load new texture
+	// NOTE: Ensure your Texture class constructor handles file loading!
+	Texture* newTex = new Texture(filePath, Texture::Filter::Nearest, Texture::Wrap::ClampToEdge);
+
+	// Check if load failed (width/height will be 0)
+	if (newTex->GetWidth() == 0)
+	{
+		delete newTex;
+		Engine_Log("Failed to load texture at path.");
+		return nullptr;
+	}
+
+	s_TextureCache[filePath] = newTex;
+	return (void*) newTex;
+}
+
+// Assigns the loaded texture pointer to an Entity
+SLIME_EXPORT void __cdecl Entity_SetTexturePtr(EntityId id, void* texPtr)
+{
+	if (!ObjectManager::IsCreated() || id == 0)
+		return;
+
+	GameObject* obj = ObjectManager::Get().Get((ObjectId) id);
+	if (!obj)
+		return;
+
+	if (texPtr)
+	{
+		Texture* tex = (Texture*) texPtr;
+		obj->SetTexture(tex);
+		// Automatically update the sprite width to match the texture for convenience
+		obj->SetSpriteWidth(tex->GetWidth());
+	}
+	else
+	{
+		obj->SetTexture(nullptr);
+	}
 }
 
 // -------------------------------------------------------------------------

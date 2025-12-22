@@ -1,3 +1,5 @@
+using EngineManaged.Scene;
+using System;
 using System.Runtime.InteropServices;
 
 internal static partial class Native
@@ -80,4 +82,16 @@ internal static partial class Native
 
 	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
 	internal static extern float Entity_GetFrameRate(ulong id);
+
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	public static extern IntPtr Texture_Load(string path);
+
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	public static extern void Entity_SetTexturePtr(ulong id, IntPtr texPtr);
+
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	public static extern IntPtr Entity_GetRotation(ulong id);
+
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	public static extern void Entity_SetRotation(ulong id, float rotation);
 }

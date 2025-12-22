@@ -195,8 +195,15 @@ void ObjectManager::RenderAll()
 			}
 			else
 			{
-				// Standard Static Texture
-				Renderer2D::DrawQuad(obj->GetPos(), obj->GetScale(), tex, 1.0f, { obj->GetColor(), 1.0f });
+				if (obj->GetRotation() != 0.0f)
+				{
+					Renderer2D::DrawRotatedQuad(obj->GetPos(), obj->GetScale(), glm::radians(obj->GetRotation()), tex, 1.0f, { obj->GetColor(), 1.0f });
+				}
+				else
+				{
+					// Standard Static Texture
+					Renderer2D::DrawQuad(obj->GetPos(), obj->GetScale(), tex, 1.0f, { obj->GetColor(), 1.0f });
+				}
 			}
 		}
 		// Case 2: Flat Color Object

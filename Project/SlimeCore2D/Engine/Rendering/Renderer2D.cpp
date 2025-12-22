@@ -158,8 +158,13 @@ void Renderer2D::Flush()
 
 	// Update Uniforms (sampler array)
 	// Usually done once on Shader Init, but if shader changes ensure this is set.
-	int samplers[32]; for(int i=0; i<32; i++) samplers[i] = i;
-		s_Data.TextureShader->setIntArray("u_Textures", samplers, 32);
+	int samplers[32];
+	for (int i = 0; i < 32; i++)
+	{
+		samplers[i] = i;
+	}
+
+	s_Data.TextureShader->setIntArray("u_Textures", samplers, 32);
 
 	glBindVertexArray(s_Data.QuadVA);
 	glDrawElements(GL_TRIANGLES, s_Data.IndexCount, GL_UNSIGNED_INT, nullptr);

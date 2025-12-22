@@ -43,6 +43,12 @@ public readonly struct Entity
 		set => Native.Entity_SetSpriteWidth(Id, value);
 	}
 
+	public float Rotation
+	{
+		get => Native.Entity_GetRotation(Id);
+		set => Native.Entity_SetRotation(Id, value);
+	}
+
 	// ---------------------------------------------------------------------
 	// Transform Methods
 	// ---------------------------------------------------------------------

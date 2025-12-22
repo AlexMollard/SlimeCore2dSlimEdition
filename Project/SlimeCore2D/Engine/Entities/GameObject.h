@@ -56,6 +56,16 @@ public:
 	}
 
 	// Visuals
+	float GetRotation() const
+	{
+		return rotationDegrees;
+	}
+
+	void SetRotation(float degrees)
+	{
+		rotationDegrees = degrees;
+	}
+
 	void SetColor(glm::vec3 color)
 	{
 		m_Color = color;
@@ -161,4 +171,6 @@ protected:
 	int m_SpriteWidth = 0;     // 0 means full texture
 	float m_FrameRate = 12.0f; // Frames per second
 	float m_Timer = 0.0f;
+
+	float rotationDegrees = 0.0f;
 };

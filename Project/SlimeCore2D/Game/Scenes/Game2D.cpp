@@ -86,5 +86,5 @@ void Game2D::Draw()
 
 	// 1. Draw C++ internal UI (if any)
 	UIManager::Get().Draw();
-
+	
 }
