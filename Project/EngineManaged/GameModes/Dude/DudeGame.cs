@@ -7,15 +7,15 @@ using EngineManaged.Numeric;
 
 namespace GameModes.Dude;
 
-	// --- SHARED DATA STRUCTURES ---
-	internal enum HaterType { Normal, Chonker }
-	internal class Hater { public Entity Ent; public Vec2 Pos; public HaterType Type; }
-	internal class Collectable { public Entity Ent; public Vec2 Pos; public PowerupDef Definition; }
-	internal class GhostTrail { public Entity Ent; public float Alpha; public float InitW; public float InitH; }
+// --- SHARED DATA STRUCTURES ---
+internal enum HaterType { Normal, Chonker }
+internal class Hater { public Entity Ent; public Vec2 Pos; public HaterType Type; }
+internal class Collectable { public Entity Ent; public Vec2 Pos; public PowerupDef Definition; }
+internal class GhostTrail { public Entity Ent; public float Alpha; public float InitW; public float InitH; }
 
-	// Refactored to use Vec2 for position and velocity
-	internal class Particle { public Entity Ent; public Vec2 Pos; public Vec2 Vel; public float Life; public float InitSize; }
-	internal class XPGem { public Entity Ent; public Vec2 Pos; public int Value; }
+// Refactored to use Vec2 for position and velocity
+internal class Particle { public Entity Ent; public Vec2 Pos; public Vec2 Vel; public float Life; public float InitSize; }
+internal class XPGem { public Entity Ent; public Vec2 Pos; public int Value; }
 
 // --- GAME CONTEXT ---
 public class DudeGame : IGameMode
@@ -31,11 +31,11 @@ public class DudeGame : IGameMode
 	internal Entity DarkOverlay;
 	internal Entity CardBgBackdrop;
 
-		// --- STATS CONTAINER ---
-		internal DudeStats Stats = new DudeStats();
+	// --- STATS CONTAINER ---
+	internal DudeStats Stats = new DudeStats();
 
-		// --- EVENT SYSTEM ---
-		internal GameEvents Events = new GameEvents();
+	// --- EVENT SYSTEM ---
+	internal GameEvents Events = new GameEvents();
 
 	// Core Values
 	internal int Level;
@@ -70,10 +70,10 @@ public class DudeGame : IGameMode
 
 	internal Random Rng = new Random();
 
-		public void Init()
-		{
-			// 1. Initialize Content Registry
-			ContentRegistry.Init();
+	public void Init()
+	{
+		// 1. Initialize Content Registry
+		ContentRegistry.Init();
 
 		// 2. Reset Data
 		Level = 1;
@@ -109,9 +109,9 @@ public class DudeGame : IGameMode
 		XPBarFill = SceneFactory.CreateQuad(0.0f, -7.0f, 0f, 0.6f, 0.0f, 0.8f, 1.0f, layer: 81);
 		XPBarFill.SetAnchor(0.0f, 0.5f);
 
-			// UI
-			ScoreText = UIText.Create("0", 1, -13.5f, 7.5f);
-			LevelText = UIText.Create("LVL 1", 1, -13.0f, -6.25f);
+		// UI
+		ScoreText = UIText.Create("0", 1, -13.5f, 7.5f);
+		LevelText = UIText.Create("LVL 1", 1, -13.0f, -6.25f);
 
 		// 4. Start Gameplay
 		ChangeState(new StatePlaying());
@@ -152,35 +152,23 @@ public class DudeGame : IGameMode
 		UpgradeCounts.Clear();
 	}
 
-		internal void SpawnExplosion(Vec2 pos, int count, float r, float g, float b)
+	internal void SpawnExplosion(Vec2 pos, int count, float r, float g, float b)
+	{
+		for (int i = 0; i < count; i++)
 		{
-			for (int i = 0; i < count; i++)
-			{
-				float size = (float)Rng.NextDouble() * 0.4f + 0.1f;
-				float angle = (float)Rng.NextDouble() * 6.28f;
-				float speed = (float)Rng.NextDouble() * 8.0f + 2.0f;
+			float size = (float)Rng.NextDouble() * 0.4f + 0.1f;
+			float angle = (float)Rng.NextDouble() * 6.28f;
+			float speed = (float)Rng.NextDouble() * 8.0f + 2.0f;
 
-				Vec2 vel = new Vec2(MathF.Cos(angle), MathF.Sin(angle)) * speed;
+			Vec2 vel = new Vec2(MathF.Cos(angle), MathF.Sin(angle)) * speed;
 
-				var ent = SceneFactory.CreateQuad(pos.X, pos.Y, size, size, r, g, b, layer: 30);
-				ent.SetAnchor(0.5f, 0.5f);
-				Particles.Add(new Particle { Ent = ent, Pos = pos, Vel = vel, Life = 1.0f, InitSize = size });
-			}
+			var ent = SceneFactory.CreateQuad(pos.X, pos.Y, size, size, r, g, b, layer: 30);
+			ent.SetAnchor(0.5f, 0.5f);
+			Particles.Add(new Particle { Ent = ent, Pos = pos, Vel = vel, Life = 1.0f, InitSize = size });
 		}
-
-		// --- STAT ACCESSORS ---
-		internal float StatMagnetRange { get => Stats.MagnetRange; set => Stats.MagnetRange = value; }
-		internal float StatSpeedMult { get => Stats.SpeedMult; set => Stats.SpeedMult = value; }
-		internal float StatDashCooldown { get => Stats.DashCooldown; set => Stats.DashCooldown = value; }
-		internal float StatShieldDuration { get => Stats.ShieldDuration; set => Stats.ShieldDuration = value; }
-		internal float StatPickupBonus { get => Stats.PickupBonus; set => Stats.PickupBonus = value; }
-		internal float StatAccelMult { get => Stats.AccelMult; set => Stats.AccelMult = value; }
-		internal float StatChillDuration { get => Stats.ChillDuration; set => Stats.ChillDuration = value; }
-		internal float StatLuck { get => Stats.Luck; set => Stats.Luck = value; }
-		internal float StatSize { get => Stats.PlayerSize; set => Stats.PlayerSize = value; }
 	}
 
-	// --- STAT ACCESSORS (Used by upgrade lambdas) ---
+	// --- STAT ACCESSORS ---
 	internal float StatMagnetRange { get => Stats.MagnetRange; set => Stats.MagnetRange = value; }
 	internal float StatSpeedMult { get => Stats.SpeedMult; set => Stats.SpeedMult = value; }
 	internal float StatDashCooldown { get => Stats.DashCooldown; set => Stats.DashCooldown = value; }

@@ -41,9 +41,9 @@ public class StateGameOver : IDudeState
 
 		// 2. UI Construction
 
-			_gameOverText = UIText.Create("WASTED", 1, 0, 6.0f);
-			_gameOverText.SetColor(1, 0, 0);
-			_gameOverText.SetAnchor(0.5f, 0.5f);
+		_gameOverText = UIText.Create("WASTED", 1, 0, 6.0f);
+		_gameOverText.SetColor(1, 0, 0);
+		_gameOverText.SetAnchor(0.5f, 0.5f);
 
 		// Panel Background (14x10 to fit button comfortably)
 		_panelBorder = SceneFactory.CreateQuad(0, -15, 14.5f, 10.5f, 0.8f, 0f, 0f, layer: 91);
@@ -52,21 +52,21 @@ public class StateGameOver : IDudeState
 		_panelBg = SceneFactory.CreateQuad(0, -15, 14.0f, 10.0f, 0.1f, 0.1f, 0.1f, layer: 92);
 		_panelBg.SetAnchor(0.5f, 0.5f);
 
-			// Stats Text
-			_scoreLabel = UIText.Create($"SCORE: {(int)game.Score}", 1, 0, -15);
-			_scoreLabel.SetAnchor(0.5f, 0.5f);
-			_scoreLabel.SetColor(1, 1, 1);
-			_scoreLabel.SetLayer(95);
+		// Stats Text
+		_scoreLabel = UIText.Create($"SCORE: {(int)game.Score}", 1, 0, -15);
+		_scoreLabel.SetAnchor(0.5f, 0.5f);
+		_scoreLabel.SetColor(1, 1, 1);
+		_scoreLabel.SetLayer(95);
 
-			_levelLabel = UIText.Create($"LEVEL REACHED: {game.Level}", 1, 0, -15);
-			_levelLabel.SetAnchor(0.5f, 0.5f);
-			_levelLabel.SetColor(0.2f, 1.0f, 1.0f);
-			_levelLabel.SetLayer(95);
+		_levelLabel = UIText.Create($"LEVEL REACHED: {game.Level}", 1, 0, -15);
+		_levelLabel.SetAnchor(0.5f, 0.5f);
+		_levelLabel.SetColor(0.2f, 1.0f, 1.0f);
+		_levelLabel.SetLayer(95);
 
-			_timeLabel = UIText.Create($"TIME ALIVE: {game.TimeAlive:F1}s", 1, 0, -15);
-			_timeLabel.SetAnchor(0.5f, 0.5f);
-			_timeLabel.SetColor(0.7f, 0.7f, 0.7f);
-			_timeLabel.SetLayer(95);
+		_timeLabel = UIText.Create($"TIME ALIVE: {game.TimeAlive:F1}s", 1, 0, -15);
+		_timeLabel.SetAnchor(0.5f, 0.5f);
+		_timeLabel.SetColor(0.7f, 0.7f, 0.7f);
+		_timeLabel.SetLayer(95);
 
 		// --- STYLED RETRY BUTTON ---
 		// Bright Cyan Background
@@ -100,22 +100,22 @@ public class StateGameOver : IDudeState
 		foreach (var t in game.Trails) t.Ent.Destroy(); game.Trails.Clear();
 		foreach (var p in game.Particles) p.Ent.Destroy(); game.Particles.Clear();
 	}
+	public void Update(DudeGame game, float dt)
+	{
+		_animTimer += dt;
+		game.ShakeAmount = MathF.Max(0, game.ShakeAmount - dt);
 
-			// 1. Animate Title (Vectorized Shake)
-			Vec2 shake = new Vec2(
-				(float)(game.Rng.NextDouble() - 0.5),
-				(float)(game.Rng.NextDouble() - 0.5)
-			) * (game.ShakeAmount * 5.0f);
+		// 1. Animate Title (Vectorized Shake)
+		Vec2 shake = new Vec2(
+			(float)(game.Rng.NextDouble() - 0.5),
+			(float)(game.Rng.NextDouble() - 0.5)
+		) * (game.ShakeAmount * 5.0f);
 
-			_gameOverText.SetPosition(shake.X, 6.0f + shake.Y);
-
-			// 2. Animate Panel Slide Up
-			float slideT = MathF.Min(1.0f, _animTimer * 1.5f);
-			float panelY = Ease.Lerp(-18.0f, -1.0f, Ease.OutBack(slideT));
+		_gameOverText.SetPosition(shake.X, 6.0f + shake.Y);
 
 		// 2. Animate Panel Slide Up
 		float slideT = MathF.Min(1.0f, _animTimer * 1.5f);
-		float panelY = Lerp(-18.0f, -1.0f, EaseOutBack(slideT)); // Target Y = -1 to center visually
+		float panelY = Ease.Lerp(-18.0f, -1.0f, Ease.OutBack(slideT));
 
 		_panelBg.SetPosition(0, panelY);
 		_panelBorder.SetPosition(0, panelY);
@@ -136,19 +136,13 @@ public class StateGameOver : IDudeState
 			if (p.Life <= 0) { p.Ent.Destroy(); game.Particles.RemoveAt(i); }
 			else
 			{
-				var p = game.Particles[i];
-				p.Life -= dt * 0.5f;
-				if (p.Life <= 0) { p.Ent.Destroy(); game.Particles.RemoveAt(i); }
-				else
-				{
-					// Vectorized Physics
-					p.Pos += p.Vel * dt;
-					p.Vel *= 0.9f;
+				// Vectorized Physics
+				p.Pos += p.Vel * dt;
+				p.Vel *= 0.9f;
 
-					p.Ent.SetPosition(p.Pos.X, p.Pos.Y);
-					float s = p.InitSize * p.Life;
-					p.Ent.SetSize(s, s);
-				}
+				p.Ent.SetPosition(p.Pos.X, p.Pos.Y);
+				float s = p.InitSize * p.Life;
+				p.Ent.SetSize(s, s);
 			}
 		}
 	}
