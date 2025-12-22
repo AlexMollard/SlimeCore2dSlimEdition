@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "Game2D.h"
 #include "gtc/matrix_transform.hpp"
 

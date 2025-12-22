@@ -2,7 +2,7 @@
 
 namespace EngineManaged.Scene;
 
-public readonly struct Entity
+public record Entity
 {
 	public readonly ulong Id;
 

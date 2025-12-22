@@ -1,5 +1,5 @@
 ﻿using GameModes.Dude;
-using GameModes.Snake;
+using SlimeCore.GameModes.Snake;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 

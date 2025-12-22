@@ -8,7 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 
-namespace GameModes.Snake
+namespace SlimeCore.GameModes.Snake
 {
 	public class SnakeGame : IGameMode
 	{
@@ -18,7 +18,6 @@ namespace GameModes.Snake
 		private const int WORLD_W = 240;
 		private const int WORLD_H = 240;
         private GridSystem<Terrain> _world { get; set; }
-
 
 		private static float _cellSize = 0.4f;
 		private static float _cellSpacing = 0.4f;
@@ -31,14 +30,15 @@ namespace GameModes.Snake
 		private static float _tick = TICK_NORMAL;
 		private static float _accum = 0f;
 		private static float _time = 0f;
-		private static bool _isDead = false;
 		private static float _shake = 0f;
-		private static bool _isSprinting = false;
 
 		private static float _speedBoostTimer = 0f;
 
-		// Food
-		private static int _foodCount = 0;
+        // Visual Handles
+        public Entity[,] _view = new Entity[VIEW_W, VIEW_H];
+
+        // Food
+        private static int _foodCount = 0;
 		private const int MAX_FOOD = 25;
 		private const int START_FORWARD_CLEAR = 3;
 
@@ -46,17 +46,8 @@ namespace GameModes.Snake
 		private static FoodType[,] _foodMap = new FoodType[WORLD_W, WORLD_H];
 
 		// Camera & Smoothing
-		private static Vec2 _cam;
-		private static List<Vec2i> _snake = new();
-		private static Vec2i _dir = new(1, 0);
-		private static Vec2i _nextDir = new(1, 0);
-		private static int _grow = 0;
-
-		// Visual Handles
-		private static Entity[,] _view = new Entity[VIEW_W, VIEW_H];
-		private static Entity[] _eyes = new Entity[2];
-		private static Entity _compass;
-		private static Entity _head;
+		private Vec2 _cam;
+        private PlayerSnake _snake { get; set; } = new();
 
 		// UI
 		private static UIText _score;
@@ -83,8 +74,6 @@ namespace GameModes.Snake
 		private static readonly Vec3 COL_SPEED_2 = new(0.60f, 0.60f, 0.30f);
 		private static readonly Vec3 COL_TINT_ICE = new(0.80f, 1.00f, 1.00f);
 		private static readonly Vec3 COL_TINT_MUD = new(0.30f, 0.20f, 0.15f);
-		private static readonly Vec3 COL_SNAKE = new(0.00f, 1.00f, 0.50f);
-		private static readonly Vec3 COL_SNAKE_SPRINT = new(0.30f, 0.80f, 1.00f);
 		private static readonly Vec3 COL_FOOD_APPLE = new(1.00f, 0.00f, 0.90f);
 		private static readonly Vec3 COL_FOOD_GOLD = new(1.00f, 0.85f, 0.00f);
 		private static readonly Vec3 COL_FOOD_PLUM = new(0.60f, 0.20f, 0.90f);
@@ -104,24 +93,8 @@ namespace GameModes.Snake
 					_view[x, y].SetAnchor(0.5f, 0.5f);
 				}
 			}
-
-			_head = SceneFactory.CreateQuad(0, 0, _cellSize * 1.15f, _cellSize * 1.15f,
-											COL_SNAKE.X, COL_SNAKE.Y, COL_SNAKE.Z, layer: 5);
-			_head.SetAnchor(0.5f, 0.5f);
-			_head.IsVisible = true;
-
 			IntPtr textureId = Native.Resources_LoadTexture("Debug", "textures/debug.png");
-			_head.Texture = textureId;
-
-			_eyes[0] = SceneFactory.CreateQuad(0, 0, 0.08f, 0.08f, 0f, 0f, 0f, layer: 10);
-			_eyes[0].SetAnchor(0.5f, 0.5f);
-
-			_eyes[1] = SceneFactory.CreateQuad(0, 0, 0.08f, 0.08f, 0f, 0f, 0f, layer: 10);
-			_eyes[1].SetAnchor(0.5f, 0.5f);
-
-			_compass = SceneFactory.CreateQuad(0, 0, 0.1f, 0.1f, 1f, 1f, 0f, layer: 20);
-			_compass.SetAnchor(0.5f, 0.5f);
-			_compass.IsVisible = true;
+			_snake.Initialize(_cellSize);
 
 			_score = UIText.Create("SCORE: 0", SCORE_FONT_SIZE, -15.0f, 7.5f);
 			_score.SetVisible(true);
@@ -136,10 +109,7 @@ namespace GameModes.Snake
 			UISystem.Clear();
 			_score.Destroy();
 			_testBtn.Destroy();
-			_head.Destroy();
-			_compass.Destroy();
-			_eyes[0].Destroy();
-			_eyes[1].Destroy();
+			_snake.Destroy();
 
 			for (int x = 0; x < VIEW_W; x++)
 				for (int y = 0; y < VIEW_H; y++)
@@ -164,7 +134,7 @@ namespace GameModes.Snake
 			_accum = 0f;
 			_time = 0f;
 			_tick = TICK_NORMAL;
-			_isSprinting = false;
+			_snake.IsSprinting = false;
 			_speedBoostTimer = 0f;
 
 			var center = new Vec2i(WORLD_W / 2, WORLD_H / 2);
@@ -173,10 +143,10 @@ namespace GameModes.Snake
 			_snake.Clear();
 			_snake.Add(start);
 			_snake.Add(new Vec2i(Wrap(start.X - dir.X, WORLD_W), Wrap(start.Y - dir.Y, WORLD_H)));
-			_dir = dir;
-			_nextDir = _dir;
-			_grow = 4;
-			_isDead = false;
+			_snake.Direction = dir;
+			_snake.NextDirection = _snake.Direction;
+			_snake.Grow = 4;
+			_snake.IsDead = false;
 			_cam = start.ToVec2();
 			SpawnFood();
 		}
@@ -192,7 +162,7 @@ namespace GameModes.Snake
 				if (_speedBoostTimer < 0) _speedBoostTimer = 0;
 			}
 
-			if (!_isDead)
+			if (!_snake.IsDead)
 			{
 				HandleInput();
 
@@ -202,7 +172,7 @@ namespace GameModes.Snake
 				if (headTile == Terrain.Mud) speedMultiplier = 1.8f;
 				if (headTile == Terrain.Speed) speedMultiplier = 0.5f;
 
-				bool effectivelySprinting = _isSprinting || _speedBoostTimer > 0;
+				bool effectivelySprinting = _snake.IsSprinting || _speedBoostTimer > 0;
 				float baseTick = effectivelySprinting ? TICK_SPRINT : TICK_NORMAL;
 
 				_tick = baseTick * speedMultiplier;
@@ -211,7 +181,7 @@ namespace GameModes.Snake
 				while (_accum >= _tick)
 				{
 					_accum -= _tick;
-					_dir = _nextDir;
+					_snake.Direction = _snake.NextDirection;
 					Step();
 				}
 			}
@@ -219,13 +189,13 @@ namespace GameModes.Snake
 			{
 				if (Input.GetKeyDown(Keycode.SPACE)) ResetGameLogic();
 
-				if (_snake.Count > 1)
+				if (_snake.Body.Count > 1)
 				{
 					_accum += dt;
 					while (_accum >= _tick)
 					{
 						_accum -= _tick;
-						_snake.RemoveAt(_snake.Count - 1);
+						_snake.RemoveAt(_snake.Body.Count - 1);
 					}
 				}
 			}
@@ -234,7 +204,7 @@ namespace GameModes.Snake
 			float interp = _accum / _tick;
 
 			// FIX: Cast Vec2i to Vec2 before scalar multiplication
-			Vec2 target = _snake[0] + ((Vec2)_dir * interp);
+			Vec2 target = _snake[0] + ((Vec2)_snake.Direction * interp);
 
 			// Calculate wrapped distance vector
 			Vec2 d = target - _cam;
@@ -299,12 +269,12 @@ namespace GameModes.Snake
 		private void Step()
 		{
 			Vec2i head = _snake[0];
-			Vec2i nextRaw = head + _dir;
+			Vec2i nextRaw = head + _snake.Direction;
 			Vec2i next = new Vec2i(Wrap(nextRaw.X, WORLD_W), Wrap(nextRaw.Y, WORLD_H));
 
 			if (_world[next.X, next.Y].Blocked || IsSnakeAt(next.X, next.Y))
 			{
-				_isDead = true;
+				_snake.IsDead = true;
 				_shake = 0.4f;
 				return;
 			}
@@ -320,24 +290,39 @@ namespace GameModes.Snake
 
 				switch (type)
 				{
-					case FoodType.Gold: _grow += 5; _currentScore += 5; _shake = 0.3f; break;
-					case FoodType.Plum: _grow -= 2; _currentScore += 2; _shake = 0.15f; break;
-					case FoodType.Chili: _grow += 3; _currentScore += 1; _speedBoostTimer += 3.0f; _shake = 0.2f; break;
-					case FoodType.Apple: default: _grow += 3; _currentScore += 1; _shake = 0.15f; break;
+					case FoodType.Gold: _snake.Grow += 5; _currentScore += 5; _shake = 0.3f; break;
+					case FoodType.Plum: _snake.Grow -= 2; _currentScore += 2; _shake = 0.15f; break;
+					case FoodType.Chili: _snake.Grow += 3; _currentScore += 1; _speedBoostTimer += 3.0f; _shake = 0.2f; break;
+					case FoodType.Apple: default: _snake.Grow += 3; _currentScore += 1; _shake = 0.15f; break;
 				}
 				SpawnFood();
 			}
 
-			if (_grow > 0) _grow--;
-			else if (_grow < 0)
+			if (_snake.Grow > 0)
 			{
-				if (_snake.Count > 1) _snake.RemoveAt(_snake.Count - 1);
-				if (_snake.Count > 1) _snake.RemoveAt(_snake.Count - 1);
-				_grow++;
+				_snake.Grow--;
 			}
-			else { if (_snake.Count > 0) _snake.RemoveAt(_snake.Count - 1); }
+			else if (_snake.Grow < 0)
+			{
+				if (_snake.Body.Count > 1)
+				{
+					_snake.RemoveAt(_snake.Body.Count - 1);
+				}
+				if (_snake.Body.Count > 1)
+				{
+					_snake.RemoveAt(_snake.Body.Count - 1);
+				}
+				_snake.Grow++;
+			}
+			else if (_snake.Body.Count > 0)
+			{
+				_snake.RemoveAt(_snake.Body.Count - 1);
+			}
 
-			if (_snake.Count == 0) _snake.Add(next);
+			if (_snake.Body.Count == 0)
+			{
+				_snake.Add(next);
+			}
 		}
 
 		private void SpawnFood()
@@ -354,7 +339,9 @@ namespace GameModes.Snake
 					int x = Wrap(pos.X, WORLD_W);
 					int y = Wrap(pos.Y, WORLD_H);
 
-					if (!_world[x, y].Blocked && !_world[x, y].Food && GetSnakeIndexAt(x, y) == -1)
+					if (!_world[x, y].Blocked && 
+						!_world[x, y].Food && 
+						_snake.GetBodyIndexFromWorldPosition(x, y) == -1)
 					{
 						_world[x, y].Food = true;
 						_foodCount++;
@@ -383,11 +370,17 @@ namespace GameModes.Snake
 			Vec2i headPos = _snake[0];
 			Terrain headTerrain = _world[headPos.X, headPos.Y].Type;
 
-			Vec3 snakeBase = (_isSprinting || _speedBoostTimer > 0) ? COL_SNAKE_SPRINT : COL_SNAKE;
+			Vec3 snakeBase = (_snake.IsSprinting || _speedBoostTimer > 0) ? PlayerSnake.COL_SNAKE_SPRINT : PlayerSnake.COL_SNAKE;
 			Vec3 activeSnakeColor = snakeBase;
 
-			if (headTerrain == Terrain.Ice) activeSnakeColor = Vec3.Lerp(snakeBase, COL_TINT_ICE, 0.6f);
-			else if (headTerrain == Terrain.Mud) activeSnakeColor = Vec3.Lerp(snakeBase, COL_TINT_MUD, 0.5f) * 0.7f;
+			if (headTerrain == Terrain.Ice)
+			{
+				activeSnakeColor = Vec3.Lerp(snakeBase, COL_TINT_ICE, 0.6f);
+			}
+			else if (headTerrain == Terrain.Mud)
+			{
+				activeSnakeColor = Vec3.Lerp(snakeBase, COL_TINT_MUD, 0.5f) * 0.7f;
+			}
 
 			for (int vx = 0; vx < VIEW_W; vx++)
 			{
@@ -396,10 +389,10 @@ namespace GameModes.Snake
 					int wx = Wrap((int)camFloor.X - VIEW_W / 2 + vx, WORLD_W);
 					int wy = Wrap((int)camFloor.Y - VIEW_H / 2 + vy, WORLD_H);
 
-					float px = (vx - VIEW_W / 2f - camFrac.X + shakeVec.X) * _cellSpacing;
-					float py = (vy - VIEW_H / 2f - camFrac.Y + shakeVec.Y) * _cellSpacing;
+					float px = (vx - VIEW_W / 2f - camFrac.X + shakeVec.X) * (_cellSpacing);
+					float py = (vy - VIEW_H / 2f - camFrac.Y + shakeVec.Y) * (_cellSpacing);
 
-					var ent = _view[vx, vy];
+                    var ent = _view[vx, vy];
 					ent.SetPosition(px, py);
 
 					Vec3 tileCol = GetTileColor(wx, wy);
@@ -415,18 +408,18 @@ namespace GameModes.Snake
 						tileCol = fCol * (0.8f + 0.2f * (float)Math.Sin(_time * 12f));
 					}
 
-					int sIdx = GetSnakeIndexAt(wx, wy);
+					int sIdx = _snake.GetBodyIndexFromWorldPosition(wx, wy);
 					if (sIdx != -1)
 					{
 						float tailFade = (1.0f - (sIdx * 0.02f));
 						Vec3 finalSnakeCol = activeSnakeColor * tailFade;
-						if (_isDead) finalSnakeCol = new Vec3(0.4f, 0.1f, 0.1f);
+						if (_snake.IsDead) finalSnakeCol = new Vec3(0.4f, 0.1f, 0.1f);
 
 						if (sIdx == 0)
 						{
-							_head.SetSize(_cellSize * 1.15f, _cellSize * 1.15f);
-							_head.SetPosition(px, py);
-							_head.SetColor(finalSnakeCol.X, finalSnakeCol.Y, finalSnakeCol.Z);
+							_snake.Head.SetSize(_cellSize * 1.15f, _cellSize * 1.15f);
+							_snake.Head.SetPosition(px, py);
+							_snake.Head.SetColor(finalSnakeCol.X, finalSnakeCol.Y, finalSnakeCol.Z);
 							UpdateEyes(px, py, _cellSize * 1.15f);
 						}
 						ent.SetColor(finalSnakeCol.X, finalSnakeCol.Y, finalSnakeCol.Z);
@@ -466,9 +459,9 @@ namespace GameModes.Snake
 
 				float orbitDist = _cellSpacing * 0.9f;
 
-				_compass.IsVisible = true;
+				_snake.Compass.IsVisible = true;
 				Vec2 compassPos = headScreenPos + normalizedDir * orbitDist;
-				_compass.SetPosition(compassPos.X, compassPos.Y);
+				_snake.Compass.SetPosition(compassPos.X, compassPos.Y);
 
 				float pulse = 0.5f + 0.5f * (float)Math.Abs(Math.Sin(_time * 10f));
 
@@ -477,7 +470,7 @@ namespace GameModes.Snake
 				if (ft == FoodType.Plum) cCol = new Vec3(pulse, 0, pulse);
 				if (ft == FoodType.Chili) cCol = new Vec3(pulse, 0, 0);
 			}
-			else _compass.IsVisible = false;
+			else _snake.Compass.IsVisible = false;
 		}
 
 		private void UpdateEyes(float hpx, float hpy, float headSize)
@@ -487,18 +480,18 @@ namespace GameModes.Snake
 
 			Vec2 basePos = new Vec2(hpx, hpy);
 			// FIX: Cast _dir (Vec2i) to Vec2 before scalar multiply
-			Vec2 fwdVec = (Vec2)_dir * forward;
-			Vec2 sideVec = new Vec2(-_dir.Y, _dir.X) * side;
+			Vec2 fwdVec = (Vec2)_snake.Direction * forward;
+			Vec2 sideVec = new Vec2(-_snake.Direction.Y, _snake.Direction.X) * side;
 
 			float eyeSize = headSize * 0.17f;
-			_eyes[0].SetSize(eyeSize, eyeSize);
-			_eyes[1].SetSize(eyeSize, eyeSize);
+			_snake.Eyes[0].SetSize(eyeSize, eyeSize);
+			_snake.Eyes[1].SetSize(eyeSize, eyeSize);
 
 			Vec2 p0 = basePos + fwdVec + sideVec;
 			Vec2 p1 = basePos + fwdVec - sideVec;
 
-			_eyes[0].SetPosition(p0.X, p0.Y);
-			_eyes[1].SetPosition(p1.X, p1.Y);
+			_snake.Eyes[0].SetPosition(p0.X, p0.Y);
+			_snake.Eyes[1].SetPosition(p1.X, p1.Y);
 		}
 
 		// --- Helpers ---
@@ -523,17 +516,11 @@ namespace GameModes.Snake
 		{
 			var headPos = _snake[0];
 			if (_world[headPos.X, headPos.Y].Type == Terrain.Ice) return;
-			_isSprinting = Input.GetKeyDown(Keycode.LEFT_SHIFT);
-			if ((Input.GetKeyDown(Keycode.W) || Input.GetKeyDown(Keycode.UP)) && _dir.Y == 0) _nextDir = new Vec2i(0, 1);
-			if ((Input.GetKeyDown(Keycode.S) || Input.GetKeyDown(Keycode.DOWN)) && _dir.Y == 0) _nextDir = new Vec2i(0, -1);
-			if ((Input.GetKeyDown(Keycode.A) || Input.GetKeyDown(Keycode.LEFT)) && _dir.X == 0) _nextDir = new Vec2i(-1, 0);
-			if ((Input.GetKeyDown(Keycode.D) || Input.GetKeyDown(Keycode.RIGHT)) && _dir.X == 0) _nextDir = new Vec2i(1, 0);
-		}
-
-		private int GetSnakeIndexAt(int x, int y)
-		{
-			for (int i = 0; i < _snake.Count; i++) if (_snake[i].X == x && _snake[i].Y == y) return i;
-			return -1;
+			_snake.IsSprinting = Input.GetKeyDown(Keycode.LEFT_SHIFT);
+			if ((Input.GetKeyDown(Keycode.W) || Input.GetKeyDown(Keycode.UP)) && _snake.Direction.Y == 0) _snake.NextDirection = new Vec2i(0, 1);
+			if ((Input.GetKeyDown(Keycode.S) || Input.GetKeyDown(Keycode.DOWN)) && _snake.Direction.Y == 0) _snake.NextDirection = new Vec2i(0, -1);
+			if ((Input.GetKeyDown(Keycode.A) || Input.GetKeyDown(Keycode.LEFT)) && _snake.Direction.X == 0) _snake.NextDirection = new Vec2i(-1, 0);
+			if ((Input.GetKeyDown(Keycode.D) || Input.GetKeyDown(Keycode.RIGHT)) && _snake.Direction.X == 0) _snake.NextDirection = new Vec2i(1, 0);
 		}
 
 		private Vec2i GetNearestFoodPos()
@@ -571,7 +558,7 @@ namespace GameModes.Snake
 			return bestFood;
 		}
 
-		private bool IsSnakeAt(int x, int y) => GetSnakeIndexAt(x, y) != -1;
+		private bool IsSnakeAt(int x, int y) => _snake.GetBodyIndexFromWorldPosition(x, y) != -1;
 		private int Wrap(int v, int m) => (v % m + m) % m;
 	}
 }
