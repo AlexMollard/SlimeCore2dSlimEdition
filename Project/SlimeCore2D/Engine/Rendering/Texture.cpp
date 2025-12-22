@@ -1,101 +1,186 @@
 #include "Texture.h"
-#define STB_IMAGE_IMPLEMENTATION
+
+#include <iostream>
+
+// STB Image setup
+// Make sure this is the only place STB_IMAGE_IMPLEMENTATION is defined in your project!
+#ifndef STB_IMAGE_IMPLEMENTATION
+#	define STB_IMAGE_IMPLEMENTATION
+#endif
 #include "stb_image.h"
-#include <string>
 
-Texture::Texture(std::string dir)
+Texture::Texture(const std::string& path, Filter filter, Wrap wrap)
+      : m_FilePath(path), m_InternalFormat(0), m_DataFormat(0)
 {
-	// Create and bind texture ID
-	glGenTextures(1, &m_textureID);
-	glBindTexture(GL_TEXTURE_2D, m_textureID);
+	// OpenGL expects 0.0 to be at the bottom, images usually have 0.0 at the top
+	stbi_set_flip_vertically_on_load(1);
 
-	// Set Wrapping mode
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-	// Set texture filtering
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-	// Load Image and generate mipmaps
-	unsigned char* data = stbi_load(dir.c_str(), &m_width, &m_height, &m_nrChannels, 0);
+	int width, height, channels;
+	unsigned char* data = stbi_load(path.c_str(), &width, &height, &channels, 0);
 
 	if (data)
 	{
-		glTexImage2D(GL_TEXTURE_2D, 0, m_nrChannels != 4 ? GL_RGB : GL_RGBA, m_width, m_height, 0, m_nrChannels != 4 ? GL_RGB : GL_RGBA, GL_UNSIGNED_BYTE, data);
+		m_Width = width;
+		m_Height = height;
+
+		// Determine formats
+		if (channels == 4)
+		{
+			m_InternalFormat = GL_RGBA8;
+			m_DataFormat = GL_RGBA;
+		}
+		else if (channels == 3)
+		{
+			m_InternalFormat = GL_RGB8;
+			m_DataFormat = GL_RGB;
+		}
+		else if (channels == 1)
+		{
+			m_InternalFormat = GL_R8;
+			m_DataFormat = GL_RED;
+		}
+
+		// Create Texture
+		glGenTextures(1, &m_RendererID);
+		glBindTexture(GL_TEXTURE_2D, m_RendererID);
+
+		// Upload data
+		glTexImage2D(GL_TEXTURE_2D, 0, m_InternalFormat, m_Width, m_Height, 0, m_DataFormat, GL_UNSIGNED_BYTE, data);
+
+		// Filtering
+		GLint glFilter = (filter == Filter::Nearest) ? GL_NEAREST : GL_LINEAR;
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, glFilter);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, glFilter); // Magnification usually looks best Nearest for pixel art, Linear for HD
+
+		// Wrapping
+		GLint glWrap = (wrap == Wrap::Repeat) ? GL_REPEAT : GL_CLAMP_TO_EDGE;
+		if (wrap == Wrap::ClampToBorder)
+			glWrap = GL_CLAMP_TO_BORDER;
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, glWrap);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, glWrap);
+
+		// Mipmaps (optional, good for 3D or scaled down sprites)
+		if (filter == Filter::Linear)
+		{
+			glGenerateMipmap(GL_TEXTURE_2D);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		}
+
+// Debug Label
+#ifdef _DEBUG
+		std::string label = "Texture: " + path;
+		glObjectLabel(GL_TEXTURE, m_RendererID, -1, label.c_str());
+#endif
+
+		stbi_image_free(data);
 	}
 	else
 	{
-		printf("Failed to load texture\n");
+		std::cout << "ERROR::TEXTURE::LOAD_FAILED: " << path << std::endl;
 	}
-	stbi_image_free(data);
 }
 
-Texture::Texture(unsigned int* id)
+Texture::Texture(uint32_t width, uint32_t height, GLenum internalFormat, Filter filter, Wrap wrap)
+      : m_Width(width), m_Height(height), m_InternalFormat(internalFormat)
 {
-	this->m_textureID = *id;
-
-	// Get texture properties
-	glBindTexture(GL_TEXTURE_2D, m_textureID);
-	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &m_width);
-	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &m_height);
-	GLint format;
-	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &format);
-	if (format == GL_RGB)
-		m_nrChannels = 3;
-	else if (format == GL_RGBA)
-		m_nrChannels = 4;
+	// Determine data format from internal format
+	if (internalFormat == GL_RGBA8)
+		m_DataFormat = GL_RGBA;
+	else if (internalFormat == GL_RGB8)
+		m_DataFormat = GL_RGB;
+	else if (internalFormat == GL_R8)
+		m_DataFormat = GL_RED;
 	else
-		m_nrChannels = 0;
+		m_DataFormat = GL_RGBA; // Default
 
+	glGenTextures(1, &m_RendererID);
+	glBindTexture(GL_TEXTURE_2D, m_RendererID);
 
-	// Name texture so render doc has info
-	std::string name = "Copied Texture " + std::to_string(m_textureID);
-	glObjectLabel(GL_TEXTURE, m_textureID, -1, name.c_str());
+	// Filtering
+	GLint glFilter = (filter == Filter::Nearest) ? GL_NEAREST : GL_LINEAR;
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, glFilter);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, glFilter);
 
+	// Wrapping
+	GLint glWrap = (wrap == Wrap::Repeat) ? GL_REPEAT : GL_CLAMP_TO_EDGE;
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, glWrap);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, glWrap);
+
+	// Allocate memory but don't upload data yet
+	glTexImage2D(GL_TEXTURE_2D, 0, m_InternalFormat, m_Width, m_Height, 0, m_DataFormat, GL_UNSIGNED_BYTE, nullptr);
 }
 
 Texture::~Texture()
 {
-	if (m_textureID != 0)
-		glDeleteTextures(1, &m_textureID);
-	m_textureID = 0;
+	if (m_RendererID != 0)
+		glDeleteTextures(1, &m_RendererID);
 }
 
-void Texture::load(std::string dir)
+// Move Constructor
+Texture::Texture(Texture&& other) noexcept
 {
-	// Create and bind texture ID
-	glGenTextures(1, &m_textureID);
-	glBindTexture(GL_TEXTURE_2D, m_textureID);
+	m_RendererID = other.m_RendererID;
+	m_Width = other.m_Width;
+	m_Height = other.m_Height;
+	m_FilePath = other.m_FilePath;
+	m_InternalFormat = other.m_InternalFormat;
+	m_DataFormat = other.m_DataFormat;
 
-	// Set Wrapping mode
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	// Invalidate source
+	other.m_RendererID = 0;
+}
 
-	// Set texture filtering
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	// Load Image and generate mipmaps
-	unsigned char* data = stbi_load(dir.c_str(), &m_width, &m_height, &m_nrChannels, 0);
-
-	if (data)
+// Move Assignment
+Texture& Texture::operator=(Texture&& other) noexcept
+{
+	if (this != &other)
 	{
-		glTexImage2D(GL_TEXTURE_2D, 0, m_nrChannels != 4 ? GL_RGB : GL_RGBA, m_width, m_height, 0, m_nrChannels != 4 ? GL_RGB : GL_RGBA, GL_UNSIGNED_BYTE, data);
+		// Delete our current data
+		if (m_RendererID != 0)
+			glDeleteTextures(1, &m_RendererID);
+
+		// Move data
+		m_RendererID = other.m_RendererID;
+		m_Width = other.m_Width;
+		m_Height = other.m_Height;
+		m_FilePath = other.m_FilePath;
+		m_InternalFormat = other.m_InternalFormat;
+		m_DataFormat = other.m_DataFormat;
+
+		// Invalidate source
+		other.m_RendererID = 0;
 	}
-	else
-	{
-		printf("Failed to load texture: %c\n", dir.c_str());
-	}
-	stbi_image_free(data);
+	return *this;
 }
 
-int Texture::GetWidth()
+void Texture::Bind(uint32_t slot) const
 {
-	return m_width;
+	glActiveTexture(GL_TEXTURE0 + slot);
+	glBindTexture(GL_TEXTURE_2D, m_RendererID);
 }
 
-int Texture::GetHeight()
+void Texture::Unbind() const
 {
-	return m_height;
+	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void Texture::SetData(void* data, uint32_t size)
+{
+	// Safety check (basic) for RGBA
+	// uint32_t bpp = m_DataFormat == GL_RGBA ? 4 : 3;
+	// if (size != m_Width * m_Height * bpp) ...
+
+	glBindTexture(GL_TEXTURE_2D, m_RendererID);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, m_Width, m_Height, m_DataFormat, GL_UNSIGNED_BYTE, data);
+}
+
+void Texture::SetID(uint32_t id, uint32_t width, uint32_t height)
+{
+	if (m_RendererID != 0)
+		glDeleteTextures(1, &m_RendererID);
+
+	m_RendererID = id;
+	m_Width = width;
+	m_Height = height;
 }

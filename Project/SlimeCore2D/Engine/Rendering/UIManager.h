@@ -1,45 +1,36 @@
 #pragma once
 
-#include <string>
-#include <unordered_map>
+#include <vector>
 
-#include "Texture.h"
+#include "glm.hpp"
 
-using UIId = std::uint64_t;
-
+// You can expand this struct to be a full UI Class hierarchy
 struct UIElement
 {
-	UIId id = 0;
-	std::string text;
-	Texture* texture = nullptr;
-	int texW = 0, texH = 0;
-	float x = 0, y = 0;
-	float anchorX = 0.5f, anchorY = 0.5f;
-	float r = 1, g = 1, b = 1;
-	int layer = 1;
-	bool visible = true;
-	int fontSize = 24;
+	glm::vec2 Position;
+	glm::vec2 Size;
+	glm::vec4 Color;
+	// Texture* Image = nullptr;
+	// std::string Text;
 };
 
 class UIManager
 {
 public:
+	// Singleton access if desired, or just static
 	static UIManager& Get();
-	UIId CreateText(const std::string& text, int fontSize, float x, float y);
-	void Destroy(UIId id);
-	void SetText(UIId id, const std::string& text);
-	void SetPosition(UIId id, float x, float y);
-	void SetAnchor(UIId id, float ax, float ay);
-	void SetColor(UIId id, float r, float g, float b);
-	void SetVisible(UIId id, bool visible);
-	void SetLayer(UIId id, int layer);
 
+	void Init();
 	void Draw();
 
-private:
-	UIManager();
-	~UIManager();
+	// Add elements to the list to be drawn this frame (Immediate mode)
+	void DrawUIQuad(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color);
+	// Add other UI widgets here...
 
-	UIId m_nextId = 1;
-	std::unordered_map<UIId, UIElement> m_elements;
+private:
+	UIManager() = default;
+
+	glm::mat4 m_OrthoMatrix;
+	// Temporary storage if you want to delay rendering,
+	// OR you can just pass through to Renderer2D immediately if called inside a UI pass.
 };

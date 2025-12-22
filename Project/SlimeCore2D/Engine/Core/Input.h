@@ -1,80 +1,90 @@
 #pragma once
-#include "Camera.h"
-#include "glew.h"
-#include "glfw3.h"
-#include "glm.hpp"
-#include "Keycode.h"
+
+#include <glm.hpp>
 #include <unordered_map>
+
+#include "Keycode.h"
+
+// Forward Declarations
+struct GLFWwindow;
+class Camera;
 
 class Input
 {
 public:
-	~Input();
+	// Singleton Access
+	static Input* GetInstance();
 
-	static Input* GetInstance()
+	// Lifecycle
+	void Init(GLFWwindow* window);
+	void Update(); // Call this at the START of every frame
+
+	// --- Keyboard ---
+	// Returns true while the key is held down
+	bool GetKey(Keycode key);
+	// Returns true only on the frame the key was pressed
+	bool GetKeyDown(Keycode key);
+	// Returns true only on the frame the key was released
+	bool GetKeyUp(Keycode key);
+
+	// --- Mouse ---
+	// Returns true while the button is held down (0=Left, 1=Right, 2=Middle)
+	bool GetMouseButton(int button);
+	bool GetMouseButtonDown(int button);
+	bool GetMouseButtonUp(int button);
+
+	// Screen Coordinates (Pixels, 0,0 is Top-Left usually, but we normalize to Bottom-Left for GL)
+	glm::vec2 GetMousePosition();
+
+	// World Coordinates (Units, based on Camera)
+	glm::vec2 GetMousePositionWorld();
+
+	float GetScroll() const
 	{
-		if (!instance)
-			instance = new Input;
-		return instance;
-	};
+		return m_ScrollY;
+	}
 
-	void Update();
+	// --- Window / Viewport ---
+	void SetCamera(Camera* camera);
 
-	GLFWwindow* GetWindow();
+	Camera* GetCamera() const
+	{
+		return m_Camera;
+	}
 
-	static glm::vec2 GetMousePos();
-	glm::vec2 GetDeltaMouse();
-
-	glm::vec2 GetWindowSize();
-	glm::vec2 GetAspectRatio();
-	static bool GetMouseDown(int button);
-
-	void SetCamera(Camera* cam);
-	
-	// Viewport rectangle used for rendering when preserving aspect ratio
 	void SetViewportRect(int x, int y, int width, int height);
-	glm::vec4 GetViewportRect();
-	Camera* GetCamera();
 
-	static bool GetKeyPress(Keycode key);
-	static bool GetKeyRelease(Keycode key);
+	glm::vec4 GetViewportRect() const
+	{
+		return m_ViewportRect;
+	}
 
-	static void SetScroll(float newScroll);
-	static float GetScroll();
-
-	bool GetFocus();
-	void SetFocus(bool focus);
-
-	static glm::vec2 GetMouseToWorldPos();
+	// Callbacks (Internal use by GLFW)
+	void SetScrollInternal(float x, float y);
 
 private:
-	static Input* instance;
+	Input() = default;
+	~Input() = default;
 
-	Input();
+	// Singleton instance
+	static Input* s_Instance;
 
-	GLFWwindow* window;
+	GLFWwindow* m_Window = nullptr;
+	Camera* m_Camera = nullptr;
 
-	static double mouseXPos;
-	static double mouseYPos;
+	// Mouse State
+	glm::vec2 m_MousePos = { 0.0f, 0.0f };
+	float m_ScrollX = 0.0f;
+	float m_ScrollY = 0.0f;
 
-    static std::unordered_map<int, bool> keyPrevState;
+	// Viewport (X, Y, Width, Height)
+	glm::vec4 m_ViewportRect = { 0, 0, 1920, 1080 };
 
-	int winWidth = 0;
-	int winHeight = 0;
+	// Input State Maps (Current and Previous Frame)
+	// We use two maps to detect "Down" vs "Held" events
+	std::unordered_map<int, bool> m_KeyData;
+	std::unordered_map<int, bool> m_KeyDataLast;
 
-	double aspectX = 32;
-	double aspectY = 18;
-
-	bool IsWindowFocused = true;
-
-	static float scroll;
-	glm::vec2 deltaMouse = glm::vec2();
-
-	Camera* camera = nullptr;
-
-	// Current viewport rect inside the framebuffer (x, y, width, height)
-	int viewportX = 0;
-	int viewportY = 0;
-	int viewportWidth = 0;
-	int viewportHeight = 0;
+	std::unordered_map<int, bool> m_MouseData;
+	std::unordered_map<int, bool> m_MouseDataLast;
 };

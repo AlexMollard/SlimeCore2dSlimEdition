@@ -1,63 +1,115 @@
 #pragma once
+
+#include <glm.hpp>
+#include <string>
 #include <vector>
+#include <array>
 
 #include "Core/Camera.h"
-#include "Quad.h"
+#include "Shader.h"
 #include "Texture.h"
+
+// Forward Declaration for your Text/Font class
+class Text;
 
 class Renderer2D
 {
 public:
-	Renderer2D(Camera* camera);
-	~Renderer2D();
-
-	static void Init();
-	static void ShutDown();
-
-	void AddObject(GameObject* newObject);
-
-	Texture* LoadTexture(std::string dir);
-
-	void Draw();
-	void DrawUI();
-
-	Shader* GetBasicShader();
-	static void SetShader(Shader* shader);
-
-	static void DrawUIQuad(glm::vec2 pos = glm::vec2(0), int layer = 1, glm::vec2 size = glm::vec2(1), glm::vec3 color = glm::vec3(1), Texture* texture = nullptr);
-
-	static void setActiveRegion(Texture* texture, int regionIndex, int spriteWidth);
-
-	static void DrawQuad(glm::vec3 position, glm::vec2 size, glm::vec4 color, glm::vec2 anchor = glm::vec2(0.5f));
-
-	static void DrawQuad(glm::vec2 position, glm::vec2 size, glm::vec4 color)
+	struct Statistics
 	{
-		DrawQuad(glm::vec3(position, -0.9f), size, color);
+		uint32_t DrawCalls = 0;
+		uint32_t QuadCount = 0;
+		uint32_t VertexCount = 0;
+		uint32_t IndexCount = 0;
 	};
 
-	static void DrawQuad(glm::vec3 position, glm::vec2 size, glm::vec4 color, Texture* texture, int frame = 0, int spriteWidth = 16, glm::vec2 anchor = glm::vec2(0.5f));
+	static void Init();
+	static void Shutdown();
 
-	void RemoveQuad(GameObject* object);
-	int GetObjectIndex(GameObject* object);
-
-	static void BeginBatch();
-	static void EndBatch();
+	// Begin a new frame/batch. Call this before drawing.
+	static void BeginScene(Camera& camera);
+	// For custom orthographic projections (e.g. UI)
+	static void BeginScene(const glm::mat4& viewProj);
+	static void EndScene();
 	static void Flush();
 
-	static Shader* basicShader;
+	// --- Primitives ---
+
+	// Flat Color
+	static void DrawQuad(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color);
+	static void DrawQuad(const glm::vec3& position, const glm::vec2& size, const glm::vec4& color);
+
+	// Texture
+	static void DrawQuad(const glm::vec2& position, const glm::vec2& size, Texture* texture, float tiling = 1.0f, const glm::vec4& tintColor = glm::vec4(1.0f));
+	static void DrawQuad(const glm::vec3& position, const glm::vec2& size, Texture* texture, float tiling = 1.0f, const glm::vec4& tintColor = glm::vec4(1.0f));
+
+	// Rotated (Rotation in radians)
+	static void DrawRotatedQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const glm::vec4& color);
+	static void DrawRotatedQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const glm::vec4& color);
+	static void DrawRotatedQuad(const glm::vec2& position, const glm::vec2& size, float rotation, Texture* texture, float tiling = 1.0f, const glm::vec4& tintColor = glm::vec4(1.0f));
+	static void DrawRotatedQuad(const glm::vec3& position, const glm::vec2& size, float rotation, Texture* texture, float tiling = 1.0f, const glm::vec4& tintColor = glm::vec4(1.0f));
+
+	// SubTexture / Explicit UVs (Useful for Sprite Sheets and Font Atlases)
+	// uv[] must be an array of 4 vec2s: { BL, BR, TR, TL }
+	static void DrawQuadUV(const glm::vec3& position, const glm::vec2& size, Texture* texture, const glm::vec2 uv[], const glm::vec4& tintColor = glm::vec4(1.0f));
+
+	// --- Text Rendering (SDF) ---
+	// Draws a string using the provided Text object (which contains the font atlas)
+	static void DrawString(const std::string& text, Text* font, const glm::vec2& position, float scale, const glm::vec4& color);
+
+	// Stats
+	static Statistics GetStats();
+	static void ResetStats();
+
+	// Global default shader access
+	static Shader* GetShader()
+	{
+		return s_Data.TextureShader;
+	}
 
 private:
-	glm::vec3 m_currentColor = glm::vec3(-404);
-	glm::mat4 m_UIMatrix = glm::ortho<float>(16, -16, 9, -9, 2, 4);
-	Shader* m_currentShader = nullptr;
-	Texture* m_currentTexture = nullptr;
+	static void StartBatch();
+	static void NextBatch();
 
-	std::vector<GameObject*> m_objectPool;
-	std::vector<Texture*> m_texturePool;
-	std::vector<Shader*> m_shaderPool;
+	// Internal storage structure (PIMPL-style static)
+	struct Renderer2DData
+	{
+		const uint32_t MaxQuads = 10000;
+		const uint32_t MaxVertices = MaxQuads * 4;
+		const uint32_t MaxIndices = MaxQuads * 6;
+		static const uint32_t MaxTextureSlots = 32; // Check your GPU caps, 32 is standard for modern GL
 
-	static Shader* m_UIShader;
-	static Camera* m_camera;
+		unsigned int QuadVA = 0;
+		unsigned int QuadVB = 0;
+		unsigned int QuadIB = 0;
 
-	static std::vector<glm::vec2> m_UVs;
+		unsigned int WhiteTexture = 0;
+		uint32_t WhiteTextureSlot = 0;
+
+		uint32_t IndexCount = 0;
+
+		// Vertex Definition
+		struct QuadVertex
+		{
+			glm::vec3 Position;
+			glm::vec4 Color;
+			glm::vec2 TexCoord;
+			float TexIndex;
+			float TilingFactor;
+			float IsText; // 1.0 if SDF text, 0.0 if normal sprite
+		};
+
+		QuadVertex* QuadBuffer = nullptr;
+		QuadVertex* QuadBufferPtr = nullptr;
+
+		std::array<unsigned int, MaxTextureSlots> TextureSlots;
+		uint32_t TextureSlotIndex = 1; // 0 is white texture
+
+		Shader* TextureShader = nullptr;
+		glm::vec4 QuadVertexPositions[4]; // For rotation calculations
+
+		Statistics Stats;
+	};
+
+	static Renderer2DData s_Data;
 };

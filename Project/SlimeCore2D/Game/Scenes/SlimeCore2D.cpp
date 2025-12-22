@@ -2,8 +2,6 @@
 #include "Game2D.h"
 #include "Scripting/DotNetHost.h"
 
-Input* Input::instance = 0;
-
 int main()
 {
 	Window* app = new Window(1536, 852, (char*) "SlimeCore2D");
@@ -34,7 +32,6 @@ int main()
 
 	delete app;
 	delete game;
-	delete Input::GetInstance();
 
 	dotnet.Shutdown();
 	return 0;

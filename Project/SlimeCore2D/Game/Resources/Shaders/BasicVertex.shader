@@ -1,25 +1,25 @@
-#version 450
+#version 330 core
+layout (location = 0) in vec3 aPos;
+layout (location = 1) in vec4 aColor;
+layout (location = 2) in vec2 aTexCoord;
+layout (location = 3) in float aTexIndex;
+layout (location = 4) in float aTiling;
+layout (location = 5) in float aIsText;
 
-layout(location = 0) in vec3 aPos;
-layout(location = 1) in vec4 aColor;
-layout(location = 2) in vec2 aTexCoord;
-layout(location = 3) in float aTexIndex;
+out vec4 vColor;
+out vec2 vTexCoord;
+out float vTexIndex;
+out float vTiling;
+out float vIsText;
 
-uniform mat4 OrthoMatrix;
-uniform mat4 Model;
-uniform vec3 position;
-
-out vec4 Color;
-out vec2 TexCoord;
-out float TexIndex;
+uniform mat4 u_ViewProjection;
 
 void main()
 {
-	Color = aColor;
-	TexIndex = aTexIndex;
-
-	TexCoord = aTexCoord;
-	TexCoord.y = -1 * TexCoord.y;
-
-	gl_Position = OrthoMatrix * Model * vec4(-aPos.xyz, 1.0);
+    vColor = aColor;
+    vTexCoord = aTexCoord;
+    vTexIndex = aTexIndex;
+    vTiling = aTiling;
+    vIsText = aIsText;
+    gl_Position = u_ViewProjection * vec4(aPos, 1.0);
 }

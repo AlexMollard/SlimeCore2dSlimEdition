@@ -1,225 +1,171 @@
 #include "Input.h"
 
-#include <iostream>
-#include <string>
+#include "Camera.h"
+#include "glew.h"
+#include "glfw3.h"
 
-void window_focus_callback(GLFWwindow* window, int focused);
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
-float Input::scroll;
-double Input::mouseXPos;
-double Input::mouseYPos;
+Input* Input::s_Instance = nullptr;
 
-std::unordered_map<int, bool> Input::keyPrevState;
-
-Input::Input()
+// GLFW Callbacks
+void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
-	window = glfwGetCurrentContext();
-	glfwSetWindowFocusCallback(window, window_focus_callback);
-	glfwSetScrollCallback(window, scroll_callback);
-
-	// initialize viewport to current framebuffer size (defaults to full window)
-	glfwGetFramebufferSize(window, &viewportWidth, &viewportHeight);
-	viewportX = 0;
-	viewportY = 0;
+	if (Input::GetInstance())
+		Input::GetInstance()->SetScrollInternal((float) xoffset, (float) yoffset);
 }
 
-Input::~Input()
+Input* Input::GetInstance()
 {
+	if (!s_Instance)
+		s_Instance = new Input();
+	return s_Instance;
 }
 
-// Map cursor from framebuffer space into the active viewport and then into world coords
+void Input::Init(GLFWwindow* window)
+{
+	m_Window = window;
+	glfwSetScrollCallback(window, ScrollCallback);
+
+	// Initialize viewport to window size initially
+	int w, h;
+	glfwGetWindowSize(window, &w, &h);
+	m_ViewportRect = { 0, 0, w, h };
+}
+
 void Input::Update()
 {
-	if (camera)
+	// 1. Reset per-frame data
+	m_ScrollX = 0.0f;
+	m_ScrollY = 0.0f;
+
+	// 2. Poll Events (updates GLFW internal state)
+	glfwPollEvents();
+
+	// 3. Update Mouse Position
+	double x, y;
+	glfwGetCursorPos(m_Window, &x, &y);
+	m_MousePos = { (float) x, (float) y };
+
+	// 4. Update Key States for "Just Pressed" logic
+	// We copy current state to 'Last' before reading new state is tricky with GLFW immediate mode.
+	// Better approach for polled input:
+
+	// Copy current frame map to last frame map
+	m_KeyDataLast = m_KeyData;
+	m_MouseDataLast = m_MouseData;
+
+	// Update current frame map (This checks purely if key is physically down right now)
+	// We only track keys that we care about or have been pressed to save performance,
+	// but iterating all keycodes is safer. For now, we update on query or demand.
+	// Actually, to support GetKeyDown properly, we need to know the state of specific keys
+	// stored in our map.
+	for (auto& [key, pressed]: m_KeyData)
 	{
-		aspectX = -camera->GetAspectRatio().x;
-		aspectY = -camera->GetAspectRatio().y;
+		int state = glfwGetKey(m_Window, key);
+		m_KeyData[key] = (state == GLFW_PRESS || state == GLFW_REPEAT);
 	}
 
-	deltaMouse = glm::vec2((float) mouseXPos, (float) mouseYPos);
-
-	glfwGetCursorPos(window, &mouseXPos, &mouseYPos);
-	glfwGetWindowSize(window, &winWidth, &winHeight);
-
-	// Use viewport rect (fallback to full window if not set)
-	int vpX = viewportX;
-	int vpY = viewportY;
-	int vpW = viewportWidth ? viewportWidth : winWidth;
-	int vpH = viewportHeight ? viewportHeight : winHeight;
-
-	double localX = mouseXPos - vpX;
-	double localY = mouseYPos - vpY;
-
-	// Clamp to viewport area
-	if (localX < 0) localX = 0;
-	if (localX > vpW) localX = vpW;
-	if (localY < 0) localY = 0;
-	if (localY > vpH) localY = vpH;
-
-	mouseXPos = localX;
-	mouseYPos = localY;
-
-	// Convert to world coordinates using camera half-extents
-	mouseXPos /= (vpW / (aspectX * 2.0f));
-	mouseXPos -= aspectX;
-
-	mouseYPos /= (vpH / (aspectY * 2.0f));
-	mouseYPos -= aspectY;
-	mouseYPos = -mouseYPos;
-
-	deltaMouse -= glm::vec2((float) mouseXPos, (float) mouseYPos);
-	Input::scroll = 0.0f;
-} 
-
-glm::vec2 Input::GetMousePos()
-{
-	return glm::vec2(mouseXPos, mouseYPos);
-}
-
-glm::vec2 Input::GetDeltaMouse()
-{
-	return deltaMouse;
-}
-
-glm::vec2 Input::GetWindowSize()
-{
-	return glm::vec2(winWidth, winHeight);
-}
-
-glm::vec2 Input::GetAspectRatio()
-{
-	return glm::vec2(aspectX, aspectY);
-}
-
-bool Input::GetMouseDown(int button)
-{
-	return (glfwGetMouseButton(GetInstance()->window, button));
-}
-
-void Input::SetCamera(Camera* cam)
-{
-	camera = cam;
-	if (!camera || !window) return;
-
-	// Compute framebuffer/viewport to keep the camera aspect ratio and center it (letterbox/pillarbox)
-	int fbW = 0, fbH = 0;
-	glfwGetFramebufferSize(window, &fbW, &fbH);
-	if (fbW == 0 || fbH == 0)
+	// Do the same for mouse buttons (0-7)
+	for (int i = 0; i < 8; i++)
 	{
-		SetViewportRect(0, 0, fbW, fbH);
-		glViewport(0, 0, fbW, fbH);
-		return;
+		int state = glfwGetMouseButton(m_Window, i);
+		m_MouseData[i] = (state == GLFW_PRESS);
 	}
-
-	glm::vec2 aspect = camera->GetAspectRatio();
-	float targetW = fabs(aspect.x * 2.0f);
-	float targetH = fabs(aspect.y * 2.0f);
-	float targetAR = targetW / targetH;
-	float windowAR = fbW / (float)fbH;
-
-	int vpX = 0, vpY = 0, vpW = fbW, vpH = fbH;
-	if (windowAR > targetAR)
-	{
-		// window wider -> pillarbox
-		vpH = fbH;
-		vpW = (int)(fbH * targetAR);
-		vpX = (fbW - vpW) / 2;
-	}
-	else
-	{
-		// window taller -> letterbox
-		vpW = fbW;
-		vpH = (int)(fbW / targetAR);
-		vpY = (fbH - vpH) / 2;
-	}
-	glViewport(vpX, vpY, vpW, vpH);
-	SetViewportRect(vpX, vpY, vpW, vpH);
-} 
-
-GLFWwindow* Input::GetWindow()
-{
-	return window;
 }
 
-bool Input::GetFocus()
+// --- Keyboard ---
+
+bool Input::GetKey(Keycode key)
 {
-	return IsWindowFocused;
+	// Direct polling
+	int state = glfwGetKey(m_Window, (int) key);
+	// Update internal map for Next Frame's "GetKeyDown" check
+	m_KeyData[(int) key] = (state == GLFW_PRESS || state == GLFW_REPEAT);
+	return m_KeyData[(int) key];
 }
 
-void Input::SetFocus(bool focus)
+bool Input::GetKeyDown(Keycode key)
 {
-	IsWindowFocused = focus;
+	bool isDown = GetKey(key); // Also updates m_KeyData
+	bool wasDown = m_KeyDataLast[(int) key];
+	return isDown && !wasDown;
 }
 
-glm::vec2 Input::GetMouseToWorldPos()
+bool Input::GetKeyUp(Keycode key)
 {
-	return GetInstance()->camera->GetPosition() + (glm::vec2(mouseXPos, mouseYPos));
+	bool isDown = GetKey(key);
+	bool wasDown = m_KeyDataLast[(int) key];
+	return !isDown && wasDown;
 }
 
-void window_focus_callback(GLFWwindow* window, int focused)
+// --- Mouse Buttons ---
+
+bool Input::GetMouseButton(int button)
 {
-	Input::GetInstance()->SetFocus(focused);
+	int state = glfwGetMouseButton(m_Window, button);
+	m_MouseData[button] = (state == GLFW_PRESS);
+	return m_MouseData[button];
 }
 
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+bool Input::GetMouseButtonDown(int button)
 {
-	Input::SetScroll(yoffset);
+	bool isDown = GetMouseButton(button);
+	bool wasDown = m_MouseDataLast[button];
+	return isDown && !wasDown;
 }
 
-// Viewport helpers
+bool Input::GetMouseButtonUp(int button)
+{
+	bool isDown = GetMouseButton(button);
+	bool wasDown = m_MouseDataLast[button];
+	return !isDown && wasDown;
+}
+
+// --- Mouse Position Math ---
+
+glm::vec2 Input::GetMousePosition()
+{
+	// Raw Window Pixels (Top-Left 0,0)
+	return m_MousePos;
+}
+
+glm::vec2 Input::GetMousePositionWorld()
+{
+	if (!m_Camera)
+		return { 0.0f, 0.0f };
+
+	// 1. Get Mouse relative to the Viewport (handle letterboxing)
+	float x = m_MousePos.x - m_ViewportRect.x;
+	float y = m_MousePos.y - m_ViewportRect.y;
+
+	// 2. Normalize to NDC (-1.0 to 1.0)
+	// Note: OpenGL Y is Bottom-Up, GLFW Y is Top-Down. We flip Y here.
+	float ndcX = (2.0f * x) / m_ViewportRect.z - 1.0f;
+	float ndcY = 1.0f - (2.0f * y) / m_ViewportRect.w;
+
+	glm::vec4 ndcCoords(ndcX, ndcY, 0.0f, 1.0f);
+
+	// 3. Unproject: Inverse(Projection * View) * NDC
+	// The new Camera class has GetViewProjectionMatrix()
+	glm::mat4 invVP = glm::inverse(m_Camera->GetViewProjectionMatrix());
+	glm::vec4 worldCoords = invVP * ndcCoords;
+
+	return { worldCoords.x, worldCoords.y };
+}
+
+// --- Setters ---
+
+void Input::SetCamera(Camera* camera)
+{
+	m_Camera = camera;
+}
+
 void Input::SetViewportRect(int x, int y, int width, int height)
 {
-	viewportX = x;
-	viewportY = y;
-	viewportWidth = width;
-	viewportHeight = height;
+	m_ViewportRect = { (float) x, (float) y, (float) width, (float) height };
 }
 
-glm::vec4 Input::GetViewportRect()
+void Input::SetScrollInternal(float x, float y)
 {
-	return glm::vec4(viewportX, viewportY, viewportWidth, viewportHeight);
-}
-
-Camera* Input::GetCamera()
-{
-	return camera;
-}
-
-bool Input::GetKeyPress(Keycode key)
-{
-	int state = glfwGetKey(GetInstance()->window, (int) key);
-	if (state == GLFW_PRESS)
-	{
-		return true;
-	}
-
-	return false;
-}
-
-bool Input::GetKeyRelease(Keycode key)
-{
-	// Edge-detect a release: return true only when the key was pressed previously
-	// and is not pressed now.
-	int state = glfwGetKey(GetInstance()->window, (int) key);
-	bool isPressedNow = (state == GLFW_PRESS || state == GLFW_REPEAT);
-
-	bool wasPressed = false;
-	auto it = keyPrevState.find((int) key);
-	if (it != keyPrevState.end())
-		wasPressed = it->second;
-
-	// update saved state for next call
-	keyPrevState[(int) key] = isPressedNow;
-
-	return (wasPressed && !isPressedNow);
-}
-
-void Input::SetScroll(float newScroll)
-{
-	scroll = newScroll;
-}
-
-float Input::GetScroll()
-{
-	return Input::scroll;
+	m_ScrollX = x;
+	m_ScrollY = y;
 }
