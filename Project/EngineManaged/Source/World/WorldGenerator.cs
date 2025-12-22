@@ -22,15 +22,16 @@ internal class WorldGenerator
         _rng = new Random(seed);
     }
 
-    public void Generate(Tile<Terrain>[,] world)
+    public void Generate(GridSystem<Terrain> world)
     {
-        int w = world.GetLength(0);
-        int h = world.GetLength(1);
+        int w = world.Width();
+        int h = world.Height();
 
         // 1. INITIALIZE CANVAS
-        for (int x = 0; x < w; x++)
-            for (int y = 0; y < h; y++)
-                world[x, y] = new Tile<Terrain> { Blocked = false, Type = Terrain.Grass };
+        world.SetAll(o => {
+            o.Blocked = false;
+            o.Type = Terrain.Grass;
+        });
 
         // 2. DEFINE HIGHWAYS
         List<int> highwayX = new List<int>();
@@ -110,41 +111,81 @@ internal class WorldGenerator
         return size;
     }
 
-    private void ProcessPlaza(Tile<Terrain>[,] world, int x, int y, int w, int h)
+    private void ProcessPlaza(GridSystem<Terrain> world, int x, int y, int w, int h)
     {
         double roll = _rng.NextDouble();
-        if (roll < 0.45) FillRect(world, x, y, w, h, Terrain.Rock, true);
-        else if (roll < 0.65) FillRect(world, x, y, w, h, Terrain.Mud, false);
-        else if (roll < 0.80) FillRect(world, x, y, w, h, Terrain.Ice, false);
-        else if (roll < 0.85) FillRect(world, x + 1, y + 1, w - 2, h - 2, Terrain.Lava, true);
+        if (roll < 0.45)
+        {
+            FillRect(world, x, y, w, h, e =>
+            {
+                e.Type = Terrain.Rock;
+                e.Blocked = true;
+            });
+        }
+        else if (roll < 0.65)
+        {
+            FillRect(world, x, y, w, h, e =>
+            {
+                e.Type = Terrain.Mud;
+                e.Blocked = false;
+            });
+        }
+        else if (roll < 0.80)
+        {
+            FillRect(world, x, y, w, h, e =>
+            {
+                e.Type = Terrain.Ice;
+                e.Blocked = false;
+            });
+        }
+        else if (roll < 0.85)
+        {
+            FillRect(world, x + 1, y + 1, w - 2, h - 2, e =>
+            {
+                e.Type = Terrain.Lava;
+                e.Blocked = true;
+            });
+        }
     }
 
-    private void DrawHighways(Tile<Terrain>[,] world, List<int> hx, List<int> hy)
+    private void DrawHighways(GridSystem<Terrain> world, List<int> hx, List<int> hy)
     {
-        int w = world.GetLength(0);
-        int h = world.GetLength(1);
+        int w = world.Width();
+        int h = world.Height();
         foreach (int x in hx)
             for (int y = 0; y < h; y++)
             {
-                world[x, y].Type = Terrain.Speed;
-                world[x + 1, y].Type = Terrain.Speed;
-                world[x, y].Blocked = false;
-                world[x + 1, y].Blocked = false;
+                world.Set(x, y, o =>
+                {
+                    o.Type = Terrain.Speed;
+                    o.Blocked = false;
+                });
+                world.Set(x + 1, y, o =>
+                {
+                    o.Type = Terrain.Speed;
+                    o.Blocked = false;
+                });
             }
         foreach (int y in hy)
             for (int x = 0; x < w; x++)
             {
-                world[x, y].Type = Terrain.Speed;
-                world[x, y + 1].Type = Terrain.Speed;
-                world[x, y].Blocked = false;
-                world[x, y + 1].Blocked = false;
+                world.Set(x, y, o =>
+                {
+                    o.Type = Terrain.Speed;
+                    o.Blocked = false;
+                });
+                world.Set(x, y + 1, o =>
+                {
+                    o.Type = Terrain.Speed;
+                    o.Blocked = false;
+                });
             }
     }
 
-    private void RemoveSingleTileWalls(Tile<Terrain>[,] world)
+    private void RemoveSingleTileWalls(GridSystem<Terrain> world)
     {
-        int w = world.GetLength(0);
-        int h = world.GetLength(1);
+        int w = world.Width();
+        int h = world.Height();
         for (int x = 0; x < w; x++)
         {
             for (int y = 0; y < h; y++)
@@ -168,33 +209,35 @@ internal class WorldGenerator
         }
     }
 
-    private void FillRect(Tile<Terrain>[,] world, int bx, int by, int bw, int bh, Terrain type, bool blocked)
+    private void FillRect(GridSystem<Terrain> world, int bx, int by, int bw, int bh, Action<TileOptions<Terrain>> configure)
     {
         for (int x = bx; x < bx + bw; x++)
             for (int y = by; y < by + bh; y++)
             {
-                world[x, y].Type = type;
-                world[x, y].Blocked = blocked;
+                world.Set(x, y, configure);
             }
     }
 
-    private void ClearCenter(Tile<Terrain>[,] world)
+    private void ClearCenter(GridSystem<Terrain> world)
     {
-        int cw = world.GetLength(0) / 2;
-        int ch = world.GetLength(1) / 2;
+        int cw = world.Width() / 2;
+        int ch = world.Height() / 2;
         int r = 10;
         for (int x = cw - r; x <= cw + r; x++)
             for (int y = ch - r; y <= ch + r; y++)
             {
-                world[x, y].Blocked = false;
-                world[x, y].Type = Terrain.Grass;
+                world.Set(x, y, o =>
+                {
+                    o.Blocked = false;
+                    o.Type = Terrain.Grass;
+                });
             }
     }
 
-    private void PruneUnreachableAreas(Tile<Terrain>[,] world)
+    private void PruneUnreachableAreas(GridSystem<Terrain> world)
     {
-        int w = world.GetLength(0);
-        int h = world.GetLength(1);
+        int w = world.Width();
+        int h = world.Height();
         bool[,] reachable = new bool[w, h];
         Queue<(int x, int y)> queue = new Queue<(int x, int y)>();
         

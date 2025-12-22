@@ -4,7 +4,7 @@ using System.Text;
 
 namespace SlimeCore.Core.Numeric;
 
-internal static class Integrals
+public static class Integrals
 {
     public struct Int2
     {
@@ -14,6 +14,6 @@ internal static class Integrals
         { 
             X = x; 
             Y = y; 
-        } 
+        }
     }
 }
