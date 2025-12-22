@@ -20,6 +20,8 @@ public class StateGameOver : IDudeState
 	private UIButton _retryBtn;
 	private float _animTimer;
 
+	private float panelBGWidth = 14.0f;
+
 	public void Enter(DudeGame game)
 	{
 		_animTimer = 0;
@@ -49,28 +51,28 @@ public class StateGameOver : IDudeState
 		_panelBorder = SceneFactory.CreateQuad(0, -15, 14.5f, 10.5f, 0.8f, 0f, 0f, layer: 91);
 		_panelBorder.SetAnchor(0.5f, 0.5f);
 
-		_panelBg = SceneFactory.CreateQuad(0, -15, 14.0f, 10.0f, 0.1f, 0.1f, 0.1f, layer: 92);
+		_panelBg = SceneFactory.CreateQuad(0, -15, panelBGWidth, 10.0f, 0.1f, 0.1f, 0.1f, layer: 92);
 		_panelBg.SetAnchor(0.5f, 0.5f);
 
 		// Stats Text
-		_scoreLabel = UIText.Create($"SCORE: {(int)game.Score}", 1, 0, -15);
+		_scoreLabel = UIText.Create($"SCORE: {(int)game.Score}", 1, panelBGWidth / 2, -15);
 		_scoreLabel.SetAnchor(0.5f, 0.5f);
 		_scoreLabel.SetColor(1, 1, 1);
 		_scoreLabel.SetLayer(95);
 
-		_levelLabel = UIText.Create($"LEVEL REACHED: {game.Level}", 1, 0, -15);
+		_levelLabel = UIText.Create($"LEVEL REACHED: {game.Level}", 1, panelBGWidth / 2, -15);
 		_levelLabel.SetAnchor(0.5f, 0.5f);
 		_levelLabel.SetColor(0.2f, 1.0f, 1.0f);
 		_levelLabel.SetLayer(95);
 
-		_timeLabel = UIText.Create($"TIME ALIVE: {game.TimeAlive:F1}s", 1, 0, -15);
+		_timeLabel = UIText.Create($"TIME ALIVE: {game.TimeAlive:F1}s", 1, panelBGWidth / 2, -15);
 		_timeLabel.SetAnchor(0.5f, 0.5f);
 		_timeLabel.SetColor(0.7f, 0.7f, 0.7f);
 		_timeLabel.SetLayer(95);
 
 		// --- STYLED RETRY BUTTON ---
 		// Bright Cyan Background
-		_retryBtn = UIButton.Create("TRY AGAIN", 0, -15, 10.0f, 2.0f, 0.0f, 0.8f, 1.0f, layer: 96, fontSize: 36);
+		_retryBtn = UIButton.Create("TRY AGAIN", 0, -15, 10.0f, 2.0f, 0.0f, 0.8f, 1.0f, layer: 96, fontSize: 1);
 
 		// Set Text to Black for contrast
 		_retryBtn.Label.SetColor(0.1f, 0.1f, 0.1f);
