@@ -3,31 +3,17 @@ using System.Collections.Generic;
 using SlimeCore.Interfaces;
 using EngineManaged.Scene;
 using EngineManaged.UI;
+using EngineManaged.Numeric;
 
 namespace GameModes.Dude
 {
 	// --- SHARED DATA STRUCTURES ---
-	public struct Vec2
-	{
-		public float X, Y;
-		public Vec2(float x, float y) { X = x; Y = y; }
-		public static Vec2 operator +(Vec2 a, Vec2 b) => new Vec2(a.X + b.X, a.Y + b.Y);
-		public static Vec2 operator -(Vec2 a, Vec2 b) => new Vec2(a.X - b.X, a.Y - b.Y);
-		public static Vec2 operator *(Vec2 a, float scalar) => new Vec2(a.X * scalar, a.Y * scalar);
-		public static Vec2 operator /(Vec2 a, float scalar) => new Vec2(a.X / scalar, a.Y / scalar);
-		public float Length() => MathF.Sqrt(X * X + Y * Y);
-		public float LengthSquared() => X * X + Y * Y;
-		public Vec2 Normalized() { float len = Length(); return len > 0.0001f ? this / len : new Vec2(0, 0); }
-		public static Vec2 Zero => new Vec2(0, 0);
-	}
-
 	internal enum HaterType { Normal, Chonker }
 	internal class Hater { public Entity Ent; public Vec2 Pos; public HaterType Type; }
-
-	// Collectable now holds a reference to its Definition from the Registry
 	internal class Collectable { public Entity Ent; public Vec2 Pos; public PowerupDef Definition; }
-
 	internal class GhostTrail { public Entity Ent; public float Alpha; public float InitW; public float InitH; }
+
+	// Refactored to use Vec2 for position and velocity
 	internal class Particle { public Entity Ent; public Vec2 Pos; public Vec2 Vel; public float Life; public float InitSize; }
 	internal class XPGem { public Entity Ent; public Vec2 Pos; public int Value; }
 
@@ -45,10 +31,10 @@ namespace GameModes.Dude
 		internal Entity DarkOverlay;
 		internal Entity CardBgBackdrop;
 
-		// --- NEW: STATS CONTAINER ---
+		// --- STATS CONTAINER ---
 		internal DudeStats Stats = new DudeStats();
 
-		// --- NEW: EVENT SYSTEM ---
+		// --- EVENT SYSTEM ---
 		internal GameEvents Events = new GameEvents();
 
 		// Core Values
@@ -86,7 +72,7 @@ namespace GameModes.Dude
 
 		public void Init()
 		{
-			// 1. Initialize Content Registry (Load Upgrades/Powerups)
+			// 1. Initialize Content Registry
 			ContentRegistry.Init();
 
 			// 2. Reset Data
@@ -166,7 +152,6 @@ namespace GameModes.Dude
 			UpgradeCounts.Clear();
 		}
 
-		// --- PUBLIC HELPER (Used by upgrades/states) ---
 		internal void SpawnExplosion(Vec2 pos, int count, float r, float g, float b)
 		{
 			for (int i = 0; i < count; i++)
@@ -174,14 +159,16 @@ namespace GameModes.Dude
 				float size = (float)Rng.NextDouble() * 0.4f + 0.1f;
 				float angle = (float)Rng.NextDouble() * 6.28f;
 				float speed = (float)Rng.NextDouble() * 8.0f + 2.0f;
-				Vec2 vel = new Vec2(MathF.Cos(angle) * speed, MathF.Sin(angle) * speed);
+
+				Vec2 vel = new Vec2(MathF.Cos(angle), MathF.Sin(angle)) * speed;
+
 				var ent = SceneFactory.CreateQuad(pos.X, pos.Y, size, size, r, g, b, layer: 30);
 				ent.SetAnchor(0.5f, 0.5f);
 				Particles.Add(new Particle { Ent = ent, Pos = pos, Vel = vel, Life = 1.0f, InitSize = size });
 			}
 		}
 
-		// --- STAT ACCESSORS (Used by upgrade lambdas) ---
+		// --- STAT ACCESSORS ---
 		internal float StatMagnetRange { get => Stats.MagnetRange; set => Stats.MagnetRange = value; }
 		internal float StatSpeedMult { get => Stats.SpeedMult; set => Stats.SpeedMult = value; }
 		internal float StatDashCooldown { get => Stats.DashCooldown; set => Stats.DashCooldown = value; }

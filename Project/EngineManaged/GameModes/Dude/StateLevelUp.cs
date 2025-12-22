@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using EngineManaged.Scene;
 using EngineManaged.UI;
 using EngineManaged;
+using EngineManaged.Numeric;
 
 namespace GameModes.Dude
 {
@@ -61,6 +62,7 @@ namespace GameModes.Dude
 			float bob = MathF.Sin(_animTime * 2.0f) * 0.2f;
 			_upgradeTitle.SetPosition(0, 7.5f + bob);
 
+			// Note: Input.GetMousePos returns tuple (float, float), not Vec2, so we keep this as is.
 			var (mx, my) = Input.GetMousePos();
 			bool mouseDown = Input.GetMouseDown(Input.MouseButton.Left);
 

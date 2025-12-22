@@ -2,6 +2,7 @@
 using EngineManaged;
 using EngineManaged.Scene;
 using EngineManaged.UI;
+using EngineManaged.Numeric;
 
 namespace GameModes.Dude
 {
@@ -30,7 +31,7 @@ namespace GameModes.Dude
 
 		public void Update(DudeGame game, float dt)
 		{
-			// 1. EVENT HOOK: OnUpdate
+			// 1. EVENT HOOK
 			game.Events.OnUpdate?.Invoke(game, dt);
 
 			UpdateDiscoLights(game, dt);
@@ -95,24 +96,26 @@ namespace GameModes.Dude
 			if (input.LengthSquared() > 0) input = input.Normalized();
 
 			// Apply Stats: Acceleration * Multiplier
-			game.DudeVel += input * game.Stats.Acceleration * game.Stats.AccelMult * dt;
+			game.DudeVel += input * (game.Stats.Acceleration * game.Stats.AccelMult * dt);
 
 			// Apply Drag
 			float dragPower = MathF.Pow(game.Stats.Drag, dt * 60.0f);
 			game.DudeVel *= dragPower;
 
-			// Clamp Max Speed (Base * Multiplier)
+			// Clamp Max Speed
 			float maxSpd = game.Stats.MoveSpeed * game.Stats.SpeedMult;
 			if (game.DudeVel.LengthSquared() > maxSpd * maxSpd)
 				game.DudeVel = game.DudeVel.Normalized() * maxSpd;
 
 			if (Input.GetKeyDown(Keycode.SPACE) && game.DashTimer <= 0)
 			{
-				// 2. EVENT HOOK: OnDash
+				// 2. EVENT HOOK
 				game.Events.OnDash?.Invoke(game);
 
+				// Use vector arithmetic
 				Vec2 dashDir = input.LengthSquared() > 0 ? input : new Vec2(1, 0);
 				game.DudeVel += dashDir * 40.0f;
+
 				game.DashTimer = game.Stats.DashCooldown;
 				game.ShakeAmount = 0.3f;
 				SpawnTrail(game, 1.0f);
@@ -121,22 +124,31 @@ namespace GameModes.Dude
 
 		private void MoveDude(DudeGame game, float dt)
 		{
+			// Vector integration
 			game.DudePos += game.DudeVel * dt;
 
-			if (game.DudePos.X > 14) { game.DudePos.X = 14; game.DudeVel.X *= -0.8f; game.ShakeAmount += 0.1f; }
-			if (game.DudePos.X < -14) { game.DudePos.X = -14; game.DudeVel.X *= -0.8f; game.ShakeAmount += 0.1f; }
-			if (game.DudePos.Y > 9) { game.DudePos.Y = 9; game.DudeVel.Y *= -0.8f; game.ShakeAmount += 0.1f; }
-			if (game.DudePos.Y < -9) { game.DudePos.Y = -9; game.DudeVel.Y *= -0.8f; game.ShakeAmount += 0.1f; }
+			// Bounds checking (Manual AABB logic)
+			bool hitWall = false;
+			if (game.DudePos.X > 14) { game.DudePos.X = 14; game.DudeVel.X *= -0.8f; hitWall = true; }
+			if (game.DudePos.X < -14) { game.DudePos.X = -14; game.DudeVel.X *= -0.8f; hitWall = true; }
+			if (game.DudePos.Y > 9) { game.DudePos.Y = 9; game.DudeVel.Y *= -0.8f; hitWall = true; }
+			if (game.DudePos.Y < -9) { game.DudePos.Y = -9; game.DudeVel.Y *= -0.8f; hitWall = true; }
 
-			float sx = (float)(game.Rng.NextDouble() - 0.5) * game.ShakeAmount;
-			float sy = (float)(game.Rng.NextDouble() - 0.5) * game.ShakeAmount;
-			game.Dude.SetPosition(game.DudePos.X + sx, game.DudePos.Y + sy);
+			if (hitWall) game.ShakeAmount += 0.1f;
 
+			// Vectorized Shake Logic
+			Vec2 shakeOffset = new Vec2(
+				(float)(game.Rng.NextDouble() - 0.5),
+				(float)(game.Rng.NextDouble() - 0.5)
+			) * game.ShakeAmount;
+
+			Vec2 finalPos = game.DudePos + shakeOffset;
+			game.Dude.SetPosition(finalPos.X, finalPos.Y);
+
+			// Squash & Stretch
 			float speed = game.DudeVel.Length();
 			float stretch = 1.0f + (speed * 0.02f);
 			float squash = 1.0f / stretch;
-
-			// Apply Stats: Player Size
 			float baseScale = 0.9f * game.Stats.PlayerSize;
 
 			if (MathF.Abs(game.DudeVel.X) > MathF.Abs(game.DudeVel.Y))
@@ -163,7 +175,10 @@ namespace GameModes.Dude
 			for (int i = game.Haters.Count - 1; i >= 0; i--)
 			{
 				var me = game.Haters[i];
+
+				// Vectorized Direction
 				Vec2 toPlayer = (game.DudePos - me.Pos).Normalized();
+
 				Vec2 separation = Vec2.Zero;
 				int neighbors = 0;
 				float myRad = me.Type == HaterType.Chonker ? 2.5f : 1.2f;
@@ -171,8 +186,10 @@ namespace GameModes.Dude
 				foreach (var other in game.Haters)
 				{
 					if (me == other) continue;
+
 					Vec2 diff = me.Pos - other.Pos;
 					float distSq = diff.LengthSquared();
+
 					if (distSq < myRad * myRad && distSq > 0.001f)
 					{
 						float pushStrength = me.Type == HaterType.Chonker ? 8.0f : 4.0f;
@@ -187,24 +204,24 @@ namespace GameModes.Dude
 				float speed = (me.Type == HaterType.Chonker ? 2.0f : 4.5f) * timeScale;
 				me.Pos += force.Normalized() * speed * dt;
 
-				float sx = (float)(game.Rng.NextDouble() - 0.5) * game.ShakeAmount * 0.5f;
-				me.Ent.SetPosition(me.Pos.X + sx, me.Pos.Y + sx);
+				// Shake logic using vectors
+				Vec2 shake = new Vec2((float)(game.Rng.NextDouble() - 0.5f), (float)(game.Rng.NextDouble() - 0.5f));
+				Vec2 drawPos = me.Pos + shake * (game.ShakeAmount * 0.5f);
+				me.Ent.SetPosition(drawPos.X, drawPos.Y);
 
 				float pulseSpeed = me.Type == HaterType.Chonker ? 5.0f : 15.0f;
 				float baseSize = me.Type == HaterType.Chonker ? 2.2f : 0.8f;
 				float pulse = baseSize + 0.1f * MathF.Sin(game.TimeAlive * pulseSpeed + i);
 				me.Ent.SetSize(pulse, pulse);
 
-				// Hitbox adjusted by Player Size
+				// Distance check with Vector method
 				float killDist = (me.Type == HaterType.Chonker ? 1.5f : 0.7f) * game.Stats.PlayerSize;
 
-				if ((game.DudePos - me.Pos).LengthSquared() < killDist * killDist)
+				if (Vec2.Distance(game.DudePos, me.Pos) < killDist)
 				{
 					if (game.ShieldTimer > 0)
 					{
-						// 3. EVENT HOOK: OnEnemyKilled
 						game.Events.OnEnemyKilled?.Invoke(game, me.Pos);
-
 						SpawnGem(game, me.Pos, me.Type == HaterType.Chonker ? 50 : 10);
 						me.Ent.Destroy();
 						game.Haters.RemoveAt(i);
@@ -214,7 +231,6 @@ namespace GameModes.Dude
 					}
 					else
 					{
-						// 4. EVENT HOOK: OnDeath
 						game.Events.OnDeath?.Invoke(game);
 						game.ChangeState(new StateGameOver());
 					}
@@ -226,35 +242,32 @@ namespace GameModes.Dude
 		{
 			// Use Registry + Luck Stat
 			var def = ContentRegistry.GetRandomPowerup(game.Rng, game.Stats.Luck);
-			if (def != null)
-			{
-				SpawnCollectable(game, def);
-			}
+			if (def != null) SpawnCollectable(game, def);
 
 			for (int i = game.Collectables.Count - 1; i >= 0; i--)
 			{
 				var c = game.Collectables[i];
-				float distSq = (game.DudePos - c.Pos).LengthSquared();
+				float distSq = Vec2.Distance(game.DudePos, c.Pos); // Distance is actual float dist, not squared.
 
 				// Use Stat: Magnet Range
-				if (distSq < game.Stats.MagnetRange * game.Stats.MagnetRange)
-					c.Pos += (game.DudePos - c.Pos).Normalized() * 10.0f * dt;
+				if (distSq < game.Stats.MagnetRange)
+				{
+					Vec2 dir = (game.DudePos - c.Pos).Normalized();
+					c.Pos += dir * 10.0f * dt;
+				}
 
 				c.Ent.SetPosition(c.Pos.X, c.Pos.Y);
 				c.Ent.SetSize(0.6f + 0.1f * MathF.Sin(game.TimeAlive * 8), 0.6f);
 
 				// Use Stat: Player Size for pickup radius
-				if (distSq < 1.0f * game.Stats.PlayerSize)
+				// Use LengthSquared for cheaper check if not needed
+				if ((game.DudePos - c.Pos).LengthSquared() < 1.0f * game.Stats.PlayerSize)
 				{
-					// 5. REGISTRY HOOK: OnPickup
 					c.Definition.OnPickup(game, c.Pos);
-
 					game.ShakeAmount += 0.1f;
 					game.SpawnExplosion(c.Pos, 8, c.Definition.R, c.Definition.G, c.Definition.B);
 					c.Ent.Destroy();
 					game.Collectables.RemoveAt(i);
-
-					// Always check level up after pickup (in case it gave XP)
 					CheckLevelUp(game);
 				}
 			}
@@ -275,7 +288,6 @@ namespace GameModes.Dude
 
 				if (distSq < 0.5f * game.Stats.PlayerSize)
 				{
-					// Use Stat: Pickup Bonus
 					game.XP += g.Value * game.Stats.PickupBonus;
 					g.Ent.Destroy();
 					game.Gems.RemoveAt(i);
@@ -367,8 +379,13 @@ namespace GameModes.Dude
 				if (p.Life <= 0) { p.Ent.Destroy(); game.Particles.RemoveAt(i); }
 				else
 				{
-					p.Pos += p.Vel * dt; p.Vel *= 0.95f; p.Ent.SetPosition(p.Pos.X, p.Pos.Y);
-					float s = p.InitSize * p.Life; p.Ent.SetSize(s, s);
+					// Vectorized physics
+					p.Pos += p.Vel * dt;
+					p.Vel *= 0.95f;
+					p.Ent.SetPosition(p.Pos.X, p.Pos.Y);
+
+					float s = p.InitSize * p.Life;
+					p.Ent.SetSize(s, s);
 				}
 			}
 		}

@@ -1,7 +1,8 @@
 ﻿using System;
 using EngineManaged.Scene;
 using EngineManaged.UI;
-using EngineManaged; // For Input
+using EngineManaged;
+using EngineManaged.Numeric;
 
 namespace GameModes.Dude
 {
@@ -105,10 +106,13 @@ namespace GameModes.Dude
 			_animTimer += dt;
 			game.ShakeAmount = MathF.Max(0, game.ShakeAmount - dt);
 
-			// 1. Animate Title
-			float shakeX = (float)(game.Rng.NextDouble() - 0.5f) * game.ShakeAmount * 5.0f;
-			float shakeY = (float)(game.Rng.NextDouble() - 0.5f) * game.ShakeAmount * 5.0f;
-			_gameOverText.SetPosition(shakeX, 6.0f + shakeY);
+			// 1. Animate Title (Vectorized Shake)
+			Vec2 shake = new Vec2(
+				(float)(game.Rng.NextDouble() - 0.5),
+				(float)(game.Rng.NextDouble() - 0.5)
+			) * (game.ShakeAmount * 5.0f);
+
+			_gameOverText.SetPosition(shake.X, 6.0f + shake.Y);
 
 			// 2. Animate Panel Slide Up
 			float slideT = MathF.Min(1.0f, _animTimer * 1.5f);
@@ -133,8 +137,13 @@ namespace GameModes.Dude
 				if (p.Life <= 0) { p.Ent.Destroy(); game.Particles.RemoveAt(i); }
 				else
 				{
-					p.Pos += p.Vel * dt; p.Vel *= 0.9f; p.Ent.SetPosition(p.Pos.X, p.Pos.Y);
-					float s = p.InitSize * p.Life; p.Ent.SetSize(s, s);
+					// Vectorized Physics
+					p.Pos += p.Vel * dt;
+					p.Vel *= 0.9f;
+
+					p.Ent.SetPosition(p.Pos.X, p.Pos.Y);
+					float s = p.InitSize * p.Life;
+					p.Ent.SetSize(s, s);
 				}
 			}
 		}
