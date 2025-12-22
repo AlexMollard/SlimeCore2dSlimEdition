@@ -3,149 +3,148 @@ using EngineManaged.Scene;
 using EngineManaged.UI;
 using EngineManaged; // For Input
 
-namespace GameModes.Dude
+namespace GameModes.Dude;
+
+public class StateGameOver : IDudeState
 {
-	public class StateGameOver : IDudeState
+	private UIText _gameOverText;
+
+	// Stats Panel UI
+	private Entity _panelBg;
+	private Entity _panelBorder;
+	private UIText _scoreLabel;
+	private UIText _levelLabel;
+	private UIText _timeLabel;
+
+	private UIButton _retryBtn;
+	private float _animTimer;
+
+	public void Enter(DudeGame game)
 	{
-		private UIText _gameOverText;
+		_animTimer = 0;
+		game.ShakeAmount = 2.0f;
 
-		// Stats Panel UI
-		private Entity _panelBg;
-		private Entity _panelBorder;
-		private UIText _scoreLabel;
-		private UIText _levelLabel;
-		private UIText _timeLabel;
+		// 1. Cleanup Gameplay
+		game.Dude.Destroy();
+		game.ScoreText.SetVisible(false);
+		game.LevelText.SetVisible(false);
+		game.XPBarBg.IsVisible = false;
+		game.XPBarFill.IsVisible = false;
 
-		private UIButton _retryBtn;
-		private float _animTimer;
+		game.SpawnExplosion(game.DudePos, 50, 0.8f, 0.0f, 0.0f);
+		game.SpawnExplosion(game.DudePos, 20, 1.0f, 1.0f, 1.0f);
 
-		public void Enter(DudeGame game)
+		game.DarkOverlay.SetColor(0.2f, 0.0f, 0.0f);
+		game.DarkOverlay.IsVisible = true;
+		game.Bg.SetColor(0, 0, 0);
+
+		// 2. UI Construction
+
+		_gameOverText = UIText.Create("WASTED", 100, 0, 6.0f);
+		_gameOverText.SetColor(1, 0, 0);
+		_gameOverText.SetAnchor(0.5f, 0.5f);
+
+		// Panel Background (14x10 to fit button comfortably)
+		_panelBorder = SceneFactory.CreateQuad(0, -15, 14.5f, 10.5f, 0.8f, 0f, 0f, layer: 91);
+		_panelBorder.SetAnchor(0.5f, 0.5f);
+
+		_panelBg = SceneFactory.CreateQuad(0, -15, 14.0f, 10.0f, 0.1f, 0.1f, 0.1f, layer: 92);
+		_panelBg.SetAnchor(0.5f, 0.5f);
+
+		// Stats Text
+		_scoreLabel = UIText.Create($"SCORE: {(int)game.Score}", 48, 0, -15);
+		_scoreLabel.SetAnchor(0.5f, 0.5f);
+		_scoreLabel.SetColor(1, 1, 1);
+		_scoreLabel.SetLayer(95);
+
+		_levelLabel = UIText.Create($"LEVEL REACHED: {game.Level}", 32, 0, -15);
+		_levelLabel.SetAnchor(0.5f, 0.5f);
+		_levelLabel.SetColor(0.2f, 1.0f, 1.0f);
+		_levelLabel.SetLayer(95);
+
+		_timeLabel = UIText.Create($"TIME ALIVE: {game.TimeAlive:F1}s", 32, 0, -15);
+		_timeLabel.SetAnchor(0.5f, 0.5f);
+		_timeLabel.SetColor(0.7f, 0.7f, 0.7f);
+		_timeLabel.SetLayer(95);
+
+		// --- STYLED RETRY BUTTON ---
+		// Bright Cyan Background
+		_retryBtn = UIButton.Create("TRY AGAIN", 0, -15, 10.0f, 2.0f, 0.0f, 0.8f, 1.0f, layer: 96, fontSize: 36);
+
+		// Set Text to Black for contrast
+		_retryBtn.Label.SetColor(0.1f, 0.1f, 0.1f);
+
+		_retryBtn.Clicked += () =>
 		{
-			_animTimer = 0;
-			game.ShakeAmount = 2.0f;
+			game.Shutdown();
+			game.Init();
+		};
+	}
 
-			// 1. Cleanup Gameplay
-			game.Dude.Destroy();
-			game.ScoreText.SetVisible(false);
-			game.LevelText.SetVisible(false);
-			game.XPBarBg.IsVisible = false;
-			game.XPBarFill.IsVisible = false;
+	public void Exit(DudeGame game)
+	{
+		_gameOverText.Destroy();
+		_panelBg.Destroy();
+		_panelBorder.Destroy();
+		_scoreLabel.Destroy();
+		_levelLabel.Destroy();
+		_timeLabel.Destroy();
+		_retryBtn.Destroy();
 
-			game.SpawnExplosion(game.DudePos, 50, 0.8f, 0.0f, 0.0f);
-			game.SpawnExplosion(game.DudePos, 20, 1.0f, 1.0f, 1.0f);
+		if (game.DarkOverlay.IsAlive) game.DarkOverlay.IsVisible = false;
 
-			game.DarkOverlay.SetColor(0.2f, 0.0f, 0.0f);
-			game.DarkOverlay.IsVisible = true;
-			game.Bg.SetColor(0, 0, 0);
+		foreach (var h in game.Haters) h.Ent.Destroy(); game.Haters.Clear();
+		foreach (var c in game.Collectables) c.Ent.Destroy(); game.Collectables.Clear();
+		foreach (var g in game.Gems) g.Ent.Destroy(); game.Gems.Clear();
+		foreach (var t in game.Trails) t.Ent.Destroy(); game.Trails.Clear();
+		foreach (var p in game.Particles) p.Ent.Destroy(); game.Particles.Clear();
+	}
 
-			// 2. UI Construction
+	public void Update(DudeGame game, float dt)
+	{
+		_animTimer += dt;
+		game.ShakeAmount = MathF.Max(0, game.ShakeAmount - dt);
 
-			_gameOverText = UIText.Create("WASTED", 100, 0, 6.0f);
-			_gameOverText.SetColor(1, 0, 0);
-			_gameOverText.SetAnchor(0.5f, 0.5f);
+		// 1. Animate Title
+		float shakeX = (float)(game.Rng.NextDouble() - 0.5f) * game.ShakeAmount * 5.0f;
+		float shakeY = (float)(game.Rng.NextDouble() - 0.5f) * game.ShakeAmount * 5.0f;
+		_gameOverText.SetPosition(shakeX, 6.0f + shakeY);
 
-			// Panel Background (14x10 to fit button comfortably)
-			_panelBorder = SceneFactory.CreateQuad(0, -15, 14.5f, 10.5f, 0.8f, 0f, 0f, layer: 91);
-			_panelBorder.SetAnchor(0.5f, 0.5f);
+		// 2. Animate Panel Slide Up
+		float slideT = MathF.Min(1.0f, _animTimer * 1.5f);
+		float panelY = Lerp(-18.0f, -1.0f, EaseOutBack(slideT)); // Target Y = -1 to center visually
 
-			_panelBg = SceneFactory.CreateQuad(0, -15, 14.0f, 10.0f, 0.1f, 0.1f, 0.1f, layer: 92);
-			_panelBg.SetAnchor(0.5f, 0.5f);
+		_panelBg.SetPosition(0, panelY);
+		_panelBorder.SetPosition(0, panelY);
 
-			// Stats Text
-			_scoreLabel = UIText.Create($"SCORE: {(int)game.Score}", 48, 0, -15);
-			_scoreLabel.SetAnchor(0.5f, 0.5f);
-			_scoreLabel.SetColor(1, 1, 1);
-			_scoreLabel.SetLayer(95);
+		// Layout Elements inside Panel
+		_scoreLabel.SetPosition(0, panelY + 3.0f);
+		_levelLabel.SetPosition(0, panelY + 1.0f);
+		_timeLabel.SetPosition(0, panelY - 0.5f);
 
-			_levelLabel = UIText.Create($"LEVEL REACHED: {game.Level}", 32, 0, -15);
-			_levelLabel.SetAnchor(0.5f, 0.5f);
-			_levelLabel.SetColor(0.2f, 1.0f, 1.0f);
-			_levelLabel.SetLayer(95);
+		// Animate Button WITH the panel
+		_retryBtn.SetPosition(0, panelY - 3.5f);
 
-			_timeLabel = UIText.Create($"TIME ALIVE: {game.TimeAlive:F1}s", 32, 0, -15);
-			_timeLabel.SetAnchor(0.5f, 0.5f);
-			_timeLabel.SetColor(0.7f, 0.7f, 0.7f);
-			_timeLabel.SetLayer(95);
-
-			// --- STYLED RETRY BUTTON ---
-			// Bright Cyan Background
-			_retryBtn = UIButton.Create("TRY AGAIN", 0, -15, 10.0f, 2.0f, 0.0f, 0.8f, 1.0f, layer: 96, fontSize: 36);
-
-			// Set Text to Black for contrast
-			_retryBtn.Label.SetColor(0.1f, 0.1f, 0.1f);
-
-			_retryBtn.Clicked += () =>
+		// 3. Particles
+		for (int i = game.Particles.Count - 1; i >= 0; i--)
+		{
+			var p = game.Particles[i];
+			p.Life -= dt * 0.5f;
+			if (p.Life <= 0) { p.Ent.Destroy(); game.Particles.RemoveAt(i); }
+			else
 			{
-				game.Shutdown();
-				game.Init();
-			};
-		}
-
-		public void Exit(DudeGame game)
-		{
-			_gameOverText.Destroy();
-			_panelBg.Destroy();
-			_panelBorder.Destroy();
-			_scoreLabel.Destroy();
-			_levelLabel.Destroy();
-			_timeLabel.Destroy();
-			_retryBtn.Destroy();
-
-			if (game.DarkOverlay.IsAlive) game.DarkOverlay.IsVisible = false;
-
-			foreach (var h in game.Haters) h.Ent.Destroy(); game.Haters.Clear();
-			foreach (var c in game.Collectables) c.Ent.Destroy(); game.Collectables.Clear();
-			foreach (var g in game.Gems) g.Ent.Destroy(); game.Gems.Clear();
-			foreach (var t in game.Trails) t.Ent.Destroy(); game.Trails.Clear();
-			foreach (var p in game.Particles) p.Ent.Destroy(); game.Particles.Clear();
-		}
-
-		public void Update(DudeGame game, float dt)
-		{
-			_animTimer += dt;
-			game.ShakeAmount = MathF.Max(0, game.ShakeAmount - dt);
-
-			// 1. Animate Title
-			float shakeX = (float)(game.Rng.NextDouble() - 0.5f) * game.ShakeAmount * 5.0f;
-			float shakeY = (float)(game.Rng.NextDouble() - 0.5f) * game.ShakeAmount * 5.0f;
-			_gameOverText.SetPosition(shakeX, 6.0f + shakeY);
-
-			// 2. Animate Panel Slide Up
-			float slideT = MathF.Min(1.0f, _animTimer * 1.5f);
-			float panelY = Lerp(-18.0f, -1.0f, EaseOutBack(slideT)); // Target Y = -1 to center visually
-
-			_panelBg.SetPosition(0, panelY);
-			_panelBorder.SetPosition(0, panelY);
-
-			// Layout Elements inside Panel
-			_scoreLabel.SetPosition(0, panelY + 3.0f);
-			_levelLabel.SetPosition(0, panelY + 1.0f);
-			_timeLabel.SetPosition(0, panelY - 0.5f);
-
-			// Animate Button WITH the panel
-			_retryBtn.SetPosition(0, panelY - 3.5f);
-
-			// 3. Particles
-			for (int i = game.Particles.Count - 1; i >= 0; i--)
-			{
-				var p = game.Particles[i];
-				p.Life -= dt * 0.5f;
-				if (p.Life <= 0) { p.Ent.Destroy(); game.Particles.RemoveAt(i); }
-				else
-				{
-					p.Pos += p.Vel * dt; p.Vel *= 0.9f; p.Ent.SetPosition(p.Pos.X, p.Pos.Y);
-					float s = p.InitSize * p.Life; p.Ent.SetSize(s, s);
-				}
+				p.Pos += p.Vel * dt; p.Vel *= 0.9f; p.Ent.SetPosition(p.Pos.X, p.Pos.Y);
+				float s = p.InitSize * p.Life; p.Ent.SetSize(s, s);
 			}
 		}
+	}
 
-		private float Lerp(float a, float b, float t) => a + (b - a) * t;
+	private float Lerp(float a, float b, float t) => a + (b - a) * t;
 
-		private float EaseOutBack(float x)
-		{
-			float c1 = 1.70158f;
-			float c3 = c1 + 1;
-			return 1 + c3 * MathF.Pow(x - 1, 3) + c1 * MathF.Pow(x - 1, 2);
-		}
+	private float EaseOutBack(float x)
+	{
+		float c1 = 1.70158f;
+		float c3 = c1 + 1;
+		return 1 + c3 * MathF.Pow(x - 1, 3) + c1 * MathF.Pow(x - 1, 2);
 	}
 }
