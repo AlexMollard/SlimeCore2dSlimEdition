@@ -35,13 +35,13 @@ public class UIButton
 		Background.SetColor(_curR, _curG, _curB);
 	}
 
-	public static UIButton Create(string text, float x, float y, float w, float h, float r = 0.2f, float g = 0.2f, float b = 0.2f, int layer = 100, int fontSize = 42)
+	public static UIButton Create(string text, float x, float y, float w, float h, float r = 0.2f, float g = 0.2f, float b = 0.2f, int layer = 100, int fontSize = 1)
 	{
 		var bg = SceneFactory.CreateQuad(x, y, w, h, r, g, b, layer);
 		bg.SetAnchor(0.5f, 0.5f);
 
 		var lbl = UIText.Create(text, fontSize, x, y);
-		lbl.SetAnchor(0.5f, 0.5f);
+		lbl.SetPosition(x - (w / 2), y - (h / 6)); // Slight padding
 		lbl.SetLayer(layer + 1);
 
 		var btn = new UIButton(bg, lbl, layer, r, g, b);

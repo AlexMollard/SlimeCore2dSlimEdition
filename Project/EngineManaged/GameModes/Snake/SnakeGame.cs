@@ -59,10 +59,9 @@ namespace GameModes.Snake
 
 		// UI
 		private static UIText _score;
-		private static UIText _seedLabel;
 		private static UIButton _testBtn;
 		private static int _scoreCached = -1;
-		private const int SCORE_FONT_SIZE = 52;
+		private const int SCORE_FONT_SIZE = 1;
 		private static int _currentScore = 0;
 
 		
@@ -92,9 +91,6 @@ namespace GameModes.Snake
 
 		public void Init()
 		{
-			_seedLabel = UIText.Create($"SEED: {_seed}", 28, -13.0f, 8.0f);
-			_seedLabel.SetVisible(true);
-
 			_world = new GridSystem<Terrain>(WORLD_W, WORLD_H, Terrain.Grass);
 
 			ResetGameLogic();
@@ -108,26 +104,26 @@ namespace GameModes.Snake
 				}
 			}
 
+			_head = SceneFactory.CreateQuad(0, 0, _cellSize * 1.15f, _cellSize * 1.15f,
+											COL_SNAKE.X, COL_SNAKE.Y, COL_SNAKE.Z, layer: 5);
+			_head.SetAnchor(0.5f, 0.5f);
+			_head.IsVisible = true;
+
 			_eyes[0] = SceneFactory.CreateQuad(0, 0, 0.08f, 0.08f, 0f, 0f, 0f, layer: 10);
 			_eyes[0].SetAnchor(0.5f, 0.5f);
 
 			_eyes[1] = SceneFactory.CreateQuad(0, 0, 0.08f, 0.08f, 0f, 0f, 0f, layer: 10);
 			_eyes[1].SetAnchor(0.5f, 0.5f);
 
-			_head = SceneFactory.CreateQuad(0, 0, _cellSize * 1.15f, _cellSize * 1.15f,
-											COL_SNAKE.X, COL_SNAKE.Y, COL_SNAKE.Z, layer: 5);
-			_head.SetAnchor(0.5f, 0.5f);
-			_head.IsVisible = true;
-
 			_compass = SceneFactory.CreateQuad(0, 0, 0.1f, 0.1f, 1f, 1f, 0f, layer: 20);
 			_compass.SetAnchor(0.5f, 0.5f);
 			_compass.IsVisible = true;
 
-			_score = UIText.Create("SCORE: 0", SCORE_FONT_SIZE, -0.0f, 7.5f);
+			_score = UIText.Create("SCORE: 0", SCORE_FONT_SIZE, -15.0f, 7.5f);
 			_score.SetVisible(true);
 			_scoreCached = -1;
 
-			_testBtn = UIButton.Create("Click me", x: 0.0f, y: 6.0f, w: 3.75f, h: 1.5f, r: 0.2f, g: 0.6f, b: 0.9f, layer: 100, fontSize: 42);
+			_testBtn = UIButton.Create("Click me", x: 0.0f, y: 6.0f, w: 3.75f, h: 1.5f, r: 0.2f, g: 0.6f, b: 0.9f, layer: 100, fontSize: 1);
 			_testBtn.Clicked += () => { Console.WriteLine("PRESSED!"); };
 		}
 
@@ -135,7 +131,6 @@ namespace GameModes.Snake
 		{
 			UISystem.Clear();
 			_score.Destroy();
-			_seedLabel.Destroy();
 			_testBtn.Destroy();
 			_head.Destroy();
 			_compass.Destroy();
@@ -154,7 +149,6 @@ namespace GameModes.Snake
 
 			_rng = new Random(_seed);
 			Console.WriteLine($"Seed: {_seed}");
-			if (_seedLabel.IsValid) _seedLabel.Text = $"SEED: {_seed}";
 
 			var gen = new SlimeCore.Core.World.WorldGenerator(_seed);
 			gen.Generate(_world);

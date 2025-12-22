@@ -35,7 +35,7 @@ void UIManager::Draw()
 
 	m_OrthoMatrix = glm::ortho(-uiWidth * 0.5f, uiWidth * 0.5f,
 	        -uiHeight * 0.5f, uiHeight * 0.5f,
-	        -1.0f, 1.0f);
+	        -10.0f, 10.0f);
 
 	// 1. Start a new scene with UI projection
 	Renderer2D::BeginScene(m_OrthoMatrix);

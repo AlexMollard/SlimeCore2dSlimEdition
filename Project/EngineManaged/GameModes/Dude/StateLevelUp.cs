@@ -176,17 +176,15 @@ public class StateLevelUp : IDudeState
 			_bg = SceneFactory.CreateQuad(x, y, W, H, def.R, def.G, def.B, layer: 94);
 			_bg.SetAnchor(0.5f, 0.5f);
 
-			_title = UIText.Create(def.Title, 48, x, y + 2.5f);
-			_title.SetAnchor(0.5f, 0.5f);
-			_title.SetColor(0.1f, 0.1f, 0.1f);
+			_title = UIText.Create(def.Title, 1, x, y + 2.5f);
 			_title.SetLayer(95);
 
-			_desc = UIText.Create(def.Desc, 28, x, y - 0.5f);
+			_desc = UIText.Create(def.Desc, 1, x, y - 0.5f);
 			_desc.SetAnchor(0.5f, 0.5f);
 			_desc.SetColor(0.1f, 0.1f, 0.1f);
 			_desc.SetLayer(95);
 
-			_lvlLabel = UIText.Create($"LVL {nextLevel}", 32, x, y - 3.0f);
+			_lvlLabel = UIText.Create($"LVL {nextLevel}", 1, x, y - 3.0f);
 			_lvlLabel.SetAnchor(0.5f, 0.5f);
 			_lvlLabel.SetColor(0.1f, 0.1f, 0.1f);
 			_lvlLabel.SetLayer(95);

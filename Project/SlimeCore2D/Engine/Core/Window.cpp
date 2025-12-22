@@ -48,7 +48,6 @@ int Window::Window_intit(int width, int height, char* name)
 	framebuffer_size_callback(window, fbW, fbH);
 
 	glClearColor(0.06f, 0.06f, 0.06f, 1.0f);
-	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glfwSwapInterval(1); // V-Sync
