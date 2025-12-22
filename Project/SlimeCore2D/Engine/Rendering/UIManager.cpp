@@ -17,11 +17,26 @@ UIManager& UIManager::Get()
 
 void UIManager::Init()
 {
+	// Initialize with a default; updated each frame from the viewport in Draw().
 	m_OrthoMatrix = glm::ortho(0.0f, 1920.0f, 0.0f, 1080.0f, -1.0f, 1.0f);
 }
 
 void UIManager::Draw()
 {
+	// Rebuild UI projection each frame: centered origin, same unit scale as world camera.
+	// Default UI height matches the game camera (18 units), width derives from viewport aspect.
+	auto viewport = Input::GetInstance()->GetViewportRect();
+	float vpW = viewport.z > 0 ? (float) viewport.z : 1920.0f;
+	float vpH = viewport.w > 0 ? (float) viewport.w : 1080.0f;
+	float aspect = (vpH > 0.0f) ? (vpW / vpH) : (16.0f / 9.0f);
+
+	const float uiHeight = 18.0f; // match Camera ortho size used in Game2D
+	const float uiWidth = uiHeight * aspect;
+
+	m_OrthoMatrix = glm::ortho(-uiWidth * 0.5f, uiWidth * 0.5f,
+	        -uiHeight * 0.5f, uiHeight * 0.5f,
+	        -1.0f, 1.0f);
+
 	// 1. Start a new scene with UI projection
 	Renderer2D::BeginScene(m_OrthoMatrix);
 

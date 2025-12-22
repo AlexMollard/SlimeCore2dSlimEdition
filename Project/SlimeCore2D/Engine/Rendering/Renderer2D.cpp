@@ -489,12 +489,12 @@ void Renderer2D::DrawString(const std::string& text, Text* font, const glm::vec2
 				{ ch.uvMin.x, ch.uvMin.y }  // TL
 			};
 
-			// Positions relative to cursor
+			// Positions relative to cursor (BL, BR, TR, TL). y grows upward.
 			glm::vec3 pos[4] = {
-				{     xpos, ypos + h, 0.0f },
-                { xpos + w, ypos + h, 0.0f },
+				{     xpos,     ypos, 0.0f },
                 { xpos + w,     ypos, 0.0f },
-                {     xpos,     ypos, 0.0f }
+                { xpos + w, ypos + h, 0.0f },
+                {     xpos, ypos + h, 0.0f }
 			};
 
 			// Add to buffer

@@ -20,7 +20,7 @@ namespace GameModes.Dude
 			game.XPBarBg.IsVisible = true;
 			game.XPBarFill.IsVisible = true;
 
-			_controlsText = UIText.Create("WASD Move | SPACE Dash", 24, 0, -8);
+			_controlsText = UIText.Create("WASD Move | SPACE Dash", 1, -6, -8.5f);
 			_controlsText.SetAnchor(0.5f, 0.5f);
 		}
 

@@ -60,14 +60,22 @@ void EngineExports_RenderUI()
 		// For now, we pass direct position and let Renderer2D/Text handle alignment if implemented.
 		// Or, strictly use Center alignment for now.
 
-		glm::vec3 drawPos = glm::vec3(element.Position.x, element.Position.y, 0.9f + (element.Layer * 0.001f));
+		glm::vec3 drawPos = glm::vec3(element.Position.x,
+		        element.Position.y,
+		        0.9f + (element.Layer * 0.001f));
 
 		if (element.IsText && element.Font)
 		{
+			// Anchor-aware positioning for text: measure and offset
+			glm::vec2 textSize = element.Font->CalculateSize(element.TextContent, element.Scale.x);
+			glm::vec3 finalPos = drawPos;
+			finalPos.x += (0.5f - element.Anchor.x) * textSize.x;
+			finalPos.y += (0.5f - element.Anchor.y) * textSize.y;
+
 			// SDF Text Render
 			Renderer2D::DrawString(element.TextContent,
 			        element.Font,
-			        glm::vec2(drawPos.x, drawPos.y),
+			        glm::vec2(finalPos.x, finalPos.y),
 			        element.Scale.x, // Scale 1.0 = 48px
 			        element.Color);
 		}

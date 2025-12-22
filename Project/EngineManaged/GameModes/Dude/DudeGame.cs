@@ -110,8 +110,8 @@ namespace GameModes.Dude
 			XPBarFill.SetAnchor(0.0f, 0.5f);
 
 			// UI
-			ScoreText = UIText.Create("0", 48, -13.5f, 7.5f);
-			LevelText = UIText.Create("LVL 1", 32, -13.0f, -6.25f);
+			ScoreText = UIText.Create("0", 1, -13.5f, 7.5f);
+			LevelText = UIText.Create("LVL 1", 1, -13.0f, -6.25f);
 
 			// 4. Start Gameplay
 			ChangeState(new StatePlaying());

@@ -41,7 +41,7 @@ namespace GameModes.Dude
 
 			// 2. UI Construction
 
-			_gameOverText = UIText.Create("WASTED", 100, 0, 6.0f);
+			_gameOverText = UIText.Create("WASTED", 1, 0, 6.0f);
 			_gameOverText.SetColor(1, 0, 0);
 			_gameOverText.SetAnchor(0.5f, 0.5f);
 
@@ -53,17 +53,17 @@ namespace GameModes.Dude
 			_panelBg.SetAnchor(0.5f, 0.5f);
 
 			// Stats Text
-			_scoreLabel = UIText.Create($"SCORE: {(int)game.Score}", 48, 0, -15);
+			_scoreLabel = UIText.Create($"SCORE: {(int)game.Score}", 1, 0, -15);
 			_scoreLabel.SetAnchor(0.5f, 0.5f);
 			_scoreLabel.SetColor(1, 1, 1);
 			_scoreLabel.SetLayer(95);
 
-			_levelLabel = UIText.Create($"LEVEL REACHED: {game.Level}", 32, 0, -15);
+			_levelLabel = UIText.Create($"LEVEL REACHED: {game.Level}", 1, 0, -15);
 			_levelLabel.SetAnchor(0.5f, 0.5f);
 			_levelLabel.SetColor(0.2f, 1.0f, 1.0f);
 			_levelLabel.SetLayer(95);
 
-			_timeLabel = UIText.Create($"TIME ALIVE: {game.TimeAlive:F1}s", 32, 0, -15);
+			_timeLabel = UIText.Create($"TIME ALIVE: {game.TimeAlive:F1}s", 1, 0, -15);
 			_timeLabel.SetAnchor(0.5f, 0.5f);
 			_timeLabel.SetColor(0.7f, 0.7f, 0.7f);
 			_timeLabel.SetLayer(95);

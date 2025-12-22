@@ -70,11 +70,22 @@ void Text::GenerateAtlas(FT_Face face)
 	// We iterate through printable characters
 	for (unsigned char c = 32; c < 127; c++)
 	{
-		// Load character glyph with SDF Rendering
-		// If FT_RENDER_MODE_SDF is not defined, update your FreeType library or use FT_LOAD_RENDER
-		if (FT_Load_Char(face, c, FT_LOAD_RENDER | FT_RENDER_MODE_SDF))
+		// Load glyph outline first (no render) then render with the best mode available.
+		if (FT_Load_Char(face, c, FT_LOAD_DEFAULT))
 		{
 			std::cout << "ERROR::FREETYPE: Failed to load Glyph: " << c << std::endl;
+			continue;
+		}
+
+		// Prefer SDF if the FreeType build supports it, otherwise fall back to normal AA.
+		FT_Render_Mode renderMode = FT_RENDER_MODE_NORMAL;
+#ifdef FT_RENDER_MODE_SDF
+		renderMode = FT_RENDER_MODE_SDF;
+#endif
+
+		if (FT_Render_Glyph(face->glyph, renderMode))
+		{
+			std::cout << "ERROR::FREETYPE: Failed to render Glyph: " << c << std::endl;
 			continue;
 		}
 
