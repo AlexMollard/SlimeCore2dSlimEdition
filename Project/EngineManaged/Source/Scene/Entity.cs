@@ -1,4 +1,6 @@
-﻿namespace EngineManaged.Scene;
+﻿using System;
+
+namespace EngineManaged.Scene;
 
 public readonly struct Entity
 {
@@ -47,6 +49,12 @@ public readonly struct Entity
 	{
 		get => Native.Entity_GetRotation(Id);
 		set => Native.Entity_SetRotation(Id, value);
+	}
+
+	public IntPtr Texture
+	{
+		get => Native.Entity_GetTexturePtr(Id);
+		set => Native.Entity_SetTexturePtr(Id, value);
 	}
 
 	// ---------------------------------------------------------------------

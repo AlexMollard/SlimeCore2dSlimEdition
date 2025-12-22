@@ -233,6 +233,7 @@
     <ClInclude Include="Game\Scenes\WorldTypes.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="cpp.hint" />
     <None Include="Game\Resources\Shaders\BasicFragment.shader" />
     <None Include="Game\Resources\Shaders\BasicVertex.shader" />
     <None Include="Game\Resources\Shaders\UIFragment.shader" />

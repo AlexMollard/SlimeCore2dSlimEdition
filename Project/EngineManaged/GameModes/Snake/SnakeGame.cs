@@ -1,11 +1,12 @@
+using EngineManaged.Numeric;
+using EngineManaged.Scene;
+using EngineManaged.UI;
 using SlimeCore.Core.Grid;
 using SlimeCore.Core.World;
 using SlimeCore.Interfaces;
-using EngineManaged.Scene;
-using EngineManaged.UI;
-using EngineManaged.Numeric;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace GameModes.Snake
 {
@@ -108,6 +109,9 @@ namespace GameModes.Snake
 											COL_SNAKE.X, COL_SNAKE.Y, COL_SNAKE.Z, layer: 5);
 			_head.SetAnchor(0.5f, 0.5f);
 			_head.IsVisible = true;
+
+			IntPtr textureId = Native.Resources_LoadTexture("Debug", "textures/debug.png");
+			_head.Texture = textureId;
 
 			_eyes[0] = SceneFactory.CreateQuad(0, 0, 0.08f, 0.08f, 0f, 0f, 0f, layer: 10);
 			_eyes[0].SetAnchor(0.5f, 0.5f);

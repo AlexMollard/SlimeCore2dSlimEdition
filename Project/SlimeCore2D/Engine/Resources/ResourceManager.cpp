@@ -1,6 +1,8 @@
 #include "ResourceManager.h"
 
 #include "Rendering/Shader.h"
+#include "Rendering/Text.h"
+#include "Rendering/Texture.h"
 
 #if defined(_WIN32)
 #	include <windows.h>
@@ -25,6 +27,10 @@ static const char PATH_SEP = '\\';
 static const char PATH_SEP = '/';
 #endif
 
+// -----------------------------------------------------------------------------
+// HELPER FUNCTIONS (Platform Abstraction)
+// -----------------------------------------------------------------------------
+
 static bool FileExists(const std::string& path)
 {
 #if defined(_WIN32)
@@ -36,29 +42,6 @@ static bool FileExists(const std::string& path)
 #endif
 }
 
-static std::string ToLower(const std::string& s)
-{
-	std::string out = s;
-	std::transform(out.begin(), out.end(), out.begin(), [](unsigned char c) { return std::tolower(c); });
-	return out;
-}
-
-ResourceManager::ResourceManager()
-{
-}
-
-ResourceManager::~ResourceManager()
-{
-	Clear();
-}
-
-ResourceManager& ResourceManager::GetInstance()
-{
-	static ResourceManager instance;
-	return instance;
-}
-
-// Helper: check whether a path exists and is a directory
 static bool DirectoryExists(const std::string& path)
 {
 #if defined(_WIN32)
@@ -72,7 +55,14 @@ static bool DirectoryExists(const std::string& path)
 #endif
 }
 
-// Helper: get the directory that contains the running executable
+static std::string ToLower(const std::string& s)
+{
+	std::string out = s;
+	std::transform(out.begin(), out.end(), out.begin(), [](unsigned char c) { return std::tolower(c); });
+	return out;
+}
+
+// Get the directory containing the running executable
 static std::string GetExecutableDir()
 {
 #if defined(_WIN32)
@@ -108,6 +98,29 @@ static std::string GetExecutableDir()
 #endif
 }
 
+// -----------------------------------------------------------------------------
+// RESOURCE MANAGER IMPLEMENTATION
+// -----------------------------------------------------------------------------
+
+ResourceManager::ResourceManager()
+{
+}
+
+ResourceManager::~ResourceManager()
+{
+	Clear();
+}
+
+ResourceManager& ResourceManager::GetInstance()
+{
+	static ResourceManager instance;
+	return instance;
+}
+
+// -----------------------------------------------------------------------------
+// SHADERS
+// -----------------------------------------------------------------------------
+
 bool ResourceManager::LoadShadersFromDir(const std::string& dir)
 {
 	// Build a list of candidate directories in preferred order
@@ -121,6 +134,7 @@ bool ResourceManager::LoadShadersFromDir(const std::string& dir)
 	{
 		candidates.push_back(exeDir + "\\Game\\Resources\\Shaders");
 		candidates.push_back(exeDir + "\\Game\\Resources");
+		candidates.push_back(exeDir + "\\Resources\\Shaders");
 		candidates.push_back(exeDir + "\\Shaders");
 	}
 
@@ -173,6 +187,7 @@ bool ResourceManager::LoadShadersFromDir(const std::string& dir)
 		auto lower = ToLower(filename);
 		std::string filepath = chosen + "\\" + filename;
 
+		// Simple heuristic to pair .vert and .frag files
 		if (lower.find("vertex.shader") != std::string::npos || lower.find("vert.shader") != std::string::npos)
 		{
 			std::string base = filename.substr(0, filename.find_last_of('.'));
@@ -216,15 +231,15 @@ bool ResourceManager::LoadShadersFromDir(const std::string& dir)
 
 	FindClose(hFind);
 #else
-	DIR* dir = opendir(chosen.c_str());
-	if (!dir)
+	DIR* dirPtr = opendir(chosen.c_str());
+	if (!dirPtr)
 	{
 		std::cout << "ResourceManager: directory exists but could not open: " << chosen << " (" << strerror(errno) << ")" << std::endl;
 		return false;
 	}
 
 	struct dirent* ent;
-	while ((ent = readdir(dir)) != NULL)
+	while ((ent = readdir(dirPtr)) != NULL)
 	{
 		std::string filename = ent->d_name;
 		std::string filepath = chosen + "/" + filename;
@@ -244,13 +259,9 @@ bool ResourceManager::LoadShadersFromDir(const std::string& dir)
 			{
 				auto lowbase = ToLower(base);
 				if (lowbase.size() >= 6 && lowbase.substr(lowbase.size() - 6) == "vertex")
-				{
 					base = base.substr(0, base.size() - 6);
-				}
 				else if (lowbase.size() >= 4 && lowbase.substr(lowbase.size() - 4) == "vert")
-				{
 					base = base.substr(0, base.size() - 4);
-				}
 				else
 					break;
 			}
@@ -263,13 +274,9 @@ bool ResourceManager::LoadShadersFromDir(const std::string& dir)
 			{
 				auto lowbase = ToLower(base);
 				if (lowbase.size() >= 8 && lowbase.substr(lowbase.size() - 8) == "fragment")
-				{
 					base = base.substr(0, base.size() - 8);
-				}
 				else if (lowbase.size() >= 4 && lowbase.substr(lowbase.size() - 4) == "frag")
-				{
 					base = base.substr(0, base.size() - 4);
-				}
 				else
 					break;
 			}
@@ -277,7 +284,7 @@ bool ResourceManager::LoadShadersFromDir(const std::string& dir)
 		}
 	}
 
-	closedir(dir);
+	closedir(dirPtr);
 #endif
 
 	for (auto& kv: vmap)
@@ -286,7 +293,7 @@ bool ResourceManager::LoadShadersFromDir(const std::string& dir)
 		if (fmap.find(base) != fmap.end())
 		{
 			AddShader(base, vmap[base], fmap[base]);
-			std::cout << "ResourceManager: loaded shader: " << base << " (" << vmap[base] << ", " << fmap[base] << ")" << std::endl;
+			std::cout << "ResourceManager: loaded shader: " << base << std::endl;
 		}
 		else
 		{
@@ -316,45 +323,155 @@ Shader* ResourceManager::GetShader(const std::string& name)
 	return nullptr;
 }
 
-// Attempt to locate a resource file by searching candidate directories (exe dir, project fallbacks)
+// -----------------------------------------------------------------------------
+// TEXTURES
+// -----------------------------------------------------------------------------
+
+Texture* ResourceManager::LoadTexture(const std::string& name, const std::string& relativePath)
+{
+	std::string key = ToLower(name);
+
+	// 1. Check if already loaded
+	auto it = m_textures.find(key);
+	if (it != m_textures.end())
+	{
+		return it->second;
+	}
+
+	// 2. Resolve Path
+	// If relativePath is empty, we assume 'name' is the path
+	std::string searchPath = relativePath.empty() ? name : relativePath;
+	std::string fullPath = GetResourcePath(searchPath);
+
+	if (fullPath.empty())
+	{
+		std::cout << "ResourceManager: Failed to locate texture: " << searchPath << std::endl;
+		return nullptr;
+	}
+
+	// 3. Load Texture
+	// Using default settings (Nearest Neighbor, Clamp) - could be parameterized if needed
+	Texture* tex = new Texture(fullPath, Texture::Filter::Nearest, Texture::Wrap::ClampToEdge);
+
+	// Check for load failure (usually width 0)
+	if (tex->GetWidth() == 0)
+	{
+		std::cout << "ResourceManager: Failed to load texture data from: " << fullPath << std::endl;
+		delete tex;
+		return nullptr;
+	}
+
+	// 4. Store
+	m_textures[key] = tex;
+	std::cout << "ResourceManager: Loaded Texture '" << key << "' (" << tex->GetWidth() << "x" << tex->GetHeight() << ")" << std::endl;
+
+	return tex;
+}
+
+Texture* ResourceManager::GetTexture(const std::string& name)
+{
+	std::string key = ToLower(name);
+	auto it = m_textures.find(key);
+	if (it != m_textures.end())
+		return it->second;
+	return nullptr;
+}
+
+// -----------------------------------------------------------------------------
+// FONTS (SDF)
+// -----------------------------------------------------------------------------
+
+Text* ResourceManager::LoadFont(const std::string& name, const std::string& relativePath, int fontSize)
+{
+	std::string key = ToLower(name);
+
+	// 1. Check if already loaded
+	auto it = m_fonts.find(key);
+	if (it != m_fonts.end())
+	{
+		return it->second;
+	}
+
+	// 2. Resolve Path
+	std::string searchPath = relativePath.empty() ? name : relativePath;
+	std::string fullPath = GetResourcePath(searchPath);
+
+	if (fullPath.empty())
+	{
+		std::cout << "ResourceManager: Failed to locate font: " << searchPath << std::endl;
+		return nullptr;
+	}
+
+	// 3. Load Font
+	// This generates the SDF atlas
+	Text* font = new Text(fullPath, fontSize);
+
+	// 4. Store
+	m_fonts[key] = font;
+	std::cout << "ResourceManager: Loaded Font '" << key << "' from " << fullPath << std::endl;
+
+	return font;
+}
+
+Text* ResourceManager::GetFont(const std::string& name)
+{
+	std::string key = ToLower(name);
+	auto it = m_fonts.find(key);
+	if (it != m_fonts.end())
+		return it->second;
+	return nullptr;
+}
+
+// -----------------------------------------------------------------------------
+// PATH RESOLUTION
+// -----------------------------------------------------------------------------
+
 std::string ResourceManager::GetResourcePath(const std::string& relativePath)
 {
 	if (relativePath.empty())
 		return std::string();
 
-	std::vector<std::string> candidates;
+	// If absolute path, return immediately if exists
+#if defined(_WIN32)
+	// Simple check for drive letter (C:\)
+	if (relativePath.length() > 1 && relativePath[1] == ':')
+	{
+		if (FileExists(relativePath))
+			return relativePath;
+	}
+#else
+	if (relativePath.length() > 0 && relativePath[0] == '/')
+	{
+		if (FileExists(relativePath))
+			return relativePath;
+	}
+#endif
 
-	// Prefer the executable directory
+	std::vector<std::string> candidates;
 	std::string exeDir = GetExecutableDir();
+
+	// 1. Executable / staged directories
 	if (!exeDir.empty())
 	{
-		candidates.push_back(exeDir + "\\" + relativePath);
-		candidates.push_back(exeDir + "\\Game\\Resources\\" + relativePath);
-		candidates.push_back(exeDir + "\\Resources\\" + relativePath);
+		candidates.push_back(exeDir + PATH_SEP + relativePath);
+		candidates.push_back(exeDir + PATH_SEP + "Game" + PATH_SEP + "Resources" + PATH_SEP + relativePath);
+		candidates.push_back(exeDir + PATH_SEP + "Resources" + PATH_SEP + relativePath);
 	}
 
-	// Project relative fallbacks
-	candidates.push_back(relativePath);
-	candidates.push_back("..\\" + relativePath);
-	candidates.push_back("Game\\Resources\\" + relativePath);
+	// 2. Project relative (Development mode)
+	candidates.push_back(relativePath); // Working directory
+	candidates.push_back(".." + std::string(1, PATH_SEP) + relativePath);
+	candidates.push_back("Game" + std::string(1, PATH_SEP) + "Resources" + std::string(1, PATH_SEP) + relativePath);
 
 	for (auto& p: candidates)
 	{
-#if defined(_WIN32)
-		DWORD attrs = GetFileAttributesA(p.c_str());
-		if (attrs != INVALID_FILE_ATTRIBUTES && !(attrs & FILE_ATTRIBUTE_DIRECTORY))
+		if (FileExists(p))
 		{
 			return p;
 		}
-#else
-		struct stat st;
-		if (stat(p.c_str(), &st) == 0 && !S_ISDIR(st.st_mode))
-		{
-			return p;
-		}
-#endif
 	}
 
+	// Not found
 	return std::string();
 }
 
@@ -400,8 +517,46 @@ std::string ResourceManager::GetManagedRuntimeConfigPath()
 	return std::string();
 }
 
+std::string ResourceManager::GetScriptingPath(const std::string& relativeToPublishRoot)
+{
+	// Helper to find the base publish directory, then append the file
+	std::string configPath = GetManagedRuntimeConfigPath();
+	if (configPath.empty())
+		return std::string();
+
+	// Strip filename to get directory
+	size_t lastSlash = configPath.find_last_of("/\\");
+	std::string dir = (lastSlash == std::string::npos) ? "" : configPath.substr(0, lastSlash);
+
+	return dir + PATH_SEP + relativeToPublishRoot;
+}
+
+// -----------------------------------------------------------------------------
+// CLEANUP
+// -----------------------------------------------------------------------------
+
 void ResourceManager::Clear()
 {
-	// Clear resource registrations; ResourceManager does not delete shader objects.
+	// 1. Shaders
+	for (auto& kv: m_shaders)
+	{
+		delete kv.second;
+	}
 	m_shaders.clear();
+
+	// 2. Textures
+	for (auto& kv: m_textures)
+	{
+		delete kv.second;
+	}
+	m_textures.clear();
+
+	// 3. Fonts
+	for (auto& kv: m_fonts)
+	{
+		delete kv.second;
+	}
+	m_fonts.clear();
+
+	std::cout << "ResourceManager: Resources cleared." << std::endl;
 }

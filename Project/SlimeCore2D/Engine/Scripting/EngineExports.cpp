@@ -4,8 +4,8 @@
 #include <iostream>
 #include <map>
 #include <string>
-#include <vector>
 #include <unordered_map>
+#include <vector>
 
 #include "Core/Input.h"
 #include "Rendering/Renderer2D.h"
@@ -39,10 +39,8 @@ struct PersistentUIElement
 	Texture* Image = nullptr; // Pointer to standard Texture
 };
 
-// Global storage for UI and Fonts
+// Global storage for UI
 static std::map<int, PersistentUIElement> s_UIElements;
-static std::unordered_map<std::string, Texture*> s_TextureCache;
-static std::vector<Text*> s_LoadedFonts;
 static int s_NextUIID = 1;
 
 // -------------------------------------------------------------------------
@@ -58,13 +56,7 @@ void EngineExports_RenderUI()
 
 		// Calculate Draw Position based on Anchor
 		// Renderer2D draws at center/position. We need to offset based on anchor.
-		// NOTE: For text, this is tricky as we need text size.
-		// For now, we pass direct position and let Renderer2D/Text handle alignment if implemented.
-		// Or, strictly use Center alignment for now.
-
-		glm::vec3 drawPos = glm::vec3(element.Position.x,
-		        element.Position.y,
-		        0.9f + (element.Layer * 0.001f));
+		glm::vec3 drawPos = glm::vec3(element.Position.x, element.Position.y, 0.9f + (element.Layer * 0.001f));
 
 		if (element.IsText && element.Font)
 		{
@@ -114,6 +106,60 @@ SLIME_EXPORT void __cdecl Engine_Log(const char* msg)
 }
 
 // -------------------------------------------------------------------------
+// RESOURCES
+// -------------------------------------------------------------------------
+
+SLIME_EXPORT void* __cdecl Resources_LoadTexture(const char* name, const char* path)
+{
+	if (!name)
+		return nullptr;
+	std::string strName = name;
+	std::string strPath = path ? path : ""; // If path is null, it might be resolved by name in RM
+	return (void*) ResourceManager::GetInstance().LoadTexture(strName, strPath);
+}
+
+SLIME_EXPORT void* __cdecl Resources_GetTexture(const char* name)
+{
+	if (!name)
+		return nullptr;
+	return (void*) ResourceManager::GetInstance().GetTexture(name);
+}
+
+SLIME_EXPORT void* __cdecl Resources_LoadFont(const char* name, const char* path, int fontSize)
+{
+	if (!name)
+		return nullptr;
+	std::string strName = name;
+	std::string strPath = path ? path : "";
+	return (void*) ResourceManager::GetInstance().LoadFont(strName, strPath, fontSize);
+}
+
+// Legacy / Deprecated Wrapper (maintains binary compatibility)
+SLIME_EXPORT void* __cdecl Texture_Load(const char* path)
+{
+	if (!path)
+		return nullptr;
+	// Use path as the key name
+	return (void*) ResourceManager::GetInstance().LoadTexture(path, path);
+}
+
+// Legacy / Deprecated Wrapper
+SLIME_EXPORT void* __cdecl Font_LoadFromFile(const char* path)
+{
+	if (!path)
+		return nullptr;
+	// Default to 48px for legacy loading
+	return (void*) ResourceManager::GetInstance().LoadFont(path, path, 48);
+}
+
+SLIME_EXPORT void __cdecl Font_Free(void* font)
+{
+	// ResourceManager owns the pointers now.
+	// We do not delete them here to prevent double-free issues if C# calls this manually.
+	// If explicit unloading is required, add UnloadResource to RM.
+}
+
+// -------------------------------------------------------------------------
 // ENTITY LIFECYCLE (Delegates to ObjectManager)
 // -------------------------------------------------------------------------
 SLIME_EXPORT EntityId __cdecl Entity_CreateQuad(float px, float py, float sx, float sy, float r, float g, float b)
@@ -138,12 +184,10 @@ SLIME_EXPORT bool __cdecl Entity_IsAlive(EntityId id)
 }
 
 // -------------------------------------------------------------------------
-// ENTITY TRANSFORM & VISUALS
+// ENTITY TRANSFORM
 // -------------------------------------------------------------------------
 SLIME_EXPORT void __cdecl Entity_SetPosition(EntityId id, float x, float y)
 {
-	if (!ObjectManager::IsCreated() || id == 0)
-		return;
 	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
 	{
 		glm::vec3 p = obj->GetPos();
@@ -153,54 +197,46 @@ SLIME_EXPORT void __cdecl Entity_SetPosition(EntityId id, float x, float y)
 
 SLIME_EXPORT void __cdecl Entity_GetPosition(EntityId id, float* outX, float* outY)
 {
-	if (!ObjectManager::IsCreated() || id == 0 || !outX || !outY)
-		return;
 	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
 	{
-		*outX = obj->GetPos().x;
-		*outY = obj->GetPos().y;
+		if (outX)
+			*outX = obj->GetPos().x;
+		if (outY)
+			*outY = obj->GetPos().y;
 	}
 }
 
 SLIME_EXPORT void __cdecl Entity_SetSize(EntityId id, float sx, float sy)
 {
-	if (!ObjectManager::IsCreated() || id == 0)
-		return;
 	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
 		obj->SetScale(glm::vec2(sx, sy));
 }
 
 SLIME_EXPORT void __cdecl Entity_GetSize(EntityId id, float* outSx, float* outSy)
 {
-	if (!ObjectManager::IsCreated() || id == 0 || !outSx || !outSy)
-		return;
 	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
 	{
-		*outSx = obj->GetScale().x;
-		*outSy = obj->GetScale().y;
+		if (outSx)
+			*outSx = obj->GetScale().x;
+		if (outSy)
+			*outSy = obj->GetScale().y;
 	}
 }
 
 SLIME_EXPORT void __cdecl Entity_SetColor(EntityId id, float r, float g, float b)
 {
-	if (!ObjectManager::IsCreated() || id == 0)
-		return;
 	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
 		obj->SetColor(r, g, b);
 }
 
 SLIME_EXPORT void __cdecl Entity_SetLayer(EntityId id, int layer)
 {
-	if (!ObjectManager::IsCreated() || id == 0)
-		return;
 	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
 		obj->SetLayer(layer);
 }
 
 SLIME_EXPORT int __cdecl Entity_GetLayer(EntityId id)
 {
-	if (!ObjectManager::IsCreated() || id == 0)
-		return 0;
 	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
 		return obj->GetLayer();
 	return 0;
@@ -208,47 +244,39 @@ SLIME_EXPORT int __cdecl Entity_GetLayer(EntityId id)
 
 SLIME_EXPORT void __cdecl Entity_SetRotation(EntityId id, float degrees)
 {
-	if (!ObjectManager::IsCreated() || id == 0)
-		return;
-
 	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
-	{
 		obj->SetRotation(degrees);
-	}
 }
 
 SLIME_EXPORT float __cdecl Entity_GetRotation(EntityId id)
 {
-	if (!ObjectManager::IsCreated() || id == 0)
-		return 0.0f;
-
 	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
-	{
 		return obj->GetRotation();
-	}
-
 	return 0.0f;
 }
 
 SLIME_EXPORT void __cdecl Entity_SetAnchor(EntityId id, float ax, float ay)
 {
-	if (!ObjectManager::IsCreated() || id == 0)
-		return;
 	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
 		obj->SetAnchor(glm::vec2(ax, ay));
 }
 
 SLIME_EXPORT void __cdecl Entity_GetAnchor(EntityId id, float* outAx, float* outAy)
 {
-	if (!ObjectManager::IsCreated() || id == 0 || !outAx || !outAy)
-		return;
 	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
 	{
-		*outAx = obj->GetAnchor().x;
-		*outAy = obj->GetAnchor().y;
+		if (outAx)
+			*outAx = obj->GetAnchor().x;
+		if (outAy)
+			*outAy = obj->GetAnchor().y;
 	}
 }
 
+// -------------------------------------------------------------------------
+// ENTITY VISUALS & ANIMATION
+// -------------------------------------------------------------------------
+
+// Assigns a texture by raw OpenGL ID (Low-level)
 SLIME_EXPORT void __cdecl Entity_SetTexture(EntityId id, unsigned int texId, int width, int height)
 {
 	if (!ObjectManager::IsCreated() || id == 0)
@@ -257,13 +285,8 @@ SLIME_EXPORT void __cdecl Entity_SetTexture(EntityId id, unsigned int texId, int
 	if (!obj)
 		return;
 
-	// In the new system, Texture objects manage the ID.
-	// We create a new Texture wrapper for the GameObject.
-	// NOTE: This assumes ownership is transferred to the GameObject or it's managed properly.
-	// Since we are creating 'new Texture', GameObject's destructor usually doesn't delete textures
-	// (as they are usually resources). This is a potential small leak if C# creates textures rapidly.
-	// A better way is to check if obj already has a texture with this ID.
-
+	// Note: We create a loose Texture object wrapper here.
+	// This is a temporary wrapper just so the GameObject can hold the ID.
 	Texture* t = new Texture(width, height, GL_RGBA8);
 	t->SetID(texId, width, height);
 
@@ -272,42 +295,11 @@ SLIME_EXPORT void __cdecl Entity_SetTexture(EntityId id, unsigned int texId, int
 	obj->SetTexture(t);
 }
 
-// Loads a texture from disk (or returns existing one) and returns a void* handle
-SLIME_EXPORT void* __cdecl Texture_Load(const char* path)
-{
-	if (!path)
-		return nullptr;
-
-	std::string filePath = path;
-
-	// Check if already loaded
-	if (s_TextureCache.find(filePath) != s_TextureCache.end())
-	{
-		return (void*) s_TextureCache[filePath];
-	}
-
-	// Load new texture
-	// NOTE: Ensure your Texture class constructor handles file loading!
-	Texture* newTex = new Texture(filePath, Texture::Filter::Nearest, Texture::Wrap::ClampToEdge);
-
-	// Check if load failed (width/height will be 0)
-	if (newTex->GetWidth() == 0)
-	{
-		delete newTex;
-		Engine_Log("Failed to load texture at path.");
-		return nullptr;
-	}
-
-	s_TextureCache[filePath] = newTex;
-	return (void*) newTex;
-}
-
-// Assigns the loaded texture pointer to an Entity
+// Assigns a Texture pointer retrieved via Resources_LoadTexture
 SLIME_EXPORT void __cdecl Entity_SetTexturePtr(EntityId id, void* texPtr)
 {
 	if (!ObjectManager::IsCreated() || id == 0)
 		return;
-
 	GameObject* obj = ObjectManager::Get().Get((ObjectId) id);
 	if (!obj)
 		return;
@@ -316,7 +308,7 @@ SLIME_EXPORT void __cdecl Entity_SetTexturePtr(EntityId id, void* texPtr)
 	{
 		Texture* tex = (Texture*) texPtr;
 		obj->SetTexture(tex);
-		// Automatically update the sprite width to match the texture for convenience
+		// Automatically update the sprite width to match the texture
 		obj->SetSpriteWidth(tex->GetWidth());
 	}
 	else
@@ -325,49 +317,142 @@ SLIME_EXPORT void __cdecl Entity_SetTexturePtr(EntityId id, void* texPtr)
 	}
 }
 
-// -------------------------------------------------------------------------
-// TEXT & FONT HANDLING (SDF)
-// -------------------------------------------------------------------------
-SLIME_EXPORT void* __cdecl Font_LoadFromFile(const char* path)
+SLIME_EXPORT void* __cdecl Entity_GetTexturePtr(EntityId id)
 {
-	if (!path)
+	if (!ObjectManager::IsCreated() || id == 0)
 		return nullptr;
-	// Load as SDF (default size 48)
-	Text* font = new Text(std::string(path), 48);
-	s_LoadedFonts.push_back(font);
-	return (void*) font;
+
+	GameObject* obj = ObjectManager::Get().Get((ObjectId) id);
+	if (!obj)
+		return nullptr;
+
+	return (void*) obj->GetTexture();
 }
 
-SLIME_EXPORT void __cdecl Font_Free(void* font)
+SLIME_EXPORT void __cdecl Entity_SetRender(EntityId id, bool value)
 {
-	if (!font)
+	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
+		obj->SetRender(value);
+}
+
+SLIME_EXPORT bool __cdecl Entity_GetRender(EntityId id)
+{
+	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
+		return obj->GetRender();
+	return false;
+}
+
+SLIME_EXPORT void __cdecl Entity_SetFrame(EntityId id, int frame)
+{
+	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
+		obj->SetFrame(frame);
+}
+
+SLIME_EXPORT int __cdecl Entity_GetFrame(EntityId id)
+{
+	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
+		return obj->GetFrame();
+	return 0;
+}
+
+SLIME_EXPORT void __cdecl Entity_AdvanceFrame(EntityId id)
+{
+	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
+		obj->AdvanceFrame();
+}
+
+SLIME_EXPORT void __cdecl Entity_SetSpriteWidth(EntityId id, int width)
+{
+	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
+		obj->SetSpriteWidth(width);
+}
+
+SLIME_EXPORT int __cdecl Entity_GetSpriteWidth(EntityId id)
+{
+	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
+		return obj->GetSpriteWidth();
+	return 0;
+}
+
+SLIME_EXPORT void __cdecl Entity_SetHasAnimation(EntityId id, bool value)
+{
+	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
+		obj->SetHasAnimation(value);
+}
+
+SLIME_EXPORT void __cdecl Entity_SetFrameRate(EntityId id, float rate)
+{
+	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
+		obj->SetFrameRate(rate);
+}
+
+SLIME_EXPORT float __cdecl Entity_GetFrameRate(EntityId id)
+{
+	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
+		return obj->GetFrameRate();
+	return 0.0f;
+}
+
+// -------------------------------------------------------------------------
+// INPUT
+// -------------------------------------------------------------------------
+SLIME_EXPORT bool __cdecl Input_GetKeyDown(int key)
+{
+	return Input::GetInstance()->GetKey(Keycode(key));
+}
+
+SLIME_EXPORT bool __cdecl Input_GetKeyReleased(int key)
+{
+	return Input::GetInstance()->GetKeyUp(Keycode(key));
+}
+
+SLIME_EXPORT bool __cdecl Input_GetMouseDown(int button)
+{
+	return Input::GetInstance()->GetMouseButtonDown(button);
+}
+
+SLIME_EXPORT void __cdecl Input_GetMousePos(float* outX, float* outY)
+{
+	if (!outX || !outY)
 		return;
-	Text* t = (Text*) font;
-
-	// Remove from tracking
-	for (auto it = s_LoadedFonts.begin(); it != s_LoadedFonts.end(); ++it)
-	{
-		if (*it == t)
-		{
-			s_LoadedFonts.erase(it);
-			break;
-		}
-	}
-	delete t;
+	auto p = Input::GetInstance()->GetMousePosition();
+	*outX = (float) p.x;
+	*outY = (float) p.y;
 }
 
-// Deprecated legacy function wrapper
-SLIME_EXPORT unsigned int __cdecl Text_CreateTextureFromFontFile(const char* fontPath, const char* text, int pixelHeight, int* outWidth, int* outHeight)
+SLIME_EXPORT void __cdecl Input_GetMouseToWorldPos(float* outX, float* outY)
 {
-	Engine_Log("WARNING: Text_CreateTextureFromFontFile is deprecated in SDF Renderer. Use UI_CreateText.");
-	return 0;
+	if (!outX || !outY)
+		return;
+	auto p = Input::GetInstance()->GetMousePositionWorld();
+	*outX = (float) p.x;
+	*outY = (float) p.y;
 }
 
-// Deprecated legacy function wrapper
-SLIME_EXPORT unsigned int __cdecl Text_RenderToEntity(void* font, EntityId id, const char* text, int pixelHeight)
+SLIME_EXPORT void __cdecl Input_SetViewportRect(int x, int y, int w, int h)
 {
-	Engine_Log("WARNING: Text_RenderToEntity is deprecated. Use UI_CreateText for text rendering.");
-	return 0;
+	Input::GetInstance()->SetViewportRect(x, y, w, h);
+}
+
+SLIME_EXPORT void __cdecl Input_GetViewportRect(int* x, int* y, int* w, int* h)
+{
+	if (!x || !y || !w || !h)
+		return;
+	auto v = Input::GetInstance()->GetViewportRect();
+	*x = (int) v.x;
+	*y = (int) v.y;
+	*w = (int) v.z;
+	*h = (int) v.w;
+}
+
+SLIME_EXPORT void __cdecl Input_SetScroll(float v, float h)
+{
+	Input::GetInstance()->SetScrollInternal(v, h);
+}
+
+SLIME_EXPORT float __cdecl Input_GetScroll()
+{
+	return Input::GetInstance()->GetScroll();
 }
 
 // -------------------------------------------------------------------------
@@ -386,14 +471,13 @@ SLIME_EXPORT EntityId __cdecl UI_CreateText(const char* text, int fontSize, floa
 	float scale = (float) fontSize / 48.0f;
 	el.Scale = { scale, scale };
 
-	// Default font if none provided (Basic fallbacks)
-	static Text* defaultFont = nullptr;
+	// Default font resolution logic
+	// Check if a font named "DefaultFont" is loaded
+	Text* defaultFont = ResourceManager::GetInstance().GetFont("DefaultFont");
 	if (!defaultFont)
 	{
-		std::string path = ResourceManager::GetInstance().GetResourcePath("Fonts\\Chilanka-Regular.ttf");
-		if (path.empty())
-			path = "..\\Fonts\\Chilanka-Regular.ttf";
-		defaultFont = new Text(path, 48);
+		// Try to load a fallback from common locations if not found
+		defaultFont = ResourceManager::GetInstance().LoadFont("DefaultFont", "Fonts/Chilanka-Regular.ttf", 48);
 	}
 	el.Font = defaultFont;
 
@@ -475,135 +559,6 @@ SLIME_EXPORT void __cdecl UI_SetAnchor(EntityId id, float ax, float ay)
 }
 
 // -------------------------------------------------------------------------
-// INPUT (Pass-through)
-// -------------------------------------------------------------------------
-SLIME_EXPORT bool __cdecl Input_GetKeyDown(int key)
-{
-	return Input::GetInstance()->GetKey(Keycode(key));
-}
-
-SLIME_EXPORT bool __cdecl Input_GetKeyReleased(int key)
-{
-	return Input::GetInstance()->GetKeyUp(Keycode(key));
-}
-
-SLIME_EXPORT bool __cdecl Input_GetMouseDown(int button)
-{
-	return Input::GetInstance()->GetMouseButtonDown(button);
-}
-
-SLIME_EXPORT void __cdecl Input_GetMousePos(float* outX, float* outY)
-{
-	if (!outX || !outY)
-		return;
-	auto p = Input::GetInstance()->GetMousePosition();
-	*outX = (float) p.x;
-	*outY = (float) p.y;
-}
-
-SLIME_EXPORT void __cdecl Input_GetMouseToWorldPos(float* outX, float* outY)
-{
-	if (!outX || !outY)
-		return;
-	auto p = Input::GetInstance()->GetMousePositionWorld();
-	*outX = (float) p.x;
-	*outY = (float) p.y;
-}
-
-SLIME_EXPORT void __cdecl Input_SetViewportRect(int x, int y, int w, int h)
-{
-	Input::GetInstance()->SetViewportRect(x, y, w, h);
-}
-
-SLIME_EXPORT void __cdecl Input_GetViewportRect(int* x, int* y, int* w, int* h)
-{
-	if (!x || !y || !w || !h)
-		return;
-	auto v = Input::GetInstance()->GetViewportRect();
-	*x = (int) v.x;
-	*y = (int) v.y;
-	*w = (int) v.z;
-	*h = (int) v.w;
-}
-
-SLIME_EXPORT void __cdecl Input_SetScroll(float v, float h)
-{
-	Input::GetInstance()->SetScrollInternal(v, h);
-}
-
-SLIME_EXPORT float __cdecl Input_GetScroll()
-{
-	return Input::GetInstance()->GetScroll();
-}
-
-// -------------------------------------------------------------------------
-// ANIMATION & FRAME CONTROL
-// -------------------------------------------------------------------------
-SLIME_EXPORT void __cdecl Entity_SetFrame(EntityId id, int frame)
-{
-	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
-		obj->SetFrame(frame);
-}
-
-SLIME_EXPORT int __cdecl Entity_GetFrame(EntityId id)
-{
-	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
-		return obj->GetFrame();
-	return 0;
-}
-
-SLIME_EXPORT void __cdecl Entity_AdvanceFrame(EntityId id)
-{
-	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
-		obj->AdvanceFrame();
-}
-
-SLIME_EXPORT void __cdecl Entity_SetSpriteWidth(EntityId id, int width)
-{
-	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
-		obj->SetSpriteWidth(width);
-}
-
-SLIME_EXPORT int __cdecl Entity_GetSpriteWidth(EntityId id)
-{
-	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
-		return obj->GetSpriteWidth();
-	return 0;
-}
-
-SLIME_EXPORT void __cdecl Entity_SetHasAnimation(EntityId id, bool value)
-{
-	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
-		obj->SetHasAnimation(value);
-}
-
-SLIME_EXPORT void __cdecl Entity_SetFrameRate(EntityId id, float rate)
-{
-	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
-		obj->SetFrameRate(rate);
-}
-
-SLIME_EXPORT float __cdecl Entity_GetFrameRate(EntityId id)
-{
-	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
-		return obj->GetFrameRate();
-	return 0.0f;
-}
-
-SLIME_EXPORT void __cdecl Entity_SetRender(EntityId id, bool value)
-{
-	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
-		obj->SetRender(value);
-}
-
-SLIME_EXPORT bool __cdecl Entity_GetRender(EntityId id)
-{
-	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
-		return obj->GetRender();
-	return false;
-}
-
-// -------------------------------------------------------------------------
 // OBJECT MANAGER WRAPPERS
 // -------------------------------------------------------------------------
 SLIME_EXPORT EntityId __cdecl ObjectManager_CreateGameObject(float px, float py, float sx, float sy, float r, float g, float b)
@@ -615,16 +570,15 @@ SLIME_EXPORT EntityId __cdecl ObjectManager_CreateGameObject(float px, float py,
 
 SLIME_EXPORT EntityId __cdecl ObjectManager_CreateQuad(float px, float py, float sx, float sy, float r, float g, float b)
 {
-	return (EntityId) Entity_CreateQuad(px, py, sx, sy, r, g, b);
+	return Entity_CreateQuad(px, py, sx, sy, r, g, b);
 }
 
 SLIME_EXPORT EntityId __cdecl ObjectManager_CreateQuadWithTexture(float px, float py, float sx, float sy, unsigned int texId)
 {
 	if (!ObjectManager::IsCreated())
 		return 0;
-	// Create with default color, then assign texture
 	ObjectId id = ObjectManager::Get().CreateQuad(glm::vec3(px, py, 0.0f), glm::vec2(sx, sy), glm::vec3(1.0f));
-	Entity_SetTexture((EntityId) id, texId, 0, 0); // Reuse SetTexture logic
+	Entity_SetTexture((EntityId) id, texId, 0, 0);
 	return (EntityId) id;
 }
 

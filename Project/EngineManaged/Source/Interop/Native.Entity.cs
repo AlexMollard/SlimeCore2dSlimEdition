@@ -90,6 +90,9 @@ internal static partial class Native
 	public static extern void Entity_SetTexturePtr(ulong id, IntPtr texPtr);
 
 	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	public static extern IntPtr Entity_GetTexturePtr(ulong id);
+
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
 	public static extern IntPtr Entity_GetRotation(ulong id);
 
 	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]

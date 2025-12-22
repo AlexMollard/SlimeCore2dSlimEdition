@@ -202,5 +202,6 @@
     <None Include="Game\Resources\Shaders\textFrag.shader">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="cpp.hint" />
   </ItemGroup>
 </Project>
