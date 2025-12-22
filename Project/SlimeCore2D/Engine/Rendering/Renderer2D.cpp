@@ -1,318 +1,242 @@
 #include "Renderer2D.h"
 
-#include <algorithm>
 #include <array>
-#include <cstdio>
+#include <gtc/matrix_transform.hpp>
 #include <iostream>
-#include <map>
 
-#include "Math.h"
+#include "glew.h"
 #include "Resources/ResourceManager.h"
-#include "UIManager.h"
+#include "Text.h" // Must include Text header to access font data
 
-std::vector<glm::vec2> Renderer2D::m_UVs;
-Camera* Renderer2D::m_camera;
-Shader* Renderer2D::basicShader;
-Shader* Renderer2D::m_UIShader;
+// Define the static data instance
+Renderer2D::Renderer2DData Renderer2D::s_Data;
 
-static const size_t maxQuadCount = 2000;
-static const size_t maxVertexCount = maxQuadCount * 4;
-static const size_t maxIndexCount = maxQuadCount * 6;
-static const size_t maxTextures = 31;
-
-struct Vertex
+void Renderer2D::Init()
 {
-	glm::vec3 position;
-	glm::vec4 color;
-	glm::vec2 texCoords;
-	float texIndex;
-};
+	s_Data.QuadBuffer = new Renderer2DData::QuadVertex[s_Data.MaxVertices];
 
-struct RendererData
-{
-	GLuint quadVA = 0;
-	GLuint quadVB = 0;
-	GLuint quadIB = 0;
+	glCreateVertexArrays(1, &s_Data.QuadVA);
+	glBindVertexArray(s_Data.QuadVA);
 
-	GLuint whiteTexture = 0;
-	uint32_t whiteTextureSlot = 0;
+	glCreateBuffers(1, &s_Data.QuadVB);
+	glBindBuffer(GL_ARRAY_BUFFER, s_Data.QuadVB);
+	glBufferData(GL_ARRAY_BUFFER, s_Data.MaxVertices * sizeof(Renderer2DData::QuadVertex), nullptr, GL_DYNAMIC_DRAW);
 
-	uint32_t indexCount = 0;
+	// Enable Attributes
+	// 0: Position
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Renderer2DData::QuadVertex), (const void*) offsetof(Renderer2DData::QuadVertex, Position));
 
-	Vertex* quadBuffer = nullptr;
-	Vertex* quadBufferPtr = nullptr;
+	// 1: Color
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Renderer2DData::QuadVertex), (const void*) offsetof(Renderer2DData::QuadVertex, Color));
 
-	std::array<uint32_t, maxTextures> textureSlots = {};
-	uint32_t textureSlotIndex = 1;
-};
+	// 2: TexCoord
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Renderer2DData::QuadVertex), (const void*) offsetof(Renderer2DData::QuadVertex, TexCoord));
 
-static RendererData data;
+	// 3: TexIndex
+	glEnableVertexAttribArray(3);
+	glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(Renderer2DData::QuadVertex), (const void*) offsetof(Renderer2DData::QuadVertex, TexIndex));
 
-static glm::vec2 basicUVS[4] = { glm::vec2(0.0f, 0.0f), glm::vec2(1.0f, 0.0f), glm::vec2(1.0f, 1.0f), glm::vec2(0.0f, 1.0f) };
+	// 4: TilingFactor
+	glEnableVertexAttribArray(4);
+	glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, sizeof(Renderer2DData::QuadVertex), (const void*) offsetof(Renderer2DData::QuadVertex, TilingFactor));
 
-Renderer2D::Renderer2D(Camera* camera)
-{
-	// Load shaders from resource directories
+	// 5: IsText (For SDF switching in shader)
+	glEnableVertexAttribArray(5);
+	glVertexAttribPointer(5, 1, GL_FLOAT, GL_FALSE, sizeof(Renderer2DData::QuadVertex), (const void*) offsetof(Renderer2DData::QuadVertex, IsText));
+
+	// Indices
+	uint32_t* quadIndices = new uint32_t[s_Data.MaxIndices];
+	uint32_t offset = 0;
+	for (uint32_t i = 0; i < s_Data.MaxIndices; i += 6)
+	{
+		quadIndices[i + 0] = offset + 0;
+		quadIndices[i + 1] = offset + 1;
+		quadIndices[i + 2] = offset + 2;
+
+		quadIndices[i + 3] = offset + 2;
+		quadIndices[i + 4] = offset + 3;
+		quadIndices[i + 5] = offset + 0;
+
+		offset += 4;
+	}
+
+	glCreateBuffers(1, &s_Data.QuadIB);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, s_Data.QuadIB);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, s_Data.MaxIndices * sizeof(uint32_t), quadIndices, GL_STATIC_DRAW);
+
+	delete[] quadIndices;
+
+	// White Texture (1x1)
+	glCreateTextures(GL_TEXTURE_2D, 1, &s_Data.WhiteTexture);
+	glBindTexture(GL_TEXTURE_2D, s_Data.WhiteTexture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	uint32_t color = 0xffffffff;
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, &color);
+
+	s_Data.TextureSlots[0] = s_Data.WhiteTexture;
+	for (size_t i = 1; i < s_Data.MaxTextureSlots; i++)
+		s_Data.TextureSlots[i] = 0;
+
 	ResourceManager::GetInstance().LoadShadersFromDir();
-
-	basicShader = ResourceManager::GetInstance().GetShader("basic");
-	if (!basicShader)
-		basicShader = new Shader("Basic Shader", "..\\Shaders\\BasicVertex.shader", "..\\Shaders\\BasicFragment.shader");
-
-	m_UIShader = ResourceManager::GetInstance().GetShader("ui");
-	if (!m_UIShader)
-		m_UIShader = new Shader("UI Shader", "..\\Shaders\\UIVertex.shader", "..\\Shaders\\UIFragment.shader");
-
-	this->m_camera = camera;
-
-	basicShader->Use();
-
-	auto loc = glGetUniformLocation(basicShader->GetID(), "Textures");
-	int samplers[maxTextures];
-	for (int i = 0; i < maxTextures; i++)
-		samplers[i] = i;
-
-	glUniform1iv(loc, maxTextures, samplers);
-
-	// Label shader program for RenderDoc
-	if (basicShader)
-		glObjectLabel(GL_PROGRAM, basicShader->GetID(), -1, "Renderer2D BasicShader");
-
-	m_UIShader->Use();
-
-	loc = glGetUniformLocation(m_UIShader->GetID(), "Textures");
-
-	glUniform1iv(loc, maxTextures, samplers);
-
-	if (m_UIShader)
-		glObjectLabel(GL_PROGRAM, m_UIShader->GetID(), -1, "Renderer2D UIShader");
-
-	Init();
-}
-
-Renderer2D::~Renderer2D()
-{
-	ShutDown();
-	for (int i = 0; i < m_texturePool.size(); i++)
+	s_Data.TextureShader = ResourceManager::GetInstance().GetShader("basic");
+	if (!s_Data.TextureShader)
 	{
-		delete m_texturePool[i];
-		m_texturePool[i] = nullptr;
+		std::cout << "Renderer2D Warning: 'BatchShader' not found. Make sure to load a shader capable of batching." << std::endl;
 	}
 
-	delete basicShader;
-	basicShader = nullptr;
-
-	delete m_UIShader;
-	m_UIShader = nullptr;
-
-	delete m_camera;
-	m_camera = nullptr;
+	// Helper for rotation
+	s_Data.QuadVertexPositions[0] = { -0.5f, -0.5f, 0.0f, 1.0f };
+	s_Data.QuadVertexPositions[1] = { 0.5f, -0.5f, 0.0f, 1.0f };
+	s_Data.QuadVertexPositions[2] = { 0.5f, 0.5f, 0.0f, 1.0f };
+	s_Data.QuadVertexPositions[3] = { -0.5f, 0.5f, 0.0f, 1.0f };
 }
 
-void Renderer2D::AddObject(GameObject* newObject)
+void Renderer2D::Shutdown()
 {
-	std::vector<GameObject*>::iterator it = find(m_objectPool.begin(), m_objectPool.end(), newObject);
+	delete[] s_Data.QuadBuffer;
+	glDeleteVertexArrays(1, &s_Data.QuadVA);
+	glDeleteBuffers(1, &s_Data.QuadVB);
+	glDeleteBuffers(1, &s_Data.QuadIB);
+	glDeleteTextures(1, &s_Data.WhiteTexture);
+}
 
-	if (it != m_objectPool.end())
+void Renderer2D::BeginScene(Camera& camera)
+{
+	if (s_Data.TextureShader)
 	{
-		std::cout << "GameObject already in Renderer: " << *it << '\n';
+		s_Data.TextureShader->Use();
+		// Assuming Camera has GetViewProjection or similar.
+		// If you only have GetTransform() (Ortho), use that.
+		s_Data.TextureShader->setMat4("u_ViewProjection", camera.GetProjectionMatrix());
+	}
+	StartBatch();
+}
+
+void Renderer2D::BeginScene(const glm::mat4& viewProj)
+{
+	if (s_Data.TextureShader)
+	{
+		s_Data.TextureShader->Use();
+		s_Data.TextureShader->setMat4("u_ViewProjection", viewProj);
+	}
+	StartBatch();
+}
+
+void Renderer2D::EndScene()
+{
+	Flush();
+}
+
+void Renderer2D::StartBatch()
+{
+	s_Data.IndexCount = 0;
+	s_Data.QuadBufferPtr = s_Data.QuadBuffer;
+	s_Data.TextureSlotIndex = 1;
+}
+
+void Renderer2D::Flush()
+{
+	if (s_Data.IndexCount == 0)
 		return;
-	}
 
-	GameObject* go = newObject;
-	go->SetID(m_objectPool.size());
-	go->SetShader(basicShader);
+	uint32_t dataSize = (uint32_t) ((uint8_t*) s_Data.QuadBufferPtr - (uint8_t*) s_Data.QuadBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, s_Data.QuadVB);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, dataSize, s_Data.QuadBuffer);
 
-	if (m_objectPool.size() > 0)
+	// Bind Textures
+	for (uint32_t i = 0; i < s_Data.TextureSlotIndex; i++)
 	{
-		if (m_objectPool.back()->GetPos().z <= go->GetPos().z)
-		{
-			m_objectPool.push_back(go);
-			return;
-		}
-
-		for (int i = 0; i < m_objectPool.size(); i++)
-		{
-			if (m_objectPool[i]->GetPos().z >= go->GetPos().z)
-			{
-				m_objectPool.insert(m_objectPool.begin() + i, go);
-				return;
-			}
-		}
+		glActiveTexture(GL_TEXTURE0 + i);
+		glBindTexture(GL_TEXTURE_2D, s_Data.TextureSlots[i]);
 	}
-	else
-		m_objectPool.push_back(go);
+
+	// Update Uniforms (sampler array)
+	// Usually done once on Shader Init, but if shader changes ensure this is set.
+	int samplers[32]; for(int i=0; i<32; i++) samplers[i] = i;
+		s_Data.TextureShader->setIntArray("u_Textures", samplers, 32);
+
+	glBindVertexArray(s_Data.QuadVA);
+	glDrawElements(GL_TRIANGLES, s_Data.IndexCount, GL_UNSIGNED_INT, nullptr);
+
+	s_Data.Stats.DrawCalls++;
+	s_Data.Stats.VertexCount += s_Data.IndexCount / 6 * 4;
+	s_Data.Stats.IndexCount += s_Data.IndexCount;
 }
 
-Texture* Renderer2D::LoadTexture(std::string dir)
+void Renderer2D::NextBatch()
 {
-	Texture* tempTex = new Texture(dir);
-
-	m_texturePool.push_back(tempTex);
-
-	// Name texture for RenderDoc debugging
-	if (tempTex && tempTex->GetID() != 0)
-	{
-		std::string name = "Texture: " + dir;
-		glObjectLabel(GL_TEXTURE, tempTex->GetID(), -1, name.c_str());
-	}
-
-	return tempTex;
-}
-
-void Renderer2D::Draw()
-{
-	// Debug group for world draw
-	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Renderer2D::Draw - World");
-
-	BeginBatch();
-
-	basicShader->Use();
-
-	basicShader->setMat4("OrthoMatrix", m_camera->GetTransform());
-	basicShader->setMat4("Model", glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)));
-	basicShader->setVec4("SunColor", glm::vec4(1.0f));
-
-	glm::vec2 camPos = m_camera->GetPosition();
-
-	// Sort objects by layer first, then by z (stable to preserve relative order within equal keys)
-	std::stable_sort(m_objectPool.begin(),
-	        m_objectPool.end(),
-	        [](GameObject* a, GameObject* b)
-	        {
-		        if (a->GetLayer() != b->GetLayer())
-			        return a->GetLayer() > b->GetLayer();
-		        return a->GetPos().z < b->GetPos().z;
-	        });
-
-	for (int i = 0; i < m_objectPool.size(); i++)
-	{
-		if (m_objectPool[i]->GetRender() == false)
-			continue;
-
-		if (m_objectPool[i]->GetTexture() == nullptr)
-		{
-			DrawQuad(m_objectPool[i]->GetPos(), m_objectPool[i]->GetScale(), { m_objectPool[i]->GetColor(), 1.0f });
-		}
-		else if (m_objectPool[i]->GetTexture() != nullptr)
-		{
-			DrawQuad(m_objectPool[i]->GetPos(), m_objectPool[i]->GetScale(), { m_objectPool[i]->GetColor(), 1.0f }, m_objectPool[i]->GetTexture(), m_objectPool[i]->GetFrame(), m_objectPool[i]->GetSpriteWidth());
-		}
-	}
-
-	EndBatch();
 	Flush();
-	// End world draw debug group
-	glPopDebugGroup();
-
-	DrawUI();
+	StartBatch();
 }
 
-void Renderer2D::DrawUI()
+// -------------------------------------------------------------------------
+// Drawing Primitives
+// -------------------------------------------------------------------------
+
+void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color)
 {
-	// Debug group for UI draw
-	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Renderer2D::Draw - UI");
-
-	// Save GL depth, stencil, and cull state so we can restore after UI draw
-	GLboolean depthTestEnabled = glIsEnabled(GL_DEPTH_TEST);
-	GLboolean stencilTestEnabled = glIsEnabled(GL_STENCIL_TEST);
-	GLboolean cullFaceEnabled = glIsEnabled(GL_CULL_FACE);
-	GLboolean prevDepthMask = GL_TRUE;
-	glGetBooleanv(GL_DEPTH_WRITEMASK, &prevDepthMask);
-
-	// Disable depth/stencil/culling for UI so it always appears on top
-	if (depthTestEnabled)
-		glDisable(GL_DEPTH_TEST);
-	glDepthMask(GL_FALSE);
-	if (stencilTestEnabled)
-		glDisable(GL_STENCIL_TEST);
-	if (cullFaceEnabled)
-		glDisable(GL_CULL_FACE);
-
-	BeginBatch();
-
-	m_UIShader->Use();
-
-	m_UIShader->setMat4("OrthoMatrix", m_UIMatrix);
-	m_UIShader->setMat4("Model", glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)));
-
-	// Let the UIManager draw all UI elements
-	UIManager::Get().Draw();
-
-	EndBatch();
-	Flush();
-
-	// restore GL state
-	if (prevDepthMask)
-		glDepthMask(GL_TRUE);
-	else
-		glDepthMask(GL_FALSE);
-	if (depthTestEnabled)
-		glEnable(GL_DEPTH_TEST);
-	if (stencilTestEnabled)
-		glEnable(GL_STENCIL_TEST);
-	if (cullFaceEnabled)
-		glEnable(GL_CULL_FACE);
-
-	glPopDebugGroup();
+	DrawQuad({ position.x, position.y, 0.0f }, size, color);
 }
 
-Shader* Renderer2D::GetBasicShader()
+void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, const glm::vec4& color)
 {
-	return basicShader;
-}
+	if (s_Data.IndexCount >= s_Data.MaxIndices)
+		NextBatch();
 
-void Renderer2D::DrawUIQuad(glm::vec2 pos, int layer, glm::vec2 size, glm::vec3 color, Texture* texture)
-{
-	if (texture == nullptr)
-		DrawQuad(glm::vec3(pos.x, pos.y, 2 + layer * 0.01f), size, { color, 1.0f });
-	else
-		DrawQuad(glm::vec3(pos.x, pos.y, 2 + layer * 0.01f), size, { color, 1.0f }, texture, 0, texture->GetWidth());
-}
+	const float texIndex = 0.0f; // White Texture
+	const float tilingFactor = 1.0f;
+	const glm::vec2 texCoords[] = {
+		{ 0.0f, 0.0f },
+        { 1.0f, 0.0f },
+        { 1.0f, 1.0f },
+        { 0.0f, 1.0f }
+	};
 
-void Renderer2D::DrawQuad(glm::vec3 position, glm::vec2 size, glm::vec4 color, glm::vec2 anchor)
-{
-	if (data.indexCount >= maxIndexCount)
-	{
-		EndBatch();
-		Flush();
-		BeginBatch();
-	}
-
-	float textureIndex = 0.0f;
-
-	// Anchor is normalized (0..1). position is the anchor point in world space.
-	// corners: (0,0) bottom-left, (1,0) bottom-right, (1,1) top-right, (0,1) top-left
-	glm::vec3 positions[4] = { glm::vec3(position.x + (0.0f - anchor.x) * size.x, position.y + (0.0f - anchor.y) * size.y, position.z),
-		glm::vec3(position.x + (1.0f - anchor.x) * size.x, position.y + (0.0f - anchor.y) * size.y, position.z),
-		glm::vec3(position.x + (1.0f - anchor.x) * size.x, position.y + (1.0f - anchor.y) * size.y, position.z),
-		glm::vec3(position.x + (0.0f - anchor.x) * size.x, position.y + (1.0f - anchor.y) * size.y, position.z) };
+	glm::vec3 transformPos;
+	// Center-based anchor logic
+	// BL, BR, TR, TL
+	glm::vec3 offsets[4] = {
+		{ -0.5f * size.x, -0.5f * size.y, 0.0f },
+        {  0.5f * size.x, -0.5f * size.y, 0.0f },
+        {  0.5f * size.x,  0.5f * size.y, 0.0f },
+        { -0.5f * size.x,  0.5f * size.y, 0.0f }
+	};
 
 	for (int i = 0; i < 4; i++)
 	{
-		data.quadBufferPtr->position = positions[i];
-		data.quadBufferPtr->color = color;
-		data.quadBufferPtr->texCoords = basicUVS[i];
-		data.quadBufferPtr->texIndex = textureIndex;
-		data.quadBufferPtr++;
+		s_Data.QuadBufferPtr->Position = position + offsets[i];
+		s_Data.QuadBufferPtr->Color = color;
+		s_Data.QuadBufferPtr->TexCoord = texCoords[i];
+		s_Data.QuadBufferPtr->TexIndex = texIndex;
+		s_Data.QuadBufferPtr->TilingFactor = tilingFactor;
+		s_Data.QuadBufferPtr->IsText = 0.0f;
+		s_Data.QuadBufferPtr++;
 	}
 
-	data.indexCount += 6;
+	s_Data.IndexCount += 6;
+	s_Data.Stats.QuadCount++;
 }
 
-void Renderer2D::DrawQuad(glm::vec3 position, glm::vec2 size, glm::vec4 color, Texture* texture, int frame, int spriteWidth, glm::vec2 anchor)
+void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, Texture* texture, float tiling, const glm::vec4& tintColor)
 {
-	if (data.indexCount >= maxIndexCount || data.textureSlotIndex >= maxTextures)
-	{
-		EndBatch();
-		Flush();
-		BeginBatch();
-	}
+	DrawQuad({ position.x, position.y, 0.0f }, size, texture, tiling, tintColor);
+}
+
+void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, Texture* texture, float tiling, const glm::vec4& tintColor)
+{
+	if (s_Data.IndexCount >= s_Data.MaxIndices || s_Data.TextureSlotIndex > 31)
+		NextBatch();
 
 	float textureIndex = 0.0f;
-	for (uint32_t i = 1; i < data.textureSlotIndex; i++)
+	for (uint32_t i = 1; i < s_Data.TextureSlotIndex; i++)
 	{
-		if (data.textureSlots[i] == texture->GetID())
+		if (s_Data.TextureSlots[i] == texture->GetID())
 		{
 			textureIndex = (float) i;
 			break;
@@ -321,202 +245,284 @@ void Renderer2D::DrawQuad(glm::vec3 position, glm::vec2 size, glm::vec4 color, T
 
 	if (textureIndex == 0.0f)
 	{
-		textureIndex = (float) data.textureSlotIndex;
-		data.textureSlots[data.textureSlotIndex] = texture->GetID();
-		data.textureSlotIndex++;
+		if (s_Data.TextureSlotIndex >= s_Data.MaxTextureSlots)
+			NextBatch();
+		textureIndex = (float) s_Data.TextureSlotIndex;
+		s_Data.TextureSlots[s_Data.TextureSlotIndex] = texture->GetID();
+		s_Data.TextureSlotIndex++;
 	}
 
-	static bool useBasicUVS = false;
+	glm::vec2 texCoords[] = {
+		{ 0.0f, 0.0f },
+        { 1.0f, 0.0f },
+        { 1.0f, 1.0f },
+        { 0.0f, 1.0f }
+	};
 
-	if (texture->GetWidth() == 16)
-	{
-		useBasicUVS = true;
-	}
-	else
-	{
-		useBasicUVS = false;
-		setActiveRegion(texture, frame, spriteWidth);
-	}
-
-	// Anchor is normalized (0..1).
-	glm::vec3 positions[4] = { glm::vec3(position.x + (0.0f - anchor.x) * size.x, position.y + (0.0f - anchor.y) * size.y, position.z),
-		glm::vec3(position.x + (1.0f - anchor.x) * size.x, position.y + (0.0f - anchor.y) * size.y, position.z),
-		glm::vec3(position.x + (1.0f - anchor.x) * size.x, position.y + (1.0f - anchor.y) * size.y, position.z),
-		glm::vec3(position.x + (0.0f - anchor.x) * size.x, position.y + (1.0f - anchor.y) * size.y, position.z) };
+	// Assuming anchor is center
+	glm::vec3 offsets[4] = {
+		{ -0.5f * size.x, -0.5f * size.y, 0.0f },
+        {  0.5f * size.x, -0.5f * size.y, 0.0f },
+        {  0.5f * size.x,  0.5f * size.y, 0.0f },
+        { -0.5f * size.x,  0.5f * size.y, 0.0f }
+	};
 
 	for (int i = 0; i < 4; i++)
 	{
-		data.quadBufferPtr->position = positions[i];
-		data.quadBufferPtr->color = color;
-		data.quadBufferPtr->texCoords = (useBasicUVS) ? basicUVS[i] : m_UVs[i];
-		data.quadBufferPtr->texIndex = textureIndex;
-		data.quadBufferPtr++;
+		s_Data.QuadBufferPtr->Position = position + offsets[i];
+		s_Data.QuadBufferPtr->Color = tintColor;
+		s_Data.QuadBufferPtr->TexCoord = texCoords[i];
+		s_Data.QuadBufferPtr->TexIndex = textureIndex;
+		s_Data.QuadBufferPtr->TilingFactor = tiling;
+		s_Data.QuadBufferPtr->IsText = 0.0f;
+		s_Data.QuadBufferPtr++;
 	}
 
-	data.indexCount += 6;
+	s_Data.IndexCount += 6;
+	s_Data.Stats.QuadCount++;
 }
 
-void Renderer2D::RemoveQuad(GameObject* object)
+void Renderer2D::DrawRotatedQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const glm::vec4& color)
 {
-	m_objectPool.erase(m_objectPool.begin() + GetObjectIndex(object));
+	DrawRotatedQuad({ position.x, position.y, 0.0f }, size, rotation, color);
 }
 
-int Renderer2D::GetObjectIndex(GameObject* object)
+void Renderer2D::DrawRotatedQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const glm::vec4& color)
 {
-	for (int i = 0; i < m_objectPool.size(); i++)
+	if (s_Data.IndexCount >= s_Data.MaxIndices)
+		NextBatch();
+
+	const float texIndex = 0.0f;
+	const float tiling = 1.0f;
+	const glm::vec2 texCoords[] = {
+		{ 0.0f, 0.0f },
+        { 1.0f, 0.0f },
+        { 1.0f, 1.0f },
+        { 0.0f, 1.0f }
+	};
+
+	glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) * glm::rotate(glm::mat4(1.0f), rotation, { 0.0f, 0.0f, 1.0f }) * glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
+
+	for (int i = 0; i < 4; i++)
 	{
-		if (m_objectPool[i] == object)
+		s_Data.QuadBufferPtr->Position = transform * s_Data.QuadVertexPositions[i];
+		s_Data.QuadBufferPtr->Color = color;
+		s_Data.QuadBufferPtr->TexCoord = texCoords[i];
+		s_Data.QuadBufferPtr->TexIndex = texIndex;
+		s_Data.QuadBufferPtr->TilingFactor = tiling;
+		s_Data.QuadBufferPtr->IsText = 0.0f;
+		s_Data.QuadBufferPtr++;
+	}
+
+	s_Data.IndexCount += 6;
+	s_Data.Stats.QuadCount++;
+}
+
+void Renderer2D::DrawRotatedQuad(const glm::vec3& position, const glm::vec2& size, float rotation, Texture* texture, float tiling, const glm::vec4& tintColor)
+{
+	if (s_Data.IndexCount >= s_Data.MaxIndices || s_Data.TextureSlotIndex > 31)
+		NextBatch();
+
+	float textureIndex = 0.0f;
+	for (uint32_t i = 1; i < s_Data.TextureSlotIndex; i++)
+	{
+		if (s_Data.TextureSlots[i] == texture->GetID())
 		{
-			return i;
+			textureIndex = (float) i;
+			break;
 		}
 	}
-	return -404;
-}
 
-void Renderer2D::setActiveRegion(Texture* texture, int regionIndex, int spriteWidth)
-{
-	m_UVs.clear();
-
-	//					  (int) textureSize / spriteWidth;
-	int numberOfRegions = texture->GetWidth() / spriteWidth;
-
-	float uv_x = (regionIndex % numberOfRegions) / (float) numberOfRegions;
-	float uv_y = (regionIndex / (float) numberOfRegions) * (float) numberOfRegions;
-
-	glm::vec2 uv_down_left = glm::vec2(uv_x, uv_y);
-	glm::vec2 uv_down_right = glm::vec2(uv_x + 1.0f / numberOfRegions, uv_y);
-	glm::vec2 uv_up_right = glm::vec2(uv_x + 1.0f / numberOfRegions, (uv_y + 1.0f));
-	glm::vec2 uv_up_left = glm::vec2(uv_x, (uv_y + 1.0f));
-
-	m_UVs.push_back(uv_down_left);
-	m_UVs.push_back(uv_down_right);
-	m_UVs.push_back(uv_up_right);
-	m_UVs.push_back(uv_up_left);
-}
-
-void Renderer2D::Init()
-{
-	data.quadBuffer = new Vertex[maxVertexCount];
-
-	glCreateVertexArrays(1, &data.quadVA);
-	glBindVertexArray(data.quadVA);
-	// Label VAO for RenderDoc
-	glObjectLabel(GL_VERTEX_ARRAY, data.quadVA, -1, "Renderer2D Quad VA");
-
-	glCreateBuffers(1, &data.quadVB);
-	glBindBuffer(GL_ARRAY_BUFFER, data.quadVB);
-	glBufferData(GL_ARRAY_BUFFER, maxVertexCount * sizeof(Vertex), nullptr, GL_DYNAMIC_DRAW);
-	// Label vertex buffer
-	glObjectLabel(GL_BUFFER, data.quadVB, -1, "Renderer2D Quad VB");
-
-	glEnableVertexArrayAttrib(data.quadVA, 0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*) offsetof(Vertex, position));
-
-	glEnableVertexArrayAttrib(data.quadVA, 1);
-	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*) offsetof(Vertex, color));
-
-	glEnableVertexArrayAttrib(data.quadVA, 2);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*) offsetof(Vertex, texCoords));
-
-	glEnableVertexArrayAttrib(data.quadVA, 3);
-	glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*) offsetof(Vertex, texIndex));
-
-	uint32_t indices[maxIndexCount];
-	uint32_t offset = 0;
-	for (int i = 0; i < maxIndexCount; i += 6)
+	if (textureIndex == 0.0f)
 	{
-		indices[i + 0] = 0 + offset;
-		indices[i + 1] = 1 + offset;
-		indices[i + 2] = 2 + offset;
-
-		indices[i + 3] = 2 + offset;
-		indices[i + 4] = 3 + offset;
-		indices[i + 5] = 0 + offset;
-
-		offset += 4;
+		if (s_Data.TextureSlotIndex >= s_Data.MaxTextureSlots)
+			NextBatch();
+		textureIndex = (float) s_Data.TextureSlotIndex;
+		s_Data.TextureSlots[s_Data.TextureSlotIndex] = texture->GetID();
+		s_Data.TextureSlotIndex++;
 	}
 
-	glCreateBuffers(1, &data.quadIB);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, data.quadIB);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-	// Label index buffer
-	glObjectLabel(GL_BUFFER, data.quadIB, -1, "Renderer2D Quad IB");
+	glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) * glm::rotate(glm::mat4(1.0f), rotation, { 0.0f, 0.0f, 1.0f }) * glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
 
-	glCreateTextures(GL_TEXTURE_2D, 1, &data.whiteTexture);
-	glBindTexture(GL_TEXTURE_2D, data.whiteTexture);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	const glm::vec2 texCoords[] = {
+		{ 0.0f, 0.0f },
+        { 1.0f, 0.0f },
+        { 1.0f, 1.0f },
+        { 0.0f, 1.0f }
+	};
 
-	uint32_t color = 0xffffffff;
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, &color);
-	// Label white texture
-	glObjectLabel(GL_TEXTURE, data.whiteTexture, -1, "Renderer2D WhiteTexture");
-
-	data.textureSlots[0] = data.whiteTexture;
-	for (size_t i = 1; i < maxTextures; i++)
+	for (int i = 0; i < 4; i++)
 	{
-		data.textureSlots[i] = 0;
+		s_Data.QuadBufferPtr->Position = transform * s_Data.QuadVertexPositions[i];
+		s_Data.QuadBufferPtr->Color = tintColor;
+		s_Data.QuadBufferPtr->TexCoord = texCoords[i];
+		s_Data.QuadBufferPtr->TexIndex = textureIndex;
+		s_Data.QuadBufferPtr->TilingFactor = tiling;
+		s_Data.QuadBufferPtr->IsText = 0.0f;
+		s_Data.QuadBufferPtr++;
 	}
+
+	s_Data.IndexCount += 6;
+	s_Data.Stats.QuadCount++;
 }
 
-void Renderer2D::ShutDown()
+void Renderer2D::DrawQuadUV(const glm::vec3& position, const glm::vec2& size, Texture* texture, const glm::vec2 uv[], const glm::vec4& tintColor)
 {
-	glDeleteVertexArrays(1, &data.quadVA);
-	glDeleteBuffers(1, &data.quadVB);
-	glDeleteBuffers(1, &data.quadIB);
+	if (s_Data.IndexCount >= s_Data.MaxIndices || s_Data.TextureSlotIndex > 31)
+		NextBatch();
 
-	glDeleteTextures(1, &data.whiteTexture);
-
-	delete[] data.quadBuffer;
-}
-
-void Renderer2D::BeginBatch()
-{
-	data.quadBufferPtr = data.quadBuffer;
-}
-
-void Renderer2D::SetShader(Shader* shader)
-{
-	shader->Use();
-	shader->setMat4("OrthoMatrix", m_camera->GetTransform());
-	shader->setMat4("Model", glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)));
-	shader->setVec4("SunColor", glm::vec4(1.0f));
-}
-
-void Renderer2D::EndBatch()
-{
-	GLsizeiptr size = (uint8_t*) data.quadBufferPtr - (uint8_t*) data.quadBuffer;
-	glBindBuffer(GL_ARRAY_BUFFER, data.quadVB);
-	glBufferSubData(GL_ARRAY_BUFFER, 0, size, data.quadBuffer);
-}
-
-void Renderer2D::Flush()
-{
-	// Label and report the upcoming draw to the debug stream
-	char dbg[128];
-	snprintf(dbg, sizeof(dbg), "Renderer2D::Flush - indices=%u textures=%u", (uint32_t) data.indexCount, (uint32_t) data.textureSlotIndex);
-	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, dbg);
-
-	for (uint32_t i = 0; i < data.textureSlotIndex; i++)
+	float textureIndex = 0.0f;
+	for (uint32_t i = 1; i < s_Data.TextureSlotIndex; i++)
 	{
-		uint32_t tid = data.textureSlots[i];
-		if (tid != 0)
+		if (s_Data.TextureSlots[i] == texture->GetID())
 		{
-			// ensure texture has a label for RenderDoc
-			char tname[64];
-			snprintf(tname, sizeof(tname), "Renderer2D TextureSlot %u - ID %u", i, tid);
-			glObjectLabel(GL_TEXTURE, tid, -1, tname);
+			textureIndex = (float) i;
+			break;
 		}
-		glBindTextureUnit(i, tid);
+	}
+	if (textureIndex == 0.0f)
+	{
+		if (s_Data.TextureSlotIndex >= s_Data.MaxTextureSlots)
+			NextBatch();
+		textureIndex = (float) s_Data.TextureSlotIndex;
+		s_Data.TextureSlots[s_Data.TextureSlotIndex] = texture->GetID();
+		s_Data.TextureSlotIndex++;
 	}
 
-	glBindVertexArray(data.quadVA);
-	glDrawElements(GL_TRIANGLES, data.indexCount, GL_UNSIGNED_INT, nullptr);
+	// Assuming UVs are passed as { BL, BR, TR, TL }
+	glm::vec3 offsets[4] = {
+		{ -0.5f * size.x, -0.5f * size.y, 0.0f },
+        {  0.5f * size.x, -0.5f * size.y, 0.0f },
+        {  0.5f * size.x,  0.5f * size.y, 0.0f },
+        { -0.5f * size.x,  0.5f * size.y, 0.0f }
+	};
 
-	glPopDebugGroup();
+	for (int i = 0; i < 4; i++)
+	{
+		s_Data.QuadBufferPtr->Position = position + offsets[i];
+		s_Data.QuadBufferPtr->Color = tintColor;
+		s_Data.QuadBufferPtr->TexCoord = uv[i]; // Use explicit UV
+		s_Data.QuadBufferPtr->TexIndex = textureIndex;
+		s_Data.QuadBufferPtr->TilingFactor = 1.0f;
+		s_Data.QuadBufferPtr->IsText = 0.0f;
+		s_Data.QuadBufferPtr++;
+	}
 
-	data.indexCount = 0;
-	data.textureSlotIndex = 1;
+	s_Data.IndexCount += 6;
+	s_Data.Stats.QuadCount++;
+}
+
+// -------------------------------------------------------------------------
+// Text Rendering (SDF)
+// -------------------------------------------------------------------------
+
+void Renderer2D::DrawString(const std::string& text, Text* font, const glm::vec2& position, float scale, const glm::vec4& color)
+{
+	// Assuming Text class has GetAtlasTexture() and GetCharacters() map
+	// You need to ensure your Text class has these accessors.
+	Texture* atlas = font->GetAtlasTexture();
+	auto& characters = font->GetCharacters();
+
+	// Check texture slot availability
+	if (s_Data.IndexCount >= s_Data.MaxIndices || s_Data.TextureSlotIndex > 31)
+		NextBatch();
+
+	float textureIndex = 0.0f;
+	for (uint32_t i = 1; i < s_Data.TextureSlotIndex; i++)
+	{
+		if (s_Data.TextureSlots[i] == atlas->GetID())
+		{
+			textureIndex = (float) i;
+			break;
+		}
+	}
+	if (textureIndex == 0.0f)
+	{
+		if (s_Data.TextureSlotIndex >= s_Data.MaxTextureSlots)
+			NextBatch();
+		textureIndex = (float) s_Data.TextureSlotIndex;
+		s_Data.TextureSlots[s_Data.TextureSlotIndex] = atlas->GetID();
+		s_Data.TextureSlotIndex++;
+	}
+
+	float x = position.x;
+	float y = position.y;
+
+	std::string::const_iterator c;
+	for (c = text.begin(); c != text.end(); c++)
+	{
+		auto it = characters.find(*c);
+
+		if (it == characters.end())
+			continue; // Character not found in font atlas, skip it
+
+		Character ch = it->second;
+
+		float xpos = x + ch.Bearing.x * scale;
+		float ypos = y - (ch.Size.y - ch.Bearing.y) * scale;
+		float w = ch.Size.x * scale;
+		float h = ch.Size.y * scale;
+
+		// Skip spaces (no texture area) but advance X
+		if (w > 0.0f && h > 0.0f)
+		{
+			// Check batch limits per character
+			if (s_Data.IndexCount >= s_Data.MaxIndices)
+				NextBatch();
+
+			// Font Atlas UVs are typically Top-Left to Bottom-Right in data,
+			// but we need to map to Quad vertices { BL, BR, TR, TL }
+			// Assuming Character struct has uvMin (Top-Left in texture) and uvMax (Bottom-Right)
+			// GL coords: V=0 is bottom, V=1 is top. FreeType is Top-Down.
+			// Your Atlas UVs should be pre-calculated correctly for GL.
+
+			// If stored as: uvMin = (0,0) [TopLeft], uvMax = (1,1) [BotRight]
+			// BL = min.x, max.y
+			// BR = max.x, max.y
+			// TR = max.x, min.y
+			// TL = min.x, min.y
+
+			glm::vec2 uvs[4] = {
+				{ ch.uvMin.x, ch.uvMax.y }, // BL
+				{ ch.uvMax.x, ch.uvMax.y }, // BR
+				{ ch.uvMax.x, ch.uvMin.y }, // TR
+				{ ch.uvMin.x, ch.uvMin.y }  // TL
+			};
+
+			// Positions relative to cursor
+			glm::vec3 pos[4] = {
+				{     xpos, ypos + h, 0.0f },
+                { xpos + w, ypos + h, 0.0f },
+                { xpos + w,     ypos, 0.0f },
+                {     xpos,     ypos, 0.0f }
+			};
+
+			// Add to buffer
+			for (int i = 0; i < 4; i++)
+			{
+				s_Data.QuadBufferPtr->Position = pos[i];
+				s_Data.QuadBufferPtr->Color = color;
+				s_Data.QuadBufferPtr->TexCoord = uvs[i];
+				s_Data.QuadBufferPtr->TexIndex = textureIndex;
+				s_Data.QuadBufferPtr->TilingFactor = 1.0f;
+				s_Data.QuadBufferPtr->IsText = 1.0f; // Enable SDF smoothing in shader
+				s_Data.QuadBufferPtr++;
+			}
+
+			s_Data.IndexCount += 6;
+			s_Data.Stats.QuadCount++;
+		}
+
+		x += (ch.Advance >> 6) * scale;
+	}
+}
+
+Renderer2D::Statistics Renderer2D::GetStats()
+{
+	return s_Data.Stats;
+}
+
+void Renderer2D::ResetStats()
+{
+	memset(&s_Data.Stats, 0, sizeof(Statistics));
 }

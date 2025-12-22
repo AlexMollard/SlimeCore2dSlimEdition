@@ -1,4 +1,6 @@
 #pragma once
+#include "Core/Camera.h"
+#include "Core/Input.h"
 #include "Physics/PhysicsScene.h"
 #include "Rendering/Renderer2D.h"
 
@@ -14,11 +16,9 @@ public:
 	void Draw();
 
 private:
-	Renderer2D* m_renderer = nullptr;
 	Input* m_inputManager = Input::GetInstance();
 	PhysicsScene* m_physicsScene = nullptr;
 	Camera* m_camera = nullptr;
-	GameObject* m_testObject = nullptr;
 
 	float m_timer = 0.0f;
 };

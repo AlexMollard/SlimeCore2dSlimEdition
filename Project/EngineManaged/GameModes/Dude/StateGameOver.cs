@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using EngineManaged.Scene;
 using EngineManaged.UI;
-using EngineManaged; // For Input
+using EngineManaged;
+using EngineManaged.Numeric;
 
 namespace GameModes.Dude;
 
@@ -100,15 +101,17 @@ public class StateGameOver : IDudeState
 		foreach (var p in game.Particles) p.Ent.Destroy(); game.Particles.Clear();
 	}
 
-	public void Update(DudeGame game, float dt)
-	{
-		_animTimer += dt;
-		game.ShakeAmount = MathF.Max(0, game.ShakeAmount - dt);
+			// 1. Animate Title (Vectorized Shake)
+			Vec2 shake = new Vec2(
+				(float)(game.Rng.NextDouble() - 0.5),
+				(float)(game.Rng.NextDouble() - 0.5)
+			) * (game.ShakeAmount * 5.0f);
 
-		// 1. Animate Title
-		float shakeX = (float)(game.Rng.NextDouble() - 0.5f) * game.ShakeAmount * 5.0f;
-		float shakeY = (float)(game.Rng.NextDouble() - 0.5f) * game.ShakeAmount * 5.0f;
-		_gameOverText.SetPosition(shakeX, 6.0f + shakeY);
+			_gameOverText.SetPosition(shake.X, 6.0f + shake.Y);
+
+			// 2. Animate Panel Slide Up
+			float slideT = MathF.Min(1.0f, _animTimer * 1.5f);
+			float panelY = Ease.Lerp(-18.0f, -1.0f, Ease.OutBack(slideT));
 
 		// 2. Animate Panel Slide Up
 		float slideT = MathF.Min(1.0f, _animTimer * 1.5f);
@@ -133,18 +136,20 @@ public class StateGameOver : IDudeState
 			if (p.Life <= 0) { p.Ent.Destroy(); game.Particles.RemoveAt(i); }
 			else
 			{
-				p.Pos += p.Vel * dt; p.Vel *= 0.9f; p.Ent.SetPosition(p.Pos.X, p.Pos.Y);
-				float s = p.InitSize * p.Life; p.Ent.SetSize(s, s);
+				var p = game.Particles[i];
+				p.Life -= dt * 0.5f;
+				if (p.Life <= 0) { p.Ent.Destroy(); game.Particles.RemoveAt(i); }
+				else
+				{
+					// Vectorized Physics
+					p.Pos += p.Vel * dt;
+					p.Vel *= 0.9f;
+
+					p.Ent.SetPosition(p.Pos.X, p.Pos.Y);
+					float s = p.InitSize * p.Life;
+					p.Ent.SetSize(s, s);
+				}
 			}
 		}
-	}
-
-	private float Lerp(float a, float b, float t) => a + (b - a) * t;
-
-	private float EaseOutBack(float x)
-	{
-		float c1 = 1.70158f;
-		float c3 = c1 + 1;
-		return 1 + c3 * MathF.Pow(x - 1, 3) + c1 * MathF.Pow(x - 1, 2);
 	}
 }

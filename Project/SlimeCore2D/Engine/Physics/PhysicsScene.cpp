@@ -89,16 +89,16 @@ void PhysicsScene::update(float dt)
 
 void PhysicsScene::Debug()
 {
-	Renderer2D::BeginBatch();
-	Renderer2D::SetShader(Renderer2D::basicShader);
+	//Renderer2D::BeginBatch();
+	//Renderer2D::SetShader(Renderer2D::basicShader);
 
-	for (int i = 0; i < actors.size(); i++)
-	{
-		glm::vec2 pos = (actors[i]->useBoundingBox) ? actors[i]->GetBoundingBox()->GetPos(actors[i]->GetPos()) : actors[i]->GetPos();
-		glm::vec2 scale = (actors[i]->useBoundingBox) ? actors[i]->GetBoundingBox()->GetScale() : actors[i]->GetScale();
-		Renderer2D::DrawQuad(glm::vec3(pos.x, pos.y, 0), scale, glm::vec4(1, 0, 0, 1));
-	}
+	//for (int i = 0; i < actors.size(); i++)
+	//{
+	//	glm::vec2 pos = (actors[i]->useBoundingBox) ? actors[i]->GetBoundingBox()->GetPos(actors[i]->GetPos()) : actors[i]->GetPos();
+	//	glm::vec2 scale = (actors[i]->useBoundingBox) ? actors[i]->GetBoundingBox()->GetScale() : actors[i]->GetScale();
+	//	Renderer2D::DrawQuad(glm::vec3(pos.x, pos.y, 0), scale, glm::vec4(1, 0, 0, 1));
+	//}
 
-	Renderer2D::EndBatch();
-	Renderer2D::Flush();
+	//Renderer2D::EndBatch();
+	//Renderer2D::Flush();
 }

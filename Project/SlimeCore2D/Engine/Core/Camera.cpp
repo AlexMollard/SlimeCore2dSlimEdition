@@ -1,101 +1,67 @@
 #include "Camera.h"
 
-#include "Input.h"
+#include <algorithm> // for std::max
+#include <gtc/matrix_transform.hpp>
 
-Camera::Camera(float aspectX, float aspectY, float near, float far)
+#include "Input.h" // Assuming you have this for OnUpdate
+
+Camera::Camera(float orthoSize, float aspectRatio)
+      : m_OrthographicSize(orthoSize), m_AspectRatio(aspectRatio)
 {
-	transform = glm::ortho<float>(-aspectX, aspectX, -aspectY, aspectY, near, far);
-	defaultTransform = transform;
+	m_ProjectionMatrix = glm::mat4(1.0f);
+	m_ViewMatrix = glm::mat4(1.0f);
+	m_ViewProjectionMatrix = glm::mat4(1.0f);
 
-	aspectRatio = glm::vec2(aspectX, aspectY);
-	aspectRatioBeforeFieldOfView = aspectRatio;
-	nearPlane = near;
-	farPlane = far;
+	SetProjection(orthoSize, aspectRatio);
 }
 
-Camera::~Camera()
+void Camera::SetProjection(float orthoSize, float aspectRatio)
 {
+	m_OrthographicSize = orthoSize;
+	m_AspectRatio = aspectRatio;
+
+	// Formula for centered Orthographic camera:
+	// Top = Size * Zoom * 0.5
+	// Right = Top * AspectRatio
+	float orthoLeft = -m_OrthographicSize * m_AspectRatio * 0.5f * m_ZoomLevel;
+	float orthoRight = m_OrthographicSize * m_AspectRatio * 0.5f * m_ZoomLevel;
+	float orthoBottom = -m_OrthographicSize * 0.5f * m_ZoomLevel;
+	float orthoTop = m_OrthographicSize * 0.5f * m_ZoomLevel;
+
+	// Z-Near and Z-Far usually -1.0 to 1.0 for 2D, or wider if you have layers
+	m_ProjectionMatrix = glm::ortho(orthoLeft, orthoRight, orthoBottom, orthoTop, -10.0f, 10.0f);
+
+	m_ViewProjectionMatrix = m_ProjectionMatrix * m_ViewMatrix;
 }
 
-void Camera::Update(float deltaTime)
+void Camera::RecalculateViewMatrix()
 {
-	CameraMoveMent(deltaTime);
+	// 1. Create Transform: Translate -> Rotate
+	glm::mat4 transform = glm::translate(glm::mat4(1.0f), m_Position) * glm::rotate(glm::mat4(1.0f), glm::radians(m_Rotation), glm::vec3(0, 0, 1));
+
+	// 2. View Matrix is the INVERSE of the Camera Transform
+	// (Moving camera right = Moving world left)
+	m_ViewMatrix = glm::inverse(transform);
+
+	// 3. Update cached result
+	m_ViewProjectionMatrix = m_ProjectionMatrix * m_ViewMatrix;
 }
 
-void Camera::CameraMoveMent(float deltaTime)
+void Camera::SetPosition(const glm::vec3& position)
 {
-	// float speed = (Input::GetKeyPress(Keycode::LEFT_SHIFT)) ? 10.0f : 4.0f;
-
-	// float moveSpeed = speed * deltaTime;
-
-	// if (Input::GetScroll() > 0)
-	// 	SetFOV(fieldOfView - moveSpeed);
-
-	// if (Input::GetScroll() < 0)
-	// 	SetFOV(fieldOfView + moveSpeed);
-
-	UpdateTransform();
+	m_Position = position;
+	RecalculateViewMatrix();
 }
 
-void Camera::SetPosition(glm::vec2 newPos)
+void Camera::SetRotation(float rotation)
 {
-	position = newPos;
-	UpdateTransform();
+	m_Rotation = rotation;
+	RecalculateViewMatrix();
 }
 
-glm::vec2 Camera::GetPosition()
+void Camera::SetZoom(float zoom)
 {
-	return position;
-}
-
-glm::mat4 Camera::GetTransform()
-{
-	return transform;
-}
-
-void Camera::UpdateTransform()
-{
-	transform = defaultTransform;
-
-	transform = glm::translate(transform, { position, 0.0f });
-}
-
-void Camera::SetAspectRatio(glm::vec2 newAspectRatio)
-{
-	aspectRatio = newAspectRatio;
-	aspectRatioBeforeFieldOfView = aspectRatio;
-	aspectRatio *= glm::vec2(fieldOfView);
-
-	transform = glm::ortho<float>(-aspectRatio.x, aspectRatio.x, -aspectRatio.y, aspectRatio.y, nearPlane, farPlane);
-	defaultTransform = transform;
-}
-
-glm::vec2 Camera::GetAspectRatio()
-{
-	return aspectRatio;
-}
-
-void Camera::SetClippingPlane(float newNear, float newFar)
-{
-	nearPlane = newNear;
-	farPlane = newFar;
-
-	transform = glm::ortho<float>(-aspectRatio.x, aspectRatio.x, -aspectRatio.y, aspectRatio.y, nearPlane, farPlane);
-	defaultTransform = transform;
-}
-
-glm::vec2 Camera::GetClippingPlane()
-{
-	return glm::vec2(nearPlane, farPlane);
-}
-
-float Camera::GetFOV()
-{
-	return fieldOfView;
-}
-
-void Camera::SetFOV(float newFOV)
-{
-	fieldOfView = (newFOV >= 0.01f) ? newFOV : 0.01f;
-	SetAspectRatio(aspectRatioBeforeFieldOfView);
+	// Prevent flipping or div by zero
+	m_ZoomLevel = std::max(zoom, 0.1f);
+	SetProjection(m_OrthographicSize, m_AspectRatio); // Projection depends on Zoom
 }

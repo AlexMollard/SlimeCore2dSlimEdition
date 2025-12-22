@@ -1,5 +1,7 @@
 #pragma once
+
 #include <string>
+#include <unordered_map>
 
 #include "glew.h"
 #include "glfw3.h"
@@ -8,98 +10,69 @@
 class Shader
 {
 public:
-	Shader(std::string name, const char* vertexPath, const char* fragmentPath, const char* geometryPath = nullptr);
-	Shader(std::string name);
+	// Constructor reads and builds the shader
+	Shader(const std::string& name, const char* vertexPath, const char* fragmentPath, const char* geometryPath = nullptr);
+
+	// Default constructor (creates empty object)
+	Shader() = default;
+
 	~Shader();
 
-	unsigned int CompileShader(unsigned int type, const std::string& source);
-	void CheckCompileErrors(GLuint shader, std::string type);
-	unsigned int GetID();
+	// --- Rule of Five (Prevent Copying, Allow Moving) ---
+	// Prevents "Double Free" crashes where two objects try to delete the same GPU ID
+	Shader(const Shader&) = delete;
+	Shader& operator=(const Shader&) = delete;
 
-	void Use()
+	Shader(Shader&& other) noexcept;
+	Shader& operator=(Shader&& other) noexcept;
+	// ----------------------------------------------------
+
+	void Use() const;
+	void Unbind() const;
+
+	unsigned int GetID() const
 	{
-		glUseProgram(m_shaderID);
+		return m_shaderID;
 	}
 
-	std::string GetName()
+	std::string GetName() const
 	{
 		return m_name;
-	};
+	}
 
-#pragma region Uniform functions
-
+	// Utility functions
 	// ------------------------------------------------------------------------
-	void setBool(const std::string& name, bool value) const
-	{
-		glUniform1i(glGetUniformLocation(m_shaderID, name.c_str()), (int) value);
-	}
+	void setBool(const std::string& name, bool value) const;
+	void setInt(const std::string& name, int value) const;
+	void setFloat(const std::string& name, float value) const;
 
-	// ------------------------------------------------------------------------
-	void setInt(const std::string& name, int value) const
-	{
-		glUniform1i(glGetUniformLocation(m_shaderID, name.c_str()), value);
-	}
+	// Crucial for Batch Rendering (Texture Slots)
+	void setIntArray(const std::string& name, int* values, uint32_t count) const;
 
-	// ------------------------------------------------------------------------
-	void setFloat(const std::string& name, float value) const
-	{
-		glUniform1f(glGetUniformLocation(m_shaderID, name.c_str()), value);
-	}
+	// Vectors
+	void setVec2(const std::string& name, const glm::vec2& value) const;
+	void setVec2(const std::string& name, float x, float y) const;
+	void setVec3(const std::string& name, const glm::vec3& value) const;
+	void setVec3(const std::string& name, float x, float y, float z) const;
+	void setVec4(const std::string& name, const glm::vec4& value) const;
+	void setVec4(const std::string& name, float x, float y, float z, float w) const;
 
-	// ------------------------------------------------------------------------
-	void setVec2(const std::string& name, const glm::vec2& value) const
-	{
-		glUniform2fv(glGetUniformLocation(m_shaderID, name.c_str()), 1, &value[0]);
-	}
+	// Matrices
+	void setMat2(const std::string& name, const glm::mat2& mat) const;
+	void setMat3(const std::string& name, const glm::mat3& mat) const;
+	void setMat4(const std::string& name, const glm::mat4& mat) const;
 
-	void setVec2(const std::string& name, float x, float y) const
-	{
-		glUniform2f(glGetUniformLocation(m_shaderID, name.c_str()), x, y);
-	}
+private:
+	// Helper to check for compilation/linking errors
+	void CheckCompileErrors(unsigned int shader, std::string type);
 
-	// ------------------------------------------------------------------------
-	void setVec3(const std::string& name, const glm::vec3& value) const
-	{
-		glUniform3fv(glGetUniformLocation(m_shaderID, name.c_str()), 1, &value[0]);
-	}
+	// Helper to find uniform location (with caching)
+	int GetUniformLocation(const std::string& name) const;
 
-	void setVec3(const std::string& name, float x, float y, float z) const
-	{
-		glUniform3f(glGetUniformLocation(m_shaderID, name.c_str()), x, y, z);
-	}
-
-	// ------------------------------------------------------------------------
-	void setVec4(const std::string& name, const glm::vec4& value) const
-	{
-		glUniform4fv(glGetUniformLocation(m_shaderID, name.c_str()), 1, &value[0]);
-	}
-
-	void setVec4(const std::string& name, float x, float y, float z, float w)
-	{
-		glUniform4f(glGetUniformLocation(m_shaderID, name.c_str()), x, y, z, w);
-	}
-
-	// ------------------------------------------------------------------------
-	void setMat2(const std::string& name, const glm::mat2& mat) const
-	{
-		glUniformMatrix2fv(glGetUniformLocation(m_shaderID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
-	}
-
-	// ------------------------------------------------------------------------
-	void setMat3(const std::string& name, const glm::mat3& mat) const
-	{
-		glUniformMatrix3fv(glGetUniformLocation(m_shaderID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
-	}
-
-	// ------------------------------------------------------------------------
-	void setMat4(const std::string& name, const glm::mat4& mat) const
-	{
-		glUniformMatrix4fv(glGetUniformLocation(m_shaderID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
-	}
-
-#pragma endregion
-
-protected:
+private:
 	unsigned int m_shaderID = 0;
-	std::string m_name = "DefaultName";
+	std::string m_name;
+
+	// Cache for uniform locations to avoid slow glGetUniformLocation calls
+	mutable std::unordered_map<std::string, int> m_UniformLocationCache;
 };

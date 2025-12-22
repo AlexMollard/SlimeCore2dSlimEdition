@@ -1,6 +1,6 @@
 #include "Window.h"
-#include "Scripting/EngineExports.h"
 #include "Input.h"
+#include "Camera.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 
@@ -20,11 +20,6 @@ Window::~Window()
 	Window_destroy();
 }
 
-SLIME_EXPORT void __cdecl Engine_SetClearColor(float r, float g, float b)
-{ 
-	glClearColor(r, g, b, 1.0f);
-}
-
 int Window::Window_intit(int width, int height, char* name)
 {
 	if (!glfwInit())
@@ -42,6 +37,8 @@ int Window::Window_intit(int width, int height, char* name)
 		glfwTerminate();
 		return -1;
 	}
+	
+	Input::GetInstance()->Init(window);
 
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
@@ -52,8 +49,6 @@ int Window::Window_intit(int width, int height, char* name)
 
 	glClearColor(0.06f, 0.06f, 0.06f, 1.0f);
 	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glfwSwapInterval(1); // V-Sync
@@ -104,38 +99,20 @@ float Window::GetDeltaTime()
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
-	// Compute a centered viewport that preserves the camera aspect ratio (letterbox/pillarbox)
+	if (height == 0)
+		height = 1;
+
+	glViewport(0, 0, width, height);
+	Input::GetInstance()->SetViewportRect(0, 0, width, height);
+
 	Camera* cam = Input::GetInstance()->GetCamera();
-	if (!cam)
+	if (cam)
 	{
-		// No camera yet: use full framebuffer
-		glViewport(0, 0, width, height);
-		Input::GetInstance()->SetViewportRect(0, 0, width, height);
-		return;
-	}
+		float aspectRatio = (float) width / (float) height;
 
-	glm::vec2 aspect = cam->GetAspectRatio();
-	float targetW = fabs(aspect.x * 2.0f);
-	float targetH = fabs(aspect.y * 2.0f);
-	float targetAR = targetW / targetH;
-	float windowAR = width / (float)height;
-
-	int vpX = 0, vpY = 0, vpW = width, vpH = height;
-	if (windowAR > targetAR)
-	{
-		// window wider -> pillarbox
-		vpH = height;
-		vpW = (int)(height * targetAR);
-		vpX = (width - vpW) / 2;
+		// This automatically handles the "Fixed Height" logic
+		// The camera keeps its OrthoSize (e.g., 10 units high)
+		// and just expands the width based on the new aspect ratio.
+		cam->SetProjection(cam->GetOrthographicSize(), aspectRatio);
 	}
-	else
-	{
-		// window taller -> letterbox
-		vpW = width;
-		vpH = (int)(width / targetAR);
-		vpY = (height - vpH) / 2;
-	}
-
-	glViewport(vpX, vpY, vpW, vpH);
-	Input::GetInstance()->SetViewportRect(vpX, vpY, vpW, vpH);
 }

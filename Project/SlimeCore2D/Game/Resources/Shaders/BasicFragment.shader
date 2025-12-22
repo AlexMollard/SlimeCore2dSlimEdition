@@ -1,23 +1,37 @@
-#version 450
+#version 330 core
+layout (location = 0) out vec4 color;
 
-layout(location = 0) out vec4 FragColor;
+in vec4 vColor;
+in vec2 vTexCoord;
+in float vTexIndex;
+in float vTiling;
+in float vIsText;
 
-in vec4 Color;
-in vec2 TexCoord;
-in float TexIndex;
-
-uniform sampler2D Textures[31];
-
-uniform vec3 color;
-
-uniform vec4 SunColor;
+uniform sampler2D u_Textures[32];
 
 void main()
 {
-	int index = int(TexIndex);
+    vec4 texColor = vColor;
+    int index = int(vTexIndex);
+    
+    // Sample texture
+    // Note: older GLSL requires switch/case for sampler arrays if indexing is not supported
+    vec4 sampled = texture(u_Textures[index], vTexCoord * vTiling);
 
-	if (texture(Textures[index], TexCoord).a < 0.01)
-		discard;
+    if (vIsText > 0.5) 
+    {
+        // SDF Logic
+        float distance = sampled.r;
+        float smoothing = 1.0 / 16.0; // Adjust for sharpness
+        float alpha = smoothstep(0.5 - smoothing, 0.5 + smoothing, distance);
+        texColor = vec4(vColor.rgb, vColor.a * alpha);
+    }
+    else
+    {
+        // Standard Sprite Logic
+        texColor *= sampled;
+    }
 
-	FragColor = (texture(Textures[index], TexCoord) * Color) * SunColor;
+    if (texColor.a < 0.01) discard;
+    color = texColor;
 }

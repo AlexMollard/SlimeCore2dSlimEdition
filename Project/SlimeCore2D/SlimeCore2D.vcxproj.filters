@@ -33,7 +33,7 @@
     <ClCompile Include="Engine\Physics\CollisionManager.cpp">
       <Filter>Source Files\EngineCore</Filter>
     </ClCompile>
-    <ClCompile Include="Game\Entities\GameObject.cpp">
+    <ClCompile Include="Engine\Entities\GameObject.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Game\Scenes\Game2D.cpp">
@@ -75,7 +75,7 @@
     <ClCompile Include="Engine\Rendering\Sprite.cpp">
       <Filter>Source Files\EngineCore</Filter>
     </ClCompile>
-    <ClCompile Include="Game\Entities\Cell.cpp">
+    <ClCompile Include="Engine\Entities\Cell.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Rendering\Text.cpp">
@@ -91,6 +91,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Scripting\EngineExports.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Rendering\UIManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Entities\Quad.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -137,7 +143,7 @@
     <ClInclude Include="Engine\Core\Window.h">
       <Filter>Header Files\EngineCore</Filter>
     </ClInclude>
-    <ClInclude Include="Game\Entities\GameObject.h">
+    <ClInclude Include="Engine\Entities\GameObject.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Core\Input.h">
@@ -149,7 +155,7 @@
     <ClInclude Include="Engine\Core\Math.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Game\Entities\Cell.h">
+    <ClInclude Include="Engine\Entities\Cell.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Rendering\Text.h">
@@ -168,6 +174,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Scripting\EngineExports.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Rendering\UIManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Entities\Quad.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

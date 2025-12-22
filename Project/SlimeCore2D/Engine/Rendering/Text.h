@@ -1,39 +1,58 @@
 #pragma once
+
+#include <map>
+#include <string>
+#include <vector>
+
+// FreeType Headers
 #include <ft2build.h>
 #include FT_FREETYPE_H
-#include <map>
 
 #include "glm.hpp"
-#include "Shader.h"
+#include "Texture.h"
 
+// Struct to hold information about a single character in the atlas
 struct Character
 {
-	unsigned int TextureID; // ID handle of the glyph texture
-	glm::ivec2 Size;        // Size of glyph
-	glm::ivec2 Bearing;     // Offset from baseline to left/top of glyph
-	unsigned int Advance;   // Offset to advance to next glyph
+	glm::vec2 Size;       // Size of glyph (width & height)
+	glm::vec2 Bearing;    // Offset from baseline to left/top of glyph
+	unsigned int Advance; // Offset to advance to next glyph
+
+	// Texture Coordinates in the Atlas
+	glm::vec2 uvMin; // Top-Left UV
+	glm::vec2 uvMax; // Bottom-Right UV
 };
 
 class Text
 {
 public:
-	Text();
+	// Constructor automatically loads the font and generates the atlas
+	Text(const std::string& fontPath, unsigned int fontSize = 48);
+	~Text();
 
-	void RenderText(Shader& s, std::string text, float x, float y, float scale, glm::vec3 color);
+	// Getters for Renderer2D
+	Texture* GetAtlasTexture() const
+	{
+		return m_AtlasTexture;
+	}
 
-	// Create an RGBA GL texture containing `text` rendered at `pixelHeight` pixels high.
-	// Returns GL texture id (0 on failure). outW/outH set on success.
-	static unsigned int CreateTextureFromString(const std::string& fontPath, const std::string& text, int pixelHeight, int& outW, int& outH);
+	const std::map<char, Character>& GetCharacters() const
+	{
+		return m_Characters;
+	}
 
-	// Font handle API: load a font into memory for repeated rendering operations
-	struct FontHandle;
-	static FontHandle* LoadFontFromFile(const std::string& path);
-	static void FreeFont(FontHandle* f);
-	static unsigned int CreateTextureFromLoadedFont(FontHandle* f, const std::string& text, int pixelHeight, int& outW, int& outH);
+	unsigned int GetFontSize() const
+	{
+		return m_FontSize;
+	}
 
-protected:
-	unsigned int VAO, VBO;
+	// Utility: Calculate the width/height of a string without rendering it
+	glm::vec2 CalculateSize(const std::string& text, float scale);
 
-	glm::mat4 m_projection;
-	std::map<GLchar, Character> m_characters;
+private:
+	Texture* m_AtlasTexture = nullptr;
+	std::map<char, Character> m_Characters;
+	unsigned int m_FontSize;
+
+	void GenerateAtlas(FT_Face face);
 };

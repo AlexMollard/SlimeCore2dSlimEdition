@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using EngineManaged.Scene;
 using EngineManaged.UI;
 using EngineManaged;
+using EngineManaged.Numeric;
 
 namespace GameModes.Dude;
 
@@ -61,8 +62,9 @@ public class StateLevelUp : IDudeState
 		float bob = MathF.Sin(_animTime * 2.0f) * 0.2f;
 		_upgradeTitle.SetPosition(0, 7.5f + bob);
 
-		var (mx, my) = Input.GetMousePos();
-		bool mouseDown = Input.GetMouseDown(Input.MouseButton.Left);
+			// Note: Input.GetMousePos returns tuple (float, float), not Vec2, so we keep this as is.
+			var (mx, my) = Input.GetMousePos();
+			bool mouseDown = Input.GetMouseDown(Input.MouseButton.Left);
 
 		for (int i = 0; i < _cards.Count; i++)
 		{
@@ -72,15 +74,15 @@ public class StateLevelUp : IDudeState
 			float t = MathF.Min(1.0f, (_animTime * 2.0f) - (i * 0.15f));
 			if (t < 0) t = 0;
 
-			float startY = -15.0f;
-			float endY = 0.0f;
-			float curY = Lerp(startY, endY, EaseOutBack(t));
+				float startY = -15.0f;
+				float endY = 0.0f;
+				float curY = Ease.Lerp(startY, endY, Ease.OutBack(t));
 
 			// Hover Logic
 			bool hovered = t >= 1.0f && card.Contains(mx, my);
 
-			float targetScale = hovered ? 1.15f : 1.0f;
-			card.Scale = Lerp(card.Scale, targetScale, dt * 15f);
+				float targetScale = hovered ? 1.15f : 1.0f;
+				card.Scale = Ease.Lerp(card.Scale, targetScale, dt * 15f);
 
 			// Apply Transforms
 			card.SetPosition(card.BaseX, curY);
@@ -124,21 +126,7 @@ public class StateLevelUp : IDudeState
 		}
 	}
 
-	private float Lerp(float a, float b, float t) => a + (b - a) * t;
-
-	private float EaseOutBack(float x)
-	{
-		float c1 = 1.70158f;
-		float c3 = c1 + 1;
-		return 1 + c3 * MathF.Pow(x - 1, 3) + c1 * MathF.Pow(x - 1, 2);
-	}
-
-	private void SpawnCards(DudeGame game)
-	{
-		float startX = -7.0f;
-		float gap = 7.0f;
-
-		for (int i = 0; i < 3; i++)
+		private void SpawnCards(DudeGame game)
 		{
 			// Get from Registry
 			var def = ContentRegistry.GetRandomUpgrade(game.Rng);

@@ -1,41 +1,87 @@
 #pragma once
-#include "glm.hpp"
-#include "gtc/matrix_transform.hpp"
+
+#include <glm.hpp>
 
 class Camera
 {
 public:
-	Camera(float aspectX, float aspectY, float near, float far);
-	~Camera();
+	// orthoSize: How many units high the camera sees (e.g., 10.0f).
+	// aspectRatio: Width / Height.
+	Camera(float orthoSize, float aspectRatio);
+	~Camera() = default;
 
-	void Update(float deltaTime);
-	void CameraMoveMent(float deltaTime);
+	// --- Core Logic ---
+	// Call this when the window resizes
+	void SetProjection(float orthoSize, float aspectRatio);
 
-	void SetPosition(glm::vec2 newPos);
-	glm::vec2 GetPosition();
+	// Internal update for matrices (call this if you move the camera manually without setters)
+	void RecalculateViewMatrix();
 
-	glm::mat4 GetTransform();
-	void UpdateTransform();
+	// --- Getters & Setters ---
 
-	void SetAspectRatio(glm::vec2 newAspectRatio);
-	glm::vec2 GetAspectRatio();
+	const glm::vec3& GetPosition() const
+	{
+		return m_Position;
+	}
 
-	void SetClippingPlane(float newNear, float newFar);
-	glm::vec2 GetClippingPlane();
+	// Z-value allows simple layering (e.g. -10 to 10)
+	void SetPosition(const glm::vec3& position);
 
-	float GetFOV();
-	void SetFOV(float newFOV);
+	void SetPosition(const glm::vec2& position)
+	{
+		SetPosition(glm::vec3(position.x, position.y, m_Position.z));
+	}
+
+	float GetRotation() const
+	{
+		return m_Rotation;
+	}
+
+	void SetRotation(float rotation); // In Degrees
+
+	float GetZoom() const
+	{
+		return m_ZoomLevel;
+	}
+
+	void SetZoom(float zoom);
+
+	// The Matrix sent to the Shader (u_ViewProjection)
+	const glm::mat4& GetViewProjectionMatrix() const
+	{
+		return m_ViewProjectionMatrix;
+	}
+
+	const glm::mat4& GetProjectionMatrix() const
+	{
+		return m_ProjectionMatrix;
+	}
+
+	const glm::mat4& GetViewMatrix() const
+	{
+		return m_ViewMatrix;
+	}
+
+	// Utility to get world bounds
+	float GetOrthographicSize() const
+	{
+		return m_OrthographicSize;
+	}
+
+	float GetAspectRatio() const
+	{
+		return m_AspectRatio;
+	}
 
 private:
-	glm::vec2 position = glm::vec2(0);
-	glm::mat4 defaultTransform = glm::mat4(1);
-	glm::mat4 transform = glm::mat4(1);
-	glm::vec2 aspectRatio = glm::vec2(1);
-	glm::vec2 aspectRatioBeforeFieldOfView = glm::vec2(1);
+	glm::mat4 m_ProjectionMatrix;
+	glm::mat4 m_ViewMatrix;
+	glm::mat4 m_ViewProjectionMatrix;
 
-	float nearPlane = 0;
-	float farPlane = 0;
+	glm::vec3 m_Position = { 0.0f, 0.0f, 0.0f };
+	float m_Rotation = 0.0f; // Degrees
 
-	// 1.0f is default
-	float fieldOfView = 1.0f;
+	float m_OrthographicSize = 10.0f; // Height in World Units
+	float m_AspectRatio = 1.77f;      // 16:9 approx
+	float m_ZoomLevel = 1.0f;
 };
