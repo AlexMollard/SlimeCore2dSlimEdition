@@ -35,7 +35,7 @@ namespace SlimeCore.GameModes.Snake
 		private static float _speedBoostTimer = 0f;
 
         // Visual Handles
-        public Entity[,] _view = new Entity[VIEW_W, VIEW_H];
+        private Entity[,] _view = new Entity[VIEW_W, VIEW_H];
 
         // Food
         private static int _foodCount = 0;
@@ -90,14 +90,14 @@ namespace SlimeCore.GameModes.Snake
 				for (int y = 0; y < VIEW_H; y++)
 				{
 					_view[x, y] = SceneFactory.CreateQuad(0, 0, _cellSize, _cellSize, 1f, 1f, 1f, layer: 0);
-					_view[x, y].SetAnchor(0.5f, 0.5f);
+					_view[x, y].GetComponent<TransformComponent>().Anchor = (0.5f, 0.5f);
 				}
 			}
 			IntPtr textureId = Native.Resources_LoadTexture("Debug", "textures/debug.png");
 			_snake.Initialize(_cellSize);
 
 			_score = UIText.Create("SCORE: 0", SCORE_FONT_SIZE, -15.0f, 7.5f);
-			_score.SetVisible(true);
+			_score.IsVisible = true;
 			_scoreCached = -1;
 
 			_testBtn = UIButton.Create("Click me", x: 0.0f, y: 6.0f, w: 3.75f, h: 1.5f, r: 0.2f, g: 0.6f, b: 0.9f, layer: 100, fontSize: 1);
@@ -393,7 +393,7 @@ namespace SlimeCore.GameModes.Snake
 					float py = (vy - VIEW_H / 2f - camFrac.Y + shakeVec.Y) * (_cellSpacing);
 
                     var ent = _view[vx, vy];
-					ent.SetPosition(px, py);
+					ent.GetComponent<TransformComponent>().Position = (px, py);
 
 					Vec3 tileCol = GetTileColor(wx, wy);
 
@@ -417,18 +417,18 @@ namespace SlimeCore.GameModes.Snake
 
 						if (sIdx == 0)
 						{
-							_snake.Head.SetSize(_cellSize * 1.15f, _cellSize * 1.15f);
-							_snake.Head.SetPosition(px, py);
-							_snake.Head.SetColor(finalSnakeCol.X, finalSnakeCol.Y, finalSnakeCol.Z);
+							_snake.Head.GetComponent<TransformComponent>().Scale = (_cellSize * 1.15f, _cellSize * 1.15f);
+							_snake.Head.GetComponent<TransformComponent>().Position = (px, py);
+							_snake.Head.GetComponent<SpriteComponent>().Color = (finalSnakeCol.X, finalSnakeCol.Y, finalSnakeCol.Z);
 							UpdateEyes(px, py, _cellSize * 1.15f);
 						}
-						ent.SetColor(finalSnakeCol.X, finalSnakeCol.Y, finalSnakeCol.Z);
+						ent.GetComponent<SpriteComponent>().Color = (finalSnakeCol.X, finalSnakeCol.Y, finalSnakeCol.Z);
 					}
 					else
 					{
-						ent.SetColor(tileCol.X, tileCol.Y, tileCol.Z);
+						ent.GetComponent<SpriteComponent>().Color = (tileCol.X, tileCol.Y, tileCol.Z);
 					}
-					ent.SetSize(_cellSize, _cellSize);
+					ent.GetComponent<TransformComponent>().Scale = (_cellSize, _cellSize);
 				}
 			}
 
@@ -459,9 +459,9 @@ namespace SlimeCore.GameModes.Snake
 
 				float orbitDist = _cellSpacing * 0.9f;
 
-				_snake.Compass.IsVisible = true;
+				_snake.Compass.GetComponent<SpriteComponent>().IsVisible = true;
 				Vec2 compassPos = headScreenPos + normalizedDir * orbitDist;
-				_snake.Compass.SetPosition(compassPos.X, compassPos.Y);
+				_snake.Compass.GetComponent<TransformComponent>().Position = (compassPos.X, compassPos.Y);
 
 				float pulse = 0.5f + 0.5f * (float)Math.Abs(Math.Sin(_time * 10f));
 
@@ -470,7 +470,7 @@ namespace SlimeCore.GameModes.Snake
 				if (ft == FoodType.Plum) cCol = new Vec3(pulse, 0, pulse);
 				if (ft == FoodType.Chili) cCol = new Vec3(pulse, 0, 0);
 			}
-			else _snake.Compass.IsVisible = false;
+			else _snake.Compass.GetComponent<SpriteComponent>().IsVisible = false;
 		}
 
 		private void UpdateEyes(float hpx, float hpy, float headSize)
@@ -484,14 +484,14 @@ namespace SlimeCore.GameModes.Snake
 			Vec2 sideVec = new Vec2(-_snake.Direction.Y, _snake.Direction.X) * side;
 
 			float eyeSize = headSize * 0.17f;
-			_snake.Eyes[0].SetSize(eyeSize, eyeSize);
-			_snake.Eyes[1].SetSize(eyeSize, eyeSize);
+			_snake.Eyes[0].GetComponent<TransformComponent>().Scale = (eyeSize, eyeSize);
+			_snake.Eyes[1].GetComponent<TransformComponent>().Scale = (eyeSize, eyeSize);
 
 			Vec2 p0 = basePos + fwdVec + sideVec;
 			Vec2 p1 = basePos + fwdVec - sideVec;
 
-			_snake.Eyes[0].SetPosition(p0.X, p0.Y);
-			_snake.Eyes[1].SetPosition(p1.X, p1.Y);
+			_snake.Eyes[0].GetComponent<TransformComponent>().Position = (p0.X, p0.Y);
+			_snake.Eyes[1].GetComponent<TransformComponent>().Position = (p1.X, p1.Y);
 		}
 
 		// --- Helpers ---

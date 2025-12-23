@@ -20,17 +20,36 @@ public readonly struct UIText
 		set => Native.UI_SetText(Id, value);
 	}
 
-	public void SetPosition(float x, float y) => Native.UI_SetPosition(Id, x, y);
-	public (float x, float y) GetPosition()
+	public (float x, float y) Position
 	{
-		Native.UI_GetPosition(Id, out float x, out float y);
-		return (x, y);
+		get { Native.UI_GetPosition(Id, out float x, out float y); return (x, y); }
+		set => Native.UI_SetPosition(Id, value.x, value.y);
 	}
-	public void SetAnchor(float ax, float ay) => Native.UI_SetAnchor(Id, ax, ay);
-	public void SetColor(float r, float g, float b) => Native.UI_SetColor(Id, r, g, b);
-	public void SetVisible(bool v) => Native.UI_SetVisible(Id, v);
-	public void SetLayer(int layer) => Native.UI_SetLayer(Id, layer);
-	public void SetUseScreenSpace(bool useScreenSpace) => Native.UI_SetUseScreenSpace(Id, useScreenSpace);
+
+	public (float x, float y) Anchor
+	{
+		set => Native.UI_SetAnchor(Id, value.x, value.y);
+	}
+
+	public (float r, float g, float b) Color
+	{
+		set => Native.UI_SetColor(Id, value.r, value.g, value.b);
+	}
+
+	public bool IsVisible
+	{
+		set => Native.UI_SetVisible(Id, value);
+	}
+
+	public int Layer
+	{
+		set => Native.UI_SetLayer(Id, value);
+	}
+
+	public bool UseScreenSpace
+	{
+		set => Native.UI_SetUseScreenSpace(Id, value);
+	}
 
 	/// <summary>
 	/// Gets the width and height of the text in world units.

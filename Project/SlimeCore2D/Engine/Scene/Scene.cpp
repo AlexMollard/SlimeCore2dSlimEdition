@@ -1,6 +1,5 @@
 #include "Scene.h"
 #include "Rendering/Renderer2D.h"
-#include "Entities/Quad.h"
 #include "Core/Input.h"
 #include <algorithm>
 
@@ -17,9 +16,6 @@ static glm::vec2 ScreenSpaceToUISpace(float screenX, float screenY)
 	const float uiHeight = 18.0f; // match Camera ortho size used in Game2D
 	const float uiWidth = uiHeight * aspect;
 
-	// Convert from screen space (0,0 = top-left) to UI space (0,0 = center, Y-up)
-	// Screen: (0,0) = top-left, (vpW, vpH) = bottom-right
-	// UI: (-uiWidth/2, uiHeight/2) = top-left, (uiWidth/2, -uiHeight/2) = bottom-right
 	float uiX = (screenX / vpW) * uiWidth - (uiWidth * 0.5f);
 	float uiY = (uiHeight * 0.5f) - (screenY / vpH) * uiHeight;
 
@@ -35,14 +31,9 @@ Scene::~Scene()
 {
 	if (s_ActiveScene == this)
 		s_ActiveScene = nullptr;
-
-	for (auto* obj : m_AllObjects)
-	{
-		delete obj;
-	}
-	m_AllObjects.clear();
-	m_ObjectsById.clear();
-	m_RootObjects.clear();
+	
+	// Registry cleans up itself, but we should clear active entities
+	m_ActiveEntities.clear();
 	m_UIElements.clear();
 }
 
@@ -51,89 +42,89 @@ Scene* Scene::GetActiveScene()
 	return s_ActiveScene;
 }
 
+ObjectId Scene::CreateEntity()
+{
+	Entity entity = m_Registry.CreateEntity();
+	m_ActiveEntities.push_back(entity);
+	return entity;
+}
+
 ObjectId Scene::CreateGameObject(glm::vec3 pos, glm::vec2 size, glm::vec3 color)
 {
-	ObjectId id = m_NextId++;
-	GameObject* go = new GameObject();
-	go->Create(pos, color, size, (int)id);
+	Entity entity = m_Registry.CreateEntity();
 
-	m_AllObjects.push_back(go);
-	m_ObjectsById[id] = go;
-	AddGameObject(go);
+	TransformComponent transform;
+	transform.Position = pos;
+	transform.Scale = size;
+	m_Registry.AddComponent(entity, transform);
 
-	return id;
+	SpriteComponent sprite;
+	sprite.Color = glm::vec4(color, 1.0f);
+	m_Registry.AddComponent(entity, sprite);
+
+	AnimationComponent anim;
+	m_Registry.AddComponent(entity, anim);
+
+	m_ActiveEntities.push_back(entity);
+	return entity;
 }
 
 ObjectId Scene::CreateQuad(glm::vec3 pos, glm::vec2 size, glm::vec3 color)
 {
-	ObjectId id = m_NextId++;
-	Quad* go = new Quad();
-	go->Create(pos, color, size, (int)id);
-
-	m_AllObjects.push_back(go);
-	m_ObjectsById[id] = go;
-	AddGameObject(go);
-
-	return id;
+	return CreateGameObject(pos, size, color);
 }
 
 ObjectId Scene::CreateQuad(glm::vec3 pos, glm::vec2 size, Texture* tex)
 {
-	ObjectId id = m_NextId++;
-	Quad* go = new Quad();
-	go->Create(pos, glm::vec3(1.0f), size, (int)id);
-	go->SetTexture(tex);
+	Entity entity = m_Registry.CreateEntity();
 
-	m_AllObjects.push_back(go);
-	m_ObjectsById[id] = go;
-	AddGameObject(go);
+	TransformComponent transform;
+	transform.Position = pos;
+	transform.Scale = size;
+	m_Registry.AddComponent(entity, transform);
 
-	return id;
+	SpriteComponent sprite;
+	sprite.Color = glm::vec4(1.0f);
+	sprite.Texture = tex;
+	m_Registry.AddComponent(entity, sprite);
+
+	AnimationComponent anim;
+	m_Registry.AddComponent(entity, anim);
+
+	m_ActiveEntities.push_back(entity);
+	return entity;
 }
 
 void Scene::DestroyObject(ObjectId id)
 {
-	auto it = m_ObjectsById.find(id);
-	if (it != m_ObjectsById.end())
+	if (id >= 100000) // UI ID range check
 	{
-		GameObject* obj = it->second;
-		RemoveGameObject(obj); // Remove from root list if it's there
-
-		// Remove from all objects list
-		auto allIt = std::find(m_AllObjects.begin(), m_AllObjects.end(), obj);
-		if (allIt != m_AllObjects.end())
-			m_AllObjects.erase(allIt);
-
-		m_ObjectsById.erase(it);
-		delete obj;
+		m_UIElements.erase(id);
 		return;
 	}
 
-	auto itUI = m_UIElements.find(id);
-	if (itUI != m_UIElements.end())
+	auto it = std::find(m_ActiveEntities.begin(), m_ActiveEntities.end(), id);
+	if (it != m_ActiveEntities.end())
 	{
-		m_UIElements.erase(itUI);
+		m_ActiveEntities.erase(it);
+		m_Registry.DestroyEntity(id);
 	}
-}
-
-GameObject* Scene::GetGameObject(ObjectId id)
-{
-	auto it = m_ObjectsById.find(id);
-	return (it != m_ObjectsById.end()) ? it->second : nullptr;
 }
 
 bool Scene::IsAlive(ObjectId id) const
 {
-	if (m_ObjectsById.find(id) != m_ObjectsById.end())
-		return true;
-	if (m_UIElements.find(id) != m_UIElements.end())
-		return true;
+	if (id >= 100000)
+		return m_UIElements.find(id) != m_UIElements.end();
+	
+	// Check if in active entities list (O(N) but safe)
+	for (auto e : m_ActiveEntities)
+		if (e == id) return true;
 	return false;
 }
 
 ObjectId Scene::CreateUIElement(bool isText)
 {
-	ObjectId id = m_NextId++;
+	ObjectId id = m_NextUIId++;
 	PersistentUIElement el;
 	el.IsText = isText;
 	m_UIElements[id] = el;
@@ -150,68 +141,49 @@ PersistentUIElement* Scene::GetUIElement(ObjectId id)
 
 void Scene::RenderUI()
 {
-	// Iterate over all persistent UI elements and submit them to the immediate renderer
 	for (auto& [id, element] : m_UIElements)
 	{
 		if (!element.IsVisible)
 			continue;
 
-		// Convert position based on coordinate space
 		glm::vec2 position = element.Position;
 		if (element.UseScreenSpace)
 		{
-			// Convert from screen pixels to UI world space
 			position = ScreenSpaceToUISpace(element.Position.x, element.Position.y);
 		}
 
-		// Calculate Draw Position based on Anchor
-		// Renderer2D draws at center/position. We need to offset based on anchor.
 		glm::vec3 drawPos = glm::vec3(position.x, position.y, 0.9f + (element.Layer * 0.001f));
 
 		if (element.IsText && element.Font)
 		{
-			// Anchor-aware positioning for text: measure and offset
-			// DrawString draws from baseline/left, so we need to offset based on anchor
 			glm::vec3 textInfo = element.Font->CalculateSizeWithBaseline(element.TextContent, element.Scale.x);
 			float textWidth = textInfo.x;
 			float textHeight = textInfo.y;
-			float maxY = textInfo.z;        // How far above baseline text extends
-			float minY = textHeight - maxY; // How far below baseline text extends
+			float maxY = textInfo.z;
+			float minY = textHeight - maxY;
 
 			glm::vec3 finalPos = drawPos;
-
-			// Horizontal anchor: 0.0 = left, 0.5 = center, 1.0 = right
 			finalPos.x += (0.0f - element.Anchor.x) * textWidth;
 
-			// Vertical anchor: 0.0 = bottom, 0.5 = center, 1.0 = top
 			float baselineForBottom = drawPos.y + minY;
 			float baselineForCenter = drawPos.y - (maxY - minY) * 0.5f;
 			float baselineForTop = drawPos.y - maxY;
 
-			// Linear interpolation between the three points
 			if (element.Anchor.y <= 0.5f)
 			{
-				// Interpolate between bottom (0.0) and center (0.5)
-				float t = element.Anchor.y * 2.0f; // Maps 0.0->0.0, 0.5->1.0
+				float t = element.Anchor.y * 2.0f;
 				finalPos.y = baselineForBottom * (1.0f - t) + baselineForCenter * t;
 			}
 			else
 			{
-				// Interpolate between center (0.5) and top (1.0)
-				float t = (element.Anchor.y - 0.5f) * 2.0f; // Maps 0.5->0.0, 1.0->1.0
+				float t = (element.Anchor.y - 0.5f) * 2.0f;
 				finalPos.y = baselineForCenter * (1.0f - t) + baselineForTop * t;
 			}
 
-			// SDF Text Render
-			Renderer2D::DrawString(element.TextContent,
-				element.Font,
-				finalPos,
-				element.Scale.x, // Scale 1.0 = 48px
-				element.Color);
+			Renderer2D::DrawString(element.TextContent, element.Font, finalPos, element.Scale.x, element.Color);
 		}
 		else if (!element.IsText)
 		{
-			// UI Quad Render
 			float offX = (0.5f - element.Anchor.x) * element.Scale.x;
 			float offY = (0.5f - element.Anchor.y) * element.Scale.y;
 
@@ -233,98 +205,110 @@ void Scene::RenderUI()
 
 ObjectId Scene::GetIdAtIndex(int index) const
 {
-	if (index < 0 || index >= (int)m_AllObjects.size())
+	if (index < 0 || index >= (int)m_ActiveEntities.size())
 		return InvalidObjectId;
-	GameObject* obj = m_AllObjects[index];
-	if (!obj)
-		return InvalidObjectId;
-	return static_cast<ObjectId>(obj->GetID());
-}
-
-void Scene::AddGameObject(GameObject* gameObject)
-{
-	m_RootObjects.push_back(gameObject);
-}
-
-void Scene::RemoveGameObject(GameObject* gameObject)
-{
-	auto it = std::find(m_RootObjects.begin(), m_RootObjects.end(), gameObject);
-	if (it != m_RootObjects.end())
-	{
-		m_RootObjects.erase(it);
-	}
+	return m_ActiveEntities[index];
 }
 
 void Scene::Update(float deltaTime)
 {
-	for (auto obj : m_RootObjects)
+	// Animation System
+	for (Entity entity : m_ActiveEntities)
 	{
-		obj->Update(deltaTime);
-		obj->UpdateSpriteTimer(deltaTime); // Ensure animation updates happen
+		if (m_Registry.HasComponent<AnimationComponent>(entity))
+		{
+			auto& anim = m_Registry.GetComponent<AnimationComponent>(entity);
+			if (anim.HasAnimation && anim.SpriteWidth > 0)
+			{
+				anim.Timer += deltaTime;
+				float timePerFrame = (anim.FrameRate > 0.0f) ? (1.0f / anim.FrameRate) : 0.0f;
+				
+				if (timePerFrame > 0.0f && anim.Timer >= timePerFrame)
+				{
+					while (anim.Timer >= timePerFrame)
+					{
+						anim.Timer -= timePerFrame;
+						
+						// Advance Frame
+						if (m_Registry.HasComponent<SpriteComponent>(entity))
+						{
+							auto& sprite = m_Registry.GetComponent<SpriteComponent>(entity);
+							if (sprite.Texture)
+							{
+								int texWidth = sprite.Texture->GetWidth();
+								int maxFrames = texWidth / anim.SpriteWidth;
+								if (maxFrames < 1) maxFrames = 1;
+								
+								anim.Frame++;
+								if (anim.Frame >= maxFrames)
+									anim.Frame = 0;
+							}
+						}
+					}
+				}
+			}
+		}
 	}
 }
-
 
 void Scene::Render(Camera& camera)
 {
 	Renderer2D::BeginScene(camera);
 
-	for (auto obj : m_RootObjects)
+	for (Entity entity : m_ActiveEntities)
 	{
-		RenderNode(obj);
+		if (m_Registry.HasComponent<TransformComponent>(entity) && 
+			m_Registry.HasComponent<SpriteComponent>(entity))
+		{
+			auto& transform = m_Registry.GetComponent<TransformComponent>(entity);
+			auto& sprite = m_Registry.GetComponent<SpriteComponent>(entity);
+
+			if (!sprite.IsVisible)
+				continue;
+
+			glm::mat4 transformMat = transform.GetTransform();
+
+			if (sprite.Texture)
+			{
+				bool hasAnim = false;
+				if (m_Registry.HasComponent<AnimationComponent>(entity))
+				{
+					auto& anim = m_Registry.GetComponent<AnimationComponent>(entity);
+					if (anim.SpriteWidth > 0)
+					{
+						hasAnim = true;
+						int texWidth = sprite.Texture->GetWidth();
+						int framesPerRow = texWidth / anim.SpriteWidth;
+						if (framesPerRow == 0) framesPerRow = 1;
+						int column = anim.Frame % framesPerRow;
+
+						float u0 = (float)(column * anim.SpriteWidth) / texWidth;
+						float v0 = 0.0f;
+						float u1 = (float)((column + 1) * anim.SpriteWidth) / texWidth;
+						float v1 = 1.0f;
+
+						glm::vec2 uvs[4] = {
+							{ u0, v0 }, // BL
+							{ u1, v0 }, // BR
+							{ u1, v1 }, // TR
+							{ u0, v1 }  // TL
+						};
+
+						Renderer2D::DrawQuadUV(transformMat, sprite.Texture, uvs, sprite.Color);
+					}
+				}
+				
+				if (!hasAnim)
+				{
+					Renderer2D::DrawQuad(transformMat, sprite.Texture, sprite.TilingFactor, sprite.Color);
+				}
+			}
+			else
+			{
+				Renderer2D::DrawQuad(transformMat, sprite.Color);
+			}
+		}
 	}
 
 	Renderer2D::EndScene();
-}
-
-void Scene::RenderNode(GameObject* node)
-{
-	if (!node->GetRender())
-		return;
-
-	// Calculate World Transform
-	glm::mat4 transform = node->GetWorldTransform();
-
-	// Submit to Renderer
-	if (node->GetTexture())
-	{
-		if (node->GetSpriteWidth() > 0)
-		{
-			// Calculate UVs for sprite sheet
-			int texWidth = node->GetTexture()->GetWidth();
-			int texHeight = node->GetTexture()->GetHeight();
-			int spriteWidth = node->GetSpriteWidth();
-			
-			int framesPerRow = texWidth / spriteWidth;
-			int column = node->GetFrame() % framesPerRow;
-			
-			float u0 = (float)(column * spriteWidth) / texWidth;
-			float v0 = 0.0f;
-			float u1 = (float)((column + 1) * spriteWidth) / texWidth;
-			float v1 = 1.0f;
-
-			glm::vec2 uvs[4] = {
-				{ u0, v0 }, // BL
-				{ u1, v0 }, // BR
-				{ u1, v1 }, // TR
-				{ u0, v1 }  // TL
-			};
-			
-			Renderer2D::DrawQuadUV(transform, node->GetTexture(), uvs, glm::vec4(node->GetColor(), 1.0f));
-		}
-		else
-		{
-			Renderer2D::DrawQuad(transform, node->GetTexture(), 1.0f, glm::vec4(node->GetColor(), 1.0f));
-		}
-	}
-	else
-	{
-		Renderer2D::DrawQuad(transform, glm::vec4(node->GetColor(), 1.0f));
-	}
-
-	// Recursively render children
-	for (auto child : node->GetChildren())
-	{
-		RenderNode(child);
-	}
 }

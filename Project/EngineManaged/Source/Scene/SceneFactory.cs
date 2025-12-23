@@ -15,7 +15,7 @@ public static class SceneFactory
 		ulong id = Native.Scene_CreateQuad(x, y, width, height, r, g, b);
 
 		var entity = new Entity(id);
-		if (layer != 0) entity.Layer = layer;
+		if (layer != 0) entity.GetComponent<TransformComponent>().Layer = layer;
 
 		return entity;
 	}
@@ -29,8 +29,8 @@ public static class SceneFactory
 		ulong id = Native.Scene_CreateQuadWithTexture(x, y, width, height, textureId);
 
 		var entity = new Entity(id);
-		entity.Layer = layer;
-		entity.SetAnchor(anchorX, anchorY);
+		entity.GetComponent<TransformComponent>().Layer = layer;
+		entity.GetComponent<TransformComponent>().Anchor = (anchorX, anchorY);
 
 		return entity;
 	}

@@ -179,6 +179,7 @@
   <ItemGroup>
     <ClCompile Include="Engine\Physics\BoundingBox.cpp" />
     <ClCompile Include="Engine\Core\Camera.cpp" />
+    <ClCompile Include="Engine\Scene\Components.cpp" />
     <ClCompile Include="Engine\Scripting\DotNetHost.cpp" />
     <ClCompile Include="Engine\Scripting\EngineExports.cpp" />
     <ClCompile Include="Engine\Physics\CollisionManager.cpp" />
@@ -198,13 +199,14 @@
     <ClCompile Include="Engine\Rendering\Sprite.cpp" />
     <ClCompile Include="Engine\Rendering\Text.cpp" />
     <ClCompile Include="Engine\Rendering\Texture.cpp" />
-
     <ClCompile Include="Engine\Core\Window.cpp" />
     <ClCompile Include="Game\Scenes\World.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Physics\BoundingBox.h" />
     <ClInclude Include="Engine\Core\Camera.h" />
+    <ClInclude Include="Engine\Scene\Components.h" />
+    <ClInclude Include="Engine\Scene\Registry.h" />
     <ClInclude Include="Engine\Scripting\DotNetHost.h" />
     <ClInclude Include="Engine\Scripting\EngineExports.h" />
     <ClInclude Include="Engine\Physics\CollisionManager.h" />
@@ -225,7 +227,6 @@
     <ClInclude Include="Engine\Rendering\Sprite.h" />
     <ClInclude Include="Engine\Rendering\Text.h" />
     <ClInclude Include="Engine\Rendering\Texture.h" />
-
     <ClInclude Include="Engine\Core\Window.h" />
     <ClInclude Include="Game\Scenes\World.h" />
     <ClInclude Include="Game\Scenes\WorldTypes.h" />

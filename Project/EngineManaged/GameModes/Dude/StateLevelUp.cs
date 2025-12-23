@@ -22,16 +22,16 @@ public class StateLevelUp : IDudeState
 
 	public void Enter(DudeGame game)
 	{
-		game.CardBgBackdrop.IsVisible = true;
-		game.CardBgBackdrop.SetColor(0.05f, 0.05f, 0.1f);
+		game.CardBgBackdrop.GetComponent<SpriteComponent>().IsVisible = true;
+		game.CardBgBackdrop.GetComponent<SpriteComponent>().Color = (0.05f, 0.05f, 0.1f);
 
 		_upgradeTitle = UIText.Create("LEVEL UP!", 1, -10, 7.5f);
-		_upgradeTitle.SetAnchor(0.5f, 0.5f);
-		_upgradeTitle.SetColor(1, 1, 0);
+		_upgradeTitle.Anchor = (0.5f, 0.5f);
+		_upgradeTitle.Color = (1, 1, 0);
 
 		_subTitle = UIText.Create("Select a Mutation", 1, -10, 6.0f);
-		_subTitle.SetAnchor(0.5f, 0.5f);
-		_subTitle.SetColor(0.8f, 0.8f, 0.8f);
+		_subTitle.Anchor = (0.5f, 0.5f);
+		_subTitle.Color = (0.8f, 0.8f, 0.8f);
 
 		CreateSidebar(game);
 		SpawnCards(game);
@@ -48,11 +48,11 @@ public class StateLevelUp : IDudeState
 		foreach (var t in _sidebarText) t.Destroy();
 		_sidebarText.Clear();
 
-		game.CardBgBackdrop.IsVisible = false;
+		game.CardBgBackdrop.GetComponent<SpriteComponent>().IsVisible = false;
 
 		// Reset Bar Visuals
-		game.XPBarFill.SetSize(0, 0.6f);
-		game.XPBarFill.SetColor(0.0f, 0.8f, 1.0f);
+		game.XPBarFill.GetComponent<TransformComponent>().Scale = (0, 0.6f);
+		game.XPBarFill.GetComponent<SpriteComponent>().Color = (0.0f, 0.8f, 1.0f);
 	}
 
 	public void Update(DudeGame game, float dt)
@@ -61,7 +61,7 @@ public class StateLevelUp : IDudeState
 
 		// Title Animation
 		float bob = MathF.Sin(_animTime * 2.0f) * 0.2f;
-		_upgradeTitle.SetPosition(-10, 7.5f + bob);
+		_upgradeTitle.Position = (-10, 7.5f + bob);
 
 		// Note: Input.GetMousePos returns tuple (float, float), not Vec2, so we keep this as is.
 		var (mx, my) = Input.GetMousePos();
@@ -112,16 +112,16 @@ public class StateLevelUp : IDudeState
 		float yStart = 5.0f;
 
 		_sidebarHeader = UIText.Create("Equiped", 1, xPos, yStart);
-		_sidebarHeader.SetAnchor(0.5f, 0.5f);
-		_sidebarHeader.SetColor(0.6f, 1.0f, 0.6f);
+		_sidebarHeader.Anchor = (0.5f, 0.5f);
+		_sidebarHeader.Color = (0.6f, 1.0f, 0.6f);
 
 		int i = 0;
 		foreach (var kvp in game.UpgradeCounts)
 		{
 			string text = $"{kvp.Key} x{kvp.Value}";
 			var ui = UIText.Create(text, 1, xPos, yStart - 1.5f - (i * 1.0f));
-			ui.SetAnchor(0.5f, 0.5f);
-			ui.SetColor(1, 1, 1);
+			ui.Anchor = (0.5f, 0.5f);
+			ui.Color = (1, 1, 1);
 			_sidebarText.Add(ui);
 			i++;
 		}
@@ -169,27 +169,27 @@ public class StateLevelUp : IDudeState
 			Def = def;
 
 			_shadow = SceneFactory.CreateQuad(x + 0.3f, y - 0.3f, W, H, 0f, 0f, 0f, layer: 92);
-			_shadow.SetAnchor(0.5f, 0.5f);
+			_shadow.GetComponent<TransformComponent>().Anchor = (0.5f, 0.5f);
 
 			_border = SceneFactory.CreateQuad(x, y, W + 0.25f, H + 0.25f, 1f, 1f, 1f, layer: 93);
-			_border.SetAnchor(0.5f, 0.5f);
+			_border.GetComponent<TransformComponent>().Anchor = (0.5f, 0.5f);
 
 			_bg = SceneFactory.CreateQuad(x, y, W, H, def.R, def.G, def.B, layer: 94);
-			_bg.SetAnchor(0.5f, 0.5f);
+			_bg.GetComponent<TransformComponent>().Anchor = (0.5f, 0.5f);
 
 			_title = UIText.Create(def.Title, 1, x, y + 2.5f);
-			_title.SetAnchor(0.5f, 0.5f); // Center anchor for title
-			_title.SetLayer(95);
+			_title.Anchor = (0.5f, 0.5f); // Center anchor for title
+			_title.Layer = 95;
 
 			_desc = UIText.Create(def.Desc, 1, x, y - 0.5f);
-			_desc.SetAnchor(0.5f, 0.5f);
-			_desc.SetColor(0.1f, 0.1f, 0.1f);
-			_desc.SetLayer(95);
+			_desc.Anchor = (0.5f, 0.5f);
+			_desc.Color = (0.1f, 0.1f, 0.1f);
+			_desc.Layer = 95;
 
 			_lvlLabel = UIText.Create($"LVL {nextLevel}", 1, x, y - 3.0f);
-			_lvlLabel.SetAnchor(0.5f, 0.5f);
-			_lvlLabel.SetColor(0.1f, 0.1f, 0.1f);
-			_lvlLabel.SetLayer(95);
+			_lvlLabel.Anchor = (0.5f, 0.5f);
+			_lvlLabel.Color = (0.1f, 0.1f, 0.1f);
+			_lvlLabel.Layer = 95;
 
 			// Start offscreen
 			SetPosition(x, -15.0f);
@@ -197,26 +197,26 @@ public class StateLevelUp : IDudeState
 
 		public void SetPosition(float x, float y)
 		{
-			_shadow.SetPosition(x + 0.3f * Scale, y - 0.3f * Scale);
-			_border.SetPosition(x, y);
-			_bg.SetPosition(x, y);
+			_shadow.GetComponent<TransformComponent>().Position = (x + 0.3f * Scale, y - 0.3f * Scale);
+			_border.GetComponent<TransformComponent>().Position = (x, y);
+			_bg.GetComponent<TransformComponent>().Position = (x, y);
 			// Text positions are centered at x (since anchor is 0.5, 0.5)
-			_title.SetPosition(x, y + 2.0f * Scale);
-			_desc.SetPosition(x, y - 0.5f * Scale);
-			_lvlLabel.SetPosition(x, y - 3.5f * Scale);
+			_title.Position = (x, y + 2.0f * Scale);
+			_desc.Position = (x, y - 0.5f * Scale);
+			_lvlLabel.Position = (x, y - 3.5f * Scale);
 		}
 
 		public void SetScale(float s)
 		{
-			_shadow.SetSize(W * s, H * s);
-			_border.SetSize((W + 0.25f) * s, (H + 0.25f) * s);
-			_bg.SetSize(W * s, H * s);
+			_shadow.GetComponent<TransformComponent>().Scale = (W * s, H * s);
+			_border.GetComponent<TransformComponent>().Scale = ((W + 0.25f) * s, (H + 0.25f) * s);
+			_bg.GetComponent<TransformComponent>().Scale = (W * s, H * s);
 		}
 
 		public bool Contains(float mx, float my)
 		{
-			var (bx, by) = _bg.GetPosition();
-			var (w, h) = _bg.GetSize();
+			var (bx, by) = _bg.GetComponent<TransformComponent>().Position;
+			var (w, h) = _bg.GetComponent<TransformComponent>().Scale;
 			return (mx > bx - w / 2 && mx < bx + w / 2 && my > by - h / 2 && my < by + h / 2);
 		}
 

@@ -79,6 +79,13 @@ SLIME_EXPORT void __cdecl Font_Free(void* font)
 // -------------------------------------------------------------------------
 // ENTITY LIFECYCLE (Delegates to Scene)
 // -------------------------------------------------------------------------
+SLIME_EXPORT EntityId __cdecl Entity_Create()
+{
+	if (!Scene::GetActiveScene())
+		return 0;
+	return (EntityId) Scene::GetActiveScene()->CreateEntity();
+}
+
 SLIME_EXPORT EntityId __cdecl Entity_CreateQuad(float px, float py, float sx, float sy, float r, float g, float b)
 {
 	if (!Scene::GetActiveScene())
@@ -106,97 +113,132 @@ SLIME_EXPORT bool __cdecl Entity_IsAlive(EntityId id)
 SLIME_EXPORT void __cdecl Entity_SetPosition(EntityId id, float x, float y)
 {
 	if (!Scene::GetActiveScene()) return;
-	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* t = reg.TryGetComponent<TransformComponent>((Entity)id))
 	{
-		glm::vec3 p = obj->GetPos();
-		obj->SetPos(glm::vec3(x, y, p.z));
+		t->Position.x = x;
+		t->Position.y = y;
 	}
 }
 
 SLIME_EXPORT void __cdecl Entity_GetPosition(EntityId id, float* outX, float* outY)
 {
 	if (!Scene::GetActiveScene()) return;
-	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* t = reg.TryGetComponent<TransformComponent>((Entity)id))
 	{
-		if (outX)
-			*outX = obj->GetPos().x;
-		if (outY)
-			*outY = obj->GetPos().y;
+		if (outX) *outX = t->Position.x;
+		if (outY) *outY = t->Position.y;
 	}
 }
 
 SLIME_EXPORT void __cdecl Entity_SetSize(EntityId id, float sx, float sy)
 {
 	if (!Scene::GetActiveScene()) return;
-	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
-		obj->SetScale(glm::vec2(sx, sy));
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* t = reg.TryGetComponent<TransformComponent>((Entity)id))
+	{
+		t->Scale = { sx, sy };
+	}
 }
 
 SLIME_EXPORT void __cdecl Entity_GetSize(EntityId id, float* outSx, float* outSy)
 {
 	if (!Scene::GetActiveScene()) return;
-	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* t = reg.TryGetComponent<TransformComponent>((Entity)id))
 	{
-		if (outSx)
-			*outSx = obj->GetScale().x;
-		if (outSy)
-			*outSy = obj->GetScale().y;
+		if (outSx) *outSx = t->Scale.x;
+		if (outSy) *outSy = t->Scale.y;
 	}
 }
 
 SLIME_EXPORT void __cdecl Entity_SetColor(EntityId id, float r, float g, float b)
 {
 	if (!Scene::GetActiveScene()) return;
-	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
-		obj->SetColor(r, g, b);
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* s = reg.TryGetComponent<SpriteComponent>((Entity)id))
+	{
+		s->Color = { r, g, b, 1.0f };
+	}
+}
+
+SLIME_EXPORT void __cdecl Entity_GetColor(EntityId id, float* outR, float* outG, float* outB)
+{
+	if (!Scene::GetActiveScene()) return;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* s = reg.TryGetComponent<SpriteComponent>((Entity)id))
+	{
+		if (outR) *outR = s->Color.r;
+		if (outG) *outG = s->Color.g;
+		if (outB) *outB = s->Color.b;
+	}
 }
 
 SLIME_EXPORT void __cdecl Entity_SetLayer(EntityId id, int layer)
 {
 	if (!Scene::GetActiveScene()) return;
-	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
-		obj->SetLayer(layer);
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* t = reg.TryGetComponent<TransformComponent>((Entity)id))
+	{
+		t->Position.z = layer * 0.1f;
+	}
+	if (auto* s = reg.TryGetComponent<SpriteComponent>((Entity)id))
+	{
+		s->Layer = layer;
+	}
 }
 
 SLIME_EXPORT int __cdecl Entity_GetLayer(EntityId id)
 {
 	if (!Scene::GetActiveScene()) return 0;
-	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
-		return obj->GetLayer();
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* s = reg.TryGetComponent<SpriteComponent>((Entity)id))
+	{
+		return s->Layer;
+	}
 	return 0;
 }
 
 SLIME_EXPORT void __cdecl Entity_SetRotation(EntityId id, float degrees)
 {
 	if (!Scene::GetActiveScene()) return;
-	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
-		obj->SetRotation(degrees);
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* t = reg.TryGetComponent<TransformComponent>((Entity)id))
+	{
+		t->Rotation = degrees;
+	}
 }
 
 SLIME_EXPORT float __cdecl Entity_GetRotation(EntityId id)
 {
 	if (!Scene::GetActiveScene()) return 0.0f;
-	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
-		return obj->GetRotation();
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* t = reg.TryGetComponent<TransformComponent>((Entity)id))
+	{
+		return t->Rotation;
+	}
 	return 0.0f;
 }
 
 SLIME_EXPORT void __cdecl Entity_SetAnchor(EntityId id, float ax, float ay)
 {
 	if (!Scene::GetActiveScene()) return;
-	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
-		obj->SetAnchor(glm::vec2(ax, ay));
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* t = reg.TryGetComponent<TransformComponent>((Entity)id))
+	{
+		t->Anchor = { ax, ay };
+	}
 }
 
 SLIME_EXPORT void __cdecl Entity_GetAnchor(EntityId id, float* outAx, float* outAy)
 {
 	if (!Scene::GetActiveScene()) return;
-	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* t = reg.TryGetComponent<TransformComponent>((Entity)id))
 	{
-		if (outAx)
-			*outAx = obj->GetAnchor().x;
-		if (outAy)
-			*outAy = obj->GetAnchor().y;
+		if (outAx) *outAx = t->Anchor.x;
+		if (outAy) *outAy = t->Anchor.y;
 	}
 }
 
@@ -209,18 +251,26 @@ SLIME_EXPORT void __cdecl Entity_SetTexture(EntityId id, unsigned int texId, int
 {
 	if (!Scene::GetActiveScene() || id == 0)
 		return;
-	GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id);
-	if (!obj)
-		return;
-
-	// Note: We create a loose Texture object wrapper here.
-	// This is a temporary wrapper just so the GameObject can hold the ID.
-	Texture* t = new Texture(width, height, GL_RGBA8);
-	t->SetID(texId, width, height);
-
+	
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* s = reg.TryGetComponent<SpriteComponent>((Entity)id))
+	{
+		// Create temp texture wrapper
+		// Note: This leaks if we don't manage it. 
+		// Ideally Texture* in SpriteComponent should be managed resource.
+		// For now, we just new it as before.
+		Texture* t = new Texture(width, height, GL_RGBA8);
+		t->SetID(texId, width, height);
+		s->Texture = t;
+	}
+	
 	if (width > 0)
-		obj->SetSpriteWidth(width);
-	obj->SetTexture(t);
+	{
+		if (auto* a = reg.TryGetComponent<AnimationComponent>((Entity)id))
+		{
+			a->SpriteWidth = width;
+		}
+	}
 }
 
 // Assigns a Texture pointer retrieved via Resources_LoadTexture
@@ -228,20 +278,24 @@ SLIME_EXPORT void __cdecl Entity_SetTexturePtr(EntityId id, void* texPtr)
 {
 	if (!Scene::GetActiveScene() || id == 0)
 		return;
-	GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id);
-	if (!obj)
-		return;
-
-	if (texPtr)
+	
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* s = reg.TryGetComponent<SpriteComponent>((Entity)id))
 	{
-		Texture* tex = (Texture*) texPtr;
-		obj->SetTexture(tex);
-		// Automatically update the sprite width to match the texture
-		obj->SetSpriteWidth(tex->GetWidth());
-	}
-	else
-	{
-		obj->SetTexture(nullptr);
+		if (texPtr)
+		{
+			Texture* tex = (Texture*) texPtr;
+			s->Texture = tex;
+			
+			if (auto* a = reg.TryGetComponent<AnimationComponent>((Entity)id))
+			{
+				a->SpriteWidth = tex->GetWidth();
+			}
+		}
+		else
+		{
+			s->Texture = nullptr;
+		}
 	}
 }
 
@@ -250,84 +304,117 @@ SLIME_EXPORT void* __cdecl Entity_GetTexturePtr(EntityId id)
 	if (!Scene::GetActiveScene() || id == 0)
 		return nullptr;
 
-	GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id);
-	if (!obj)
-		return nullptr;
-
-	return (void*) obj->GetTexture();
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* s = reg.TryGetComponent<SpriteComponent>((Entity)id))
+	{
+		return (void*) s->Texture;
+	}
+	return nullptr;
 }
 
 SLIME_EXPORT void __cdecl Entity_SetRender(EntityId id, bool value)
 {
 	if (!Scene::GetActiveScene()) return;
-	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
-		obj->SetRender(value);
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* s = reg.TryGetComponent<SpriteComponent>((Entity)id))
+	{
+		s->IsVisible = value;
+	}
 }
 
 SLIME_EXPORT bool __cdecl Entity_GetRender(EntityId id)
 {
 	if (!Scene::GetActiveScene()) return false;
-	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
-		return obj->GetRender();
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* s = reg.TryGetComponent<SpriteComponent>((Entity)id))
+	{
+		return s->IsVisible;
+	}
 	return false;
 }
 
 SLIME_EXPORT void __cdecl Entity_SetFrame(EntityId id, int frame)
 {
 	if (!Scene::GetActiveScene()) return;
-	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
-		obj->SetFrame(frame);
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* a = reg.TryGetComponent<AnimationComponent>((Entity)id))
+	{
+		a->Frame = frame;
+	}
 }
 
 SLIME_EXPORT int __cdecl Entity_GetFrame(EntityId id)
 {
 	if (!Scene::GetActiveScene()) return 0;
-	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
-		return obj->GetFrame();
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* a = reg.TryGetComponent<AnimationComponent>((Entity)id))
+	{
+		return a->Frame;
+	}
 	return 0;
 }
 
 SLIME_EXPORT void __cdecl Entity_AdvanceFrame(EntityId id)
 {
+	// Manual advance not fully implemented in component logic yet, 
+	// but we can just increment frame.
 	if (!Scene::GetActiveScene()) return;
-	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
-		obj->AdvanceFrame();
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* a = reg.TryGetComponent<AnimationComponent>((Entity)id))
+	{
+		a->Frame++;
+	}
 }
 
 SLIME_EXPORT void __cdecl Entity_SetSpriteWidth(EntityId id, int width)
 {
 	if (!Scene::GetActiveScene()) return;
-	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
-		obj->SetSpriteWidth(width);
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* a = reg.TryGetComponent<AnimationComponent>((Entity)id))
+	{
+		a->SpriteWidth = width;
+	}
 }
 
 SLIME_EXPORT int __cdecl Entity_GetSpriteWidth(EntityId id)
 {
 	if (!Scene::GetActiveScene()) return 0;
-	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
-		return obj->GetSpriteWidth();
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* a = reg.TryGetComponent<AnimationComponent>((Entity)id))
+	{
+		return a->SpriteWidth;
+	}
 	return 0;
 }
 
 SLIME_EXPORT void __cdecl Entity_SetHasAnimation(EntityId id, bool value)
 {
 	if (!Scene::GetActiveScene()) return;
-	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
-		obj->SetHasAnimation(value);
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* a = reg.TryGetComponent<AnimationComponent>((Entity)id))
+	{
+		a->HasAnimation = value;
+	}
 }
 
 SLIME_EXPORT void __cdecl Entity_SetFrameRate(EntityId id, float rate)
 {
 	if (!Scene::GetActiveScene()) return;
-	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
-		obj->SetFrameRate(rate);
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* a = reg.TryGetComponent<AnimationComponent>((Entity)id))
+	{
+		a->FrameRate = rate;
+	}
 }
 
 SLIME_EXPORT float __cdecl Entity_GetFrameRate(EntityId id)
 {
 	if (!Scene::GetActiveScene()) return 0.0f;
-	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
-		return obj->GetFrameRate();
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* a = reg.TryGetComponent<AnimationComponent>((Entity)id))
+	{
+		return a->FrameRate;
+	}
 	return 0.0f;
 }
 
@@ -575,6 +662,403 @@ SLIME_EXPORT float __cdecl UI_GetTextHeight(EntityId id)
 		}
 	}
 	return 0.0f;
+}
+
+// -------------------------------------------------------------------------
+// COMPONENT MANAGEMENT
+// -------------------------------------------------------------------------
+SLIME_EXPORT void __cdecl Entity_AddComponent_Transform(EntityId id)
+{
+	if (!Scene::GetActiveScene()) return;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (!reg.HasComponent<TransformComponent>((Entity)id))
+		reg.AddComponent<TransformComponent>((Entity)id, TransformComponent());
+}
+
+SLIME_EXPORT bool __cdecl Entity_HasComponent_Transform(EntityId id)
+{
+	if (!Scene::GetActiveScene()) return false;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	return reg.HasComponent<TransformComponent>((Entity)id);
+}
+
+SLIME_EXPORT void __cdecl Entity_RemoveComponent_Transform(EntityId id)
+{
+	if (!Scene::GetActiveScene()) return;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (reg.HasComponent<TransformComponent>((Entity)id))
+		reg.RemoveComponent<TransformComponent>((Entity)id);
+}
+
+SLIME_EXPORT void __cdecl Entity_AddComponent_Sprite(EntityId id)
+{
+	if (!Scene::GetActiveScene()) return;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (!reg.HasComponent<SpriteComponent>((Entity)id))
+		reg.AddComponent<SpriteComponent>((Entity)id, SpriteComponent());
+}
+
+SLIME_EXPORT bool __cdecl Entity_HasComponent_Sprite(EntityId id)
+{
+	if (!Scene::GetActiveScene()) return false;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	return reg.HasComponent<SpriteComponent>((Entity)id);
+}
+
+SLIME_EXPORT void __cdecl Entity_RemoveComponent_Sprite(EntityId id)
+{
+	if (!Scene::GetActiveScene()) return;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (reg.HasComponent<SpriteComponent>((Entity)id))
+		reg.RemoveComponent<SpriteComponent>((Entity)id);
+}
+
+SLIME_EXPORT void __cdecl Entity_AddComponent_Animation(EntityId id)
+{
+	if (!Scene::GetActiveScene()) return;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (!reg.HasComponent<AnimationComponent>((Entity)id))
+		reg.AddComponent<AnimationComponent>((Entity)id, AnimationComponent());
+}
+
+SLIME_EXPORT bool __cdecl Entity_HasComponent_Animation(EntityId id)
+{
+	if (!Scene::GetActiveScene()) return false;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	return reg.HasComponent<AnimationComponent>((Entity)id);
+}
+
+SLIME_EXPORT void __cdecl Entity_RemoveComponent_Animation(EntityId id)
+{
+	if (!Scene::GetActiveScene()) return;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (reg.HasComponent<AnimationComponent>((Entity)id))
+		reg.RemoveComponent<AnimationComponent>((Entity)id);
+}
+
+SLIME_EXPORT void __cdecl Entity_AddComponent_Tag(EntityId id)
+{
+	if (!Scene::GetActiveScene()) return;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (!reg.HasComponent<TagComponent>((Entity)id))
+		reg.AddComponent<TagComponent>((Entity)id, TagComponent());
+}
+
+SLIME_EXPORT bool __cdecl Entity_HasComponent_Tag(EntityId id)
+{
+	if (!Scene::GetActiveScene()) return false;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	return reg.HasComponent<TagComponent>((Entity)id);
+}
+
+SLIME_EXPORT void __cdecl Entity_RemoveComponent_Tag(EntityId id)
+{
+	if (!Scene::GetActiveScene()) return;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (reg.HasComponent<TagComponent>((Entity)id))
+		reg.RemoveComponent<TagComponent>((Entity)id);
+}
+
+SLIME_EXPORT void __cdecl Entity_AddComponent_Relationship(EntityId id)
+{
+	if (!Scene::GetActiveScene()) return;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (!reg.HasComponent<RelationshipComponent>((Entity)id))
+		reg.AddComponent<RelationshipComponent>((Entity)id, RelationshipComponent());
+}
+
+SLIME_EXPORT bool __cdecl Entity_HasComponent_Relationship(EntityId id)
+{
+	if (!Scene::GetActiveScene()) return false;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	return reg.HasComponent<RelationshipComponent>((Entity)id);
+}
+
+SLIME_EXPORT void __cdecl Entity_RemoveComponent_Relationship(EntityId id)
+{
+	if (!Scene::GetActiveScene()) return;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (reg.HasComponent<RelationshipComponent>((Entity)id))
+		reg.RemoveComponent<RelationshipComponent>((Entity)id);
+}
+
+// -------------------------------------------------------------------------
+// NEW COMPONENTS
+// -------------------------------------------------------------------------
+
+// RigidBody
+SLIME_EXPORT void __cdecl Entity_AddComponent_RigidBody(EntityId id)
+{
+	if (!Scene::GetActiveScene()) return;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (!reg.HasComponent<RigidBodyComponent>((Entity)id))
+		reg.AddComponent<RigidBodyComponent>((Entity)id, RigidBodyComponent());
+}
+SLIME_EXPORT bool __cdecl Entity_HasComponent_RigidBody(EntityId id)
+{
+	if (!Scene::GetActiveScene()) return false;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	return reg.HasComponent<RigidBodyComponent>((Entity)id);
+}
+SLIME_EXPORT void __cdecl Entity_RemoveComponent_RigidBody(EntityId id)
+{
+	if (!Scene::GetActiveScene()) return;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (reg.HasComponent<RigidBodyComponent>((Entity)id))
+		reg.RemoveComponent<RigidBodyComponent>((Entity)id);
+}
+
+// BoxCollider
+SLIME_EXPORT void __cdecl Entity_AddComponent_BoxCollider(EntityId id)
+{
+	if (!Scene::GetActiveScene()) return;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (!reg.HasComponent<BoxColliderComponent>((Entity)id))
+		reg.AddComponent<BoxColliderComponent>((Entity)id, BoxColliderComponent());
+}
+SLIME_EXPORT bool __cdecl Entity_HasComponent_BoxCollider(EntityId id)
+{
+	if (!Scene::GetActiveScene()) return false;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	return reg.HasComponent<BoxColliderComponent>((Entity)id);
+}
+SLIME_EXPORT void __cdecl Entity_RemoveComponent_BoxCollider(EntityId id)
+{
+	if (!Scene::GetActiveScene()) return;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (reg.HasComponent<BoxColliderComponent>((Entity)id))
+		reg.RemoveComponent<BoxColliderComponent>((Entity)id);
+}
+
+// CircleCollider
+SLIME_EXPORT void __cdecl Entity_AddComponent_CircleCollider(EntityId id)
+{
+	if (!Scene::GetActiveScene()) return;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (!reg.HasComponent<CircleColliderComponent>((Entity)id))
+		reg.AddComponent<CircleColliderComponent>((Entity)id, CircleColliderComponent());
+}
+SLIME_EXPORT bool __cdecl Entity_HasComponent_CircleCollider(EntityId id)
+{
+	if (!Scene::GetActiveScene()) return false;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	return reg.HasComponent<CircleColliderComponent>((Entity)id);
+}
+SLIME_EXPORT void __cdecl Entity_RemoveComponent_CircleCollider(EntityId id)
+{
+	if (!Scene::GetActiveScene()) return;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (reg.HasComponent<CircleColliderComponent>((Entity)id))
+		reg.RemoveComponent<CircleColliderComponent>((Entity)id);
+}
+
+// Camera
+SLIME_EXPORT void __cdecl Entity_AddComponent_Camera(EntityId id)
+{
+	if (!Scene::GetActiveScene()) return;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (!reg.HasComponent<CameraComponent>((Entity)id))
+		reg.AddComponent<CameraComponent>((Entity)id, CameraComponent());
+}
+SLIME_EXPORT bool __cdecl Entity_HasComponent_Camera(EntityId id)
+{
+	if (!Scene::GetActiveScene()) return false;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	return reg.HasComponent<CameraComponent>((Entity)id);
+}
+SLIME_EXPORT void __cdecl Entity_RemoveComponent_Camera(EntityId id)
+{
+	if (!Scene::GetActiveScene()) return;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (reg.HasComponent<CameraComponent>((Entity)id))
+		reg.RemoveComponent<CameraComponent>((Entity)id);
+}
+
+// AudioSource
+SLIME_EXPORT void __cdecl Entity_AddComponent_AudioSource(EntityId id)
+{
+	if (!Scene::GetActiveScene()) return;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (!reg.HasComponent<AudioSourceComponent>((Entity)id))
+		reg.AddComponent<AudioSourceComponent>((Entity)id, AudioSourceComponent());
+}
+SLIME_EXPORT bool __cdecl Entity_HasComponent_AudioSource(EntityId id)
+{
+	if (!Scene::GetActiveScene()) return false;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	return reg.HasComponent<AudioSourceComponent>((Entity)id);
+}
+SLIME_EXPORT void __cdecl Entity_RemoveComponent_AudioSource(EntityId id)
+{
+	if (!Scene::GetActiveScene()) return;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (reg.HasComponent<AudioSourceComponent>((Entity)id))
+		reg.RemoveComponent<AudioSourceComponent>((Entity)id);
+}
+
+// -------------------------------------------------------------------------
+// PHYSICS ACCESSORS
+// -------------------------------------------------------------------------
+SLIME_EXPORT void __cdecl Entity_SetVelocity(EntityId id, float x, float y)
+{
+	if (!Scene::GetActiveScene()) return;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* rb = reg.TryGetComponent<RigidBodyComponent>((Entity)id))
+		rb->Velocity = { x, y };
+}
+
+SLIME_EXPORT void __cdecl Entity_GetVelocity(EntityId id, float* outX, float* outY)
+{
+	if (!Scene::GetActiveScene()) return;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* rb = reg.TryGetComponent<RigidBodyComponent>((Entity)id))
+	{
+		if (outX) *outX = rb->Velocity.x;
+		if (outY) *outY = rb->Velocity.y;
+	}
+}
+
+SLIME_EXPORT void __cdecl Entity_SetMass(EntityId id, float mass)
+{
+	if (!Scene::GetActiveScene()) return;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* rb = reg.TryGetComponent<RigidBodyComponent>((Entity)id))
+		rb->Mass = mass;
+}
+
+SLIME_EXPORT float __cdecl Entity_GetMass(EntityId id)
+{
+	if (!Scene::GetActiveScene()) return 1.0f;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* rb = reg.TryGetComponent<RigidBodyComponent>((Entity)id))
+		return rb->Mass;
+	return 1.0f;
+}
+
+SLIME_EXPORT void __cdecl Entity_SetKinematic(EntityId id, bool value)
+{
+	if (!Scene::GetActiveScene()) return;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* rb = reg.TryGetComponent<RigidBodyComponent>((Entity)id))
+		rb->IsKinematic = value;
+}
+
+SLIME_EXPORT bool __cdecl Entity_GetKinematic(EntityId id)
+{
+	if (!Scene::GetActiveScene()) return false;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* rb = reg.TryGetComponent<RigidBodyComponent>((Entity)id))
+		return rb->IsKinematic;
+	return false;
+}
+
+SLIME_EXPORT void __cdecl Entity_SetColliderSize(EntityId id, float w, float h)
+{
+	if (!Scene::GetActiveScene()) return;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* bc = reg.TryGetComponent<BoxColliderComponent>((Entity)id))
+		bc->Size = { w, h };
+}
+
+SLIME_EXPORT void __cdecl Entity_GetColliderSize(EntityId id, float* outW, float* outH)
+{
+	if (!Scene::GetActiveScene()) return;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* bc = reg.TryGetComponent<BoxColliderComponent>((Entity)id))
+	{
+		if (outW) *outW = bc->Size.x;
+		if (outH) *outH = bc->Size.y;
+	}
+}
+
+SLIME_EXPORT void __cdecl Entity_SetColliderOffset(EntityId id, float x, float y)
+{
+	if (!Scene::GetActiveScene()) return;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* bc = reg.TryGetComponent<BoxColliderComponent>((Entity)id))
+		bc->Offset = { x, y };
+}
+
+SLIME_EXPORT void __cdecl Entity_GetColliderOffset(EntityId id, float* outX, float* outY)
+{
+	if (!Scene::GetActiveScene()) return;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* bc = reg.TryGetComponent<BoxColliderComponent>((Entity)id))
+	{
+		if (outX) *outX = bc->Offset.x;
+		if (outY) *outY = bc->Offset.y;
+	}
+}
+
+SLIME_EXPORT void __cdecl Entity_SetTrigger(EntityId id, bool value)
+{
+	if (!Scene::GetActiveScene()) return;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* bc = reg.TryGetComponent<BoxColliderComponent>((Entity)id))
+		bc->IsTrigger = value;
+}
+
+SLIME_EXPORT bool __cdecl Entity_GetTrigger(EntityId id)
+{
+	if (!Scene::GetActiveScene()) return false;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* bc = reg.TryGetComponent<BoxColliderComponent>((Entity)id))
+		return bc->IsTrigger;
+	return false;
+}
+
+// -------------------------------------------------------------------------
+// CAMERA ACCESSORS
+// -------------------------------------------------------------------------
+SLIME_EXPORT void __cdecl Entity_SetCameraSize(EntityId id, float size)
+{
+	if (!Scene::GetActiveScene()) return;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* c = reg.TryGetComponent<CameraComponent>((Entity)id))
+		c->OrthographicSize = size;
+}
+
+SLIME_EXPORT float __cdecl Entity_GetCameraSize(EntityId id)
+{
+	if (!Scene::GetActiveScene()) return 10.0f;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* c = reg.TryGetComponent<CameraComponent>((Entity)id))
+		return c->OrthographicSize;
+	return 10.0f;
+}
+
+SLIME_EXPORT void __cdecl Entity_SetCameraZoom(EntityId id, float zoom)
+{
+	if (!Scene::GetActiveScene()) return;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* c = reg.TryGetComponent<CameraComponent>((Entity)id))
+		c->ZoomLevel = zoom;
+}
+
+SLIME_EXPORT float __cdecl Entity_GetCameraZoom(EntityId id)
+{
+	if (!Scene::GetActiveScene()) return 1.0f;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* c = reg.TryGetComponent<CameraComponent>((Entity)id))
+		return c->ZoomLevel;
+	return 1.0f;
+}
+
+SLIME_EXPORT void __cdecl Entity_SetPrimaryCamera(EntityId id, bool value)
+{
+	if (!Scene::GetActiveScene()) return;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* c = reg.TryGetComponent<CameraComponent>((Entity)id))
+		c->IsPrimary = value;
+}
+
+SLIME_EXPORT bool __cdecl Entity_GetPrimaryCamera(EntityId id)
+{
+	if (!Scene::GetActiveScene()) return false;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* c = reg.TryGetComponent<CameraComponent>((Entity)id))
+		return c->IsPrimary;
+	return false;
 }
 
 // -------------------------------------------------------------------------

@@ -9,7 +9,7 @@ public static class GameHost
     [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
     public static void Init()
     {
-        GameManager.LoadMode(new DudeGame());
+        GameManager.LoadMode(new SnakeGame());
     }
 
     // The C++ Engine calls this every frame

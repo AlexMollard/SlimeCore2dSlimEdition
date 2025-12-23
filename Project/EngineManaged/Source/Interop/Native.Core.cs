@@ -1,5 +1,7 @@
 using System.Runtime.InteropServices;
+using System.Security;
 
+[SuppressUnmanagedCodeSecurity]
 internal static partial class Native
 {
 	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]

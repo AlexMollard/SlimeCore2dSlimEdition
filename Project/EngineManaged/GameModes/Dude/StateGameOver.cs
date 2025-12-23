@@ -29,53 +29,53 @@ public class StateGameOver : IDudeState
 
 		// 1. Cleanup Gameplay
 		game.Dude.Destroy();
-		game.ScoreText.SetVisible(false);
-		game.LevelText.SetVisible(false);
-		game.XPBarBg.IsVisible = false;
-		game.XPBarFill.IsVisible = false;
+		game.ScoreText.IsVisible = false;
+		game.LevelText.IsVisible = false;
+		game.XPBarBg.GetComponent<SpriteComponent>().IsVisible = false;
+		game.XPBarFill.GetComponent<SpriteComponent>().IsVisible = false;
 
 		game.SpawnExplosion(game.DudePos, 50, 0.8f, 0.0f, 0.0f);
 		game.SpawnExplosion(game.DudePos, 20, 1.0f, 1.0f, 1.0f);
 
-		game.DarkOverlay.SetColor(0.2f, 0.0f, 0.0f);
-		game.DarkOverlay.IsVisible = true;
-		game.Bg.SetColor(0, 0, 0);
+		game.DarkOverlay.GetComponent<SpriteComponent>().Color = (0.2f, 0.0f, 0.0f);
+		game.DarkOverlay.GetComponent<SpriteComponent>().IsVisible = true;
+		game.Bg.GetComponent<SpriteComponent>().Color = (0, 0, 0);
 
 		// 2. UI Construction
 
 		_gameOverText = UIText.Create("WASTED", 1, 0, 6.0f);
-		_gameOverText.SetColor(1, 0, 0);
-		_gameOverText.SetAnchor(0.5f, 0.5f);
+		_gameOverText.Color = (1, 0, 0);
+		_gameOverText.Anchor = (0.5f, 0.5f);
 
 		// Panel Background (14x10 to fit button comfortably)
 		_panelBorder = SceneFactory.CreateQuad(0, -15, 14.5f, 10.5f, 0.8f, 0f, 0f, layer: 91);
-		_panelBorder.SetAnchor(0.5f, 0.5f);
+		_panelBorder.GetComponent<TransformComponent>().Anchor = (0.5f, 0.5f);
 
 		_panelBg = SceneFactory.CreateQuad(0, -15, panelBGWidth, 10.0f, 0.1f, 0.1f, 0.1f, layer: 92);
-		_panelBg.SetAnchor(0.5f, 0.5f);
+		_panelBg.GetComponent<TransformComponent>().Anchor = (0.5f, 0.5f);
 
 		// Stats Text - Positioned relative to panel center (0, -15)
 		_scoreLabel = UIText.Create($"SCORE: {(int)game.Score}", 1, 0, -15 + 3.0f);
-		_scoreLabel.SetAnchor(0.5f, 0.5f);
-		_scoreLabel.SetColor(1, 1, 1);
-		_scoreLabel.SetLayer(95);
+		_scoreLabel.Anchor = (0.5f, 0.5f);
+		_scoreLabel.Color = (1, 1, 1);
+		_scoreLabel.Layer = 95;
 
 		_levelLabel = UIText.Create($"LEVEL REACHED: {game.Level}", 1, 0, -15 + 1.0f);
-		_levelLabel.SetAnchor(0.5f, 0.5f);
-		_levelLabel.SetColor(0.2f, 1.0f, 1.0f);
-		_levelLabel.SetLayer(95);
+		_levelLabel.Anchor = (0.5f, 0.5f);
+		_levelLabel.Color = (0.2f, 1.0f, 1.0f);
+		_levelLabel.Layer = 95;
 
 		_timeLabel = UIText.Create($"TIME ALIVE: {game.TimeAlive:F1}s", 1, 0, -15 - 0.5f);
-		_timeLabel.SetAnchor(0.5f, 0.5f);
-		_timeLabel.SetColor(0.7f, 0.7f, 0.7f);
-		_timeLabel.SetLayer(95);
+		_timeLabel.Anchor = (0.5f, 0.5f);
+		_timeLabel.Color = (0.7f, 0.7f, 0.7f);
+		_timeLabel.Layer = 95;
 
 		// --- STYLED RETRY BUTTON ---
 		// Bright Cyan Background
 		_retryBtn = UIButton.Create("TRY AGAIN", 0, -15, 10.0f, 2.0f, 0.0f, 0.8f, 1.0f, layer: 96, fontSize: 1);
 
 		// Set Text to Black for contrast
-		_retryBtn.Label.SetColor(0.1f, 0.1f, 0.1f);
+		_retryBtn.Label.Color = (0.1f, 0.1f, 0.1f);
 
 		_retryBtn.Clicked += () =>
 		{
@@ -94,7 +94,7 @@ public class StateGameOver : IDudeState
 		_timeLabel.Destroy();
 		_retryBtn.Destroy();
 
-		if (game.DarkOverlay.IsAlive) game.DarkOverlay.IsVisible = false;
+		if (game.DarkOverlay.IsAlive) game.DarkOverlay.GetComponent<SpriteComponent>().IsVisible = false;
 
 		foreach (var h in game.Haters) h.Ent.Destroy(); game.Haters.Clear();
 		foreach (var c in game.Collectables) c.Ent.Destroy(); game.Collectables.Clear();
@@ -113,19 +113,19 @@ public class StateGameOver : IDudeState
 			(float)(game.Rng.NextDouble() - 0.5)
 		) * (game.ShakeAmount * 5.0f);
 
-		_gameOverText.SetPosition(shake.X, 6.0f + shake.Y);
+		_gameOverText.Position = (shake.X, 6.0f + shake.Y);
 
 		// 2. Animate Panel Slide Up
 		float slideT = MathF.Min(1.0f, _animTimer * 1.5f);
 		float panelY = Ease.Lerp(-18.0f, -1.0f, Ease.OutBack(slideT));
 
-		_panelBg.SetPosition(0, panelY);
-		_panelBorder.SetPosition(0, panelY);
+		_panelBg.GetComponent<TransformComponent>().Position = (0, panelY);
+		_panelBorder.GetComponent<TransformComponent>().Position = (0, panelY);
 
 		// Layout Elements inside Panel
-		_scoreLabel.SetPosition(0, panelY + 3.0f);
-		_levelLabel.SetPosition(0, panelY + 1.0f);
-		_timeLabel.SetPosition(0, panelY - 0.5f);
+		_scoreLabel.Position = (0, panelY + 3.0f);
+		_levelLabel.Position = (0, panelY + 1.0f);
+		_timeLabel.Position = (0, panelY - 0.5f);
 
 		// Animate Button WITH the panel
 		_retryBtn.SetPosition(0, panelY - 3.5f);
@@ -142,9 +142,9 @@ public class StateGameOver : IDudeState
 				p.Pos += p.Vel * dt;
 				p.Vel *= 0.9f;
 
-				p.Ent.SetPosition(p.Pos.X, p.Pos.Y);
+				p.Ent.GetComponent<TransformComponent>().Position = (p.Pos.X, p.Pos.Y);
 				float s = p.InitSize * p.Life;
-				p.Ent.SetSize(s, s);
+				p.Ent.GetComponent<TransformComponent>().Scale = (s, s);
 			}
 		}
 	}

@@ -90,8 +90,10 @@
     <ClCompile Include="Engine\Scripting\EngineExports.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-
     <ClCompile Include="Engine\Entities\Quad.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Scene\Components.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -168,8 +170,13 @@
     <ClInclude Include="Engine\Scripting\EngineExports.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-
     <ClInclude Include="Engine\Entities\Quad.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Scene\Components.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Scene\Registry.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

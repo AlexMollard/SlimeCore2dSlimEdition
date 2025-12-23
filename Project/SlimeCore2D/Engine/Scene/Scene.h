@@ -3,12 +3,12 @@
 #include <vector>
 #include <unordered_map>
 #include <string>
-#include "Entities/GameObject.h"
+#include "Registry.h"
 #include "Core/Camera.h"
 #include "Rendering/Text.h"
 
 // Stable handle type for scripting/interop
-using ObjectId = std::uint64_t;
+using ObjectId = Entity;
 static constexpr ObjectId InvalidObjectId = 0;
 
 struct PersistentUIElement
@@ -39,13 +39,15 @@ public:
 	static Scene* GetActiveScene();
 
 	// --- Object Management ---
+	ObjectId CreateEntity();
 	ObjectId CreateGameObject(glm::vec3 pos, glm::vec2 size, glm::vec3 color);
 	ObjectId CreateQuad(glm::vec3 pos, glm::vec2 size, glm::vec3 color);
 	ObjectId CreateQuad(glm::vec3 pos, glm::vec2 size, Texture* tex);
 	
 	void DestroyObject(ObjectId id);
-	GameObject* GetGameObject(ObjectId id);
 	bool IsAlive(ObjectId id) const;
+
+	Registry& GetRegistry() { return m_Registry; }
 
 	// --- UI Management ---
 	ObjectId CreateUIElement(bool isText);
@@ -53,27 +55,21 @@ public:
 	void RenderUI();
 
 	// --- Core Loop ---
-	void AddGameObject(GameObject* gameObject);
-	void RemoveGameObject(GameObject* gameObject);
-
 	void Update(float deltaTime);
 	void Render(Camera& camera);
 
 	// --- Stats ---
-	int GetObjectCount() const { return (int)m_ObjectsById.size(); }
+	int GetObjectCount() const { return (int)m_ActiveEntities.size(); }
 	ObjectId GetIdAtIndex(int index) const;
 
 private:
-	void RenderNode(GameObject* node);
-
 	static Scene* s_ActiveScene;
 
-	std::vector<GameObject*> m_RootObjects;
+	Registry m_Registry;
+	std::vector<Entity> m_ActiveEntities; // Maintain list for index access and cleanup
 	
 	// ID Management
-	ObjectId m_NextId = 1;
-	std::unordered_map<ObjectId, GameObject*> m_ObjectsById;
-	std::vector<GameObject*> m_AllObjects; // For index-based access if needed
+	ObjectId m_NextUIId = 100000; // Start UI IDs high to avoid collision with Entity IDs for now
 	std::unordered_map<ObjectId, PersistentUIElement> m_UIElements;
 };
 

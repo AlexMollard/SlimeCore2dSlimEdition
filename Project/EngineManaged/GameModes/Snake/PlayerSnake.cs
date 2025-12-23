@@ -50,20 +50,20 @@ public record PlayerSnake
     public void Initialize(float cell_size)
     {
         Head = SceneFactory.CreateQuad(0, 0, cell_size * 1.15f, cell_size * 1.15f, COL_SNAKE.X, COL_SNAKE.Y, COL_SNAKE.Z, layer: 5);
-        Head.SetAnchor(0.5f, 0.5f);
-        Head.IsVisible = true;
+        Head.GetComponent<TransformComponent>().Anchor = (0.5f, 0.5f);
+        Head.GetComponent<SpriteComponent>().IsVisible = true;
 
         Eyes[0] = SceneFactory.CreateQuad(0, 0, 0.08f, 0.08f, 0f, 0f, 0f, layer: 10);
-        Eyes[0].SetAnchor(0.5f, 0.5f);
-        Eyes[0].IsVisible = true;
+        Eyes[0].GetComponent<TransformComponent>().Anchor = (0.5f, 0.5f);
+        Eyes[0].GetComponent<SpriteComponent>().IsVisible = true;
 
         Eyes[1] = SceneFactory.CreateQuad(0, 0, 0.08f, 0.08f, 0f, 0f, 0f, layer: 10);
-        Eyes[1].SetAnchor(0.5f, 0.5f);
-        Eyes[1].IsVisible = true;
+        Eyes[1].GetComponent<TransformComponent>().Anchor = (0.5f, 0.5f);
+        Eyes[1].GetComponent<SpriteComponent>().IsVisible = true;
 
         Compass = SceneFactory.CreateQuad(0, 0, 0.1f, 0.1f, 1f, 1f, 0f, layer: 20);
-        Compass.SetAnchor(0.5f, 0.5f);
-        Compass.IsVisible = true;
+        Compass.GetComponent<TransformComponent>().Anchor = (0.5f, 0.5f);
+        Compass.GetComponent<SpriteComponent>().IsVisible = true;
     }
 
     public void Destroy()

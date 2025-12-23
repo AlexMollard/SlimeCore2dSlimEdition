@@ -70,6 +70,21 @@ public class DudeGame : IGameMode
 
 	internal Random Rng = new Random();
 
+	// Helper to create entities using the new ECS system
+	internal Entity CreateQuadEntity(float x, float y, float w, float h, float r, float g, float b, int layer)
+	{
+		var e = Entity.Create();
+		e.AddComponent<TransformComponent>();
+		e.AddComponent<SpriteComponent>();
+		e.AddComponent<AnimationComponent>();
+		
+		e.GetComponent<TransformComponent>().Position = (x, y);
+		e.GetComponent<TransformComponent>().Scale = (w, h);
+		e.GetComponent<SpriteComponent>().Color = (r, g, b);
+		e.GetComponent<TransformComponent>().Layer = layer;
+		return e;
+	}
+
 	public void Init()
 	{
 		// 1. Initialize Content Registry
@@ -89,31 +104,47 @@ public class DudeGame : IGameMode
 		UpgradeCounts.Clear();
 
 		// 3. Create Entities
-		Bg = SceneFactory.CreateQuad(0, 0, 100, 100, 0.05f, 0.05f, 0.1f, layer: -10);
-		Bg.SetAnchor(0.5f, 0.5f);
+		Bg = CreateQuadEntity(0, 0, 100, 100, 0.05f, 0.05f, 0.1f, -10);
+		Bg.GetComponent<TransformComponent>().Anchor = (0.5f, 0.5f);
 
-		DarkOverlay = SceneFactory.CreateQuad(0, 0, 100, 100, 0f, 0f, 0f, layer: 90);
-		DarkOverlay.SetAnchor(0.5f, 0.5f);
-		DarkOverlay.IsVisible = false;
+		DarkOverlay = CreateQuadEntity(0, 0, 100, 100, 0f, 0f, 0f, 90);
+		DarkOverlay.GetComponent<TransformComponent>().Anchor = (0.5f, 0.5f);
+		DarkOverlay.GetComponent<SpriteComponent>().IsVisible = false;
 
-		CardBgBackdrop = SceneFactory.CreateQuad(0, 0, 100, 100, 0.1f, 0.1f, 0.1f, layer: 91);
-		CardBgBackdrop.SetAnchor(0.5f, 0.5f);
-		CardBgBackdrop.IsVisible = false;
+		CardBgBackdrop = CreateQuadEntity(0, 0, 100, 100, 0.1f, 0.1f, 0.1f, 91);
+		CardBgBackdrop.GetComponent<TransformComponent>().Anchor = (0.5f, 0.5f);
+		CardBgBackdrop.GetComponent<SpriteComponent>().IsVisible = false;
 
-		Dude = SceneFactory.CreateQuad(0, 0, 0.9f, 0.9f, 0.2f, 1.0f, 0.2f, layer: 20);
-		Dude.SetAnchor(0.5f, 0.5f);
+		// Create Dude with full ECS components
+		Dude = Entity.Create();
+		Dude.AddComponent<TransformComponent>();
+		Dude.AddComponent<SpriteComponent>();
+		Dude.AddComponent<AnimationComponent>();
+		Dude.AddComponent<RigidBodyComponent>();
+		Dude.AddComponent<BoxColliderComponent>();
+		
+		Dude.GetComponent<TransformComponent>().Position = (0, 0);
+		Dude.GetComponent<TransformComponent>().Scale = (0.9f, 0.9f);
+		Dude.GetComponent<SpriteComponent>().Color = (0.2f, 1.0f, 0.2f);
+		Dude.GetComponent<TransformComponent>().Layer = 20;
+		Dude.GetComponent<TransformComponent>().Anchor = (0.5f, 0.5f);
+		
+		// Init Physics Props
+		Dude.GetComponent<RigidBodyComponent>().Mass = 1.0f;
+		Dude.GetComponent<RigidBodyComponent>().IsKinematic = false;
+		Dude.GetComponent<BoxColliderComponent>().Size = (0.9f, 0.9f);
 
 		// XP Bar
-		XPBarBg = SceneFactory.CreateQuad(0, -7.0f, 28.0f, 0.6f, 0.2f, 0.2f, 0.2f, layer: 80);
-		XPBarBg.SetAnchor(0.5f, 0.5f);
-		XPBarFill = SceneFactory.CreateQuad(0.0f, -7.0f, 0f, 0.6f, 0.0f, 0.8f, 1.0f, layer: 81);
-		XPBarFill.SetAnchor(0.0f, 0.5f);
+		XPBarBg = CreateQuadEntity(0, -7.0f, 28.0f, 0.6f, 0.2f, 0.2f, 0.2f, 80);
+		XPBarBg.GetComponent<TransformComponent>().Anchor = (0.5f, 0.5f);
+		XPBarFill = CreateQuadEntity(0.0f, -7.0f, 0f, 0.6f, 0.0f, 0.8f, 1.0f, 81);
+		XPBarFill.GetComponent<TransformComponent>().Anchor = (0.0f, 0.5f);
 
 		// UI
 		ScoreText = UIText.Create("0", 1, -13.5f, 7.5f);
-		ScoreText.SetAnchor(0.0f, 1.0f); // Top-left anchor
+		ScoreText.Anchor = (0.0f, 1.0f); // Top-left anchor
 		LevelText = UIText.Create("LVL 1", 1, -13.0f, -6.25f);
-		LevelText.SetAnchor(0.0f, 0.0f); // Bottom-left anchor
+		LevelText.Anchor = (0.0f, 0.0f); // Bottom-left anchor
 
 		// 4. Start Gameplay
 		ChangeState(new StatePlaying());
@@ -164,8 +195,8 @@ public class DudeGame : IGameMode
 
 			Vec2 vel = new Vec2(MathF.Cos(angle), MathF.Sin(angle)) * speed;
 
-			var ent = SceneFactory.CreateQuad(pos.X, pos.Y, size, size, r, g, b, layer: 30);
-			ent.SetAnchor(0.5f, 0.5f);
+			var ent = CreateQuadEntity(pos.X, pos.Y, size, size, r, g, b, 30);
+			ent.GetComponent<TransformComponent>().Anchor = (0.5f, 0.5f);
 			Particles.Add(new Particle { Ent = ent, Pos = pos, Vel = vel, Life = 1.0f, InitSize = size });
 		}
 	}
