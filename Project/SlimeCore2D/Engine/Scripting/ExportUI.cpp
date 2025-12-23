@@ -30,6 +30,23 @@ SLIME_EXPORT EntityId __cdecl UI_CreateText(const char* text, int fontSize, floa
 	return (EntityId) id;
 }
 
+SLIME_EXPORT EntityId __cdecl UI_CreateImage(float x, float y, float w, float h)
+{
+	if (!Scene::GetActiveScene())
+		return 0;
+
+	ObjectId id = Scene::GetActiveScene()->CreateUIElement(false);
+	PersistentUIElement* el = Scene::GetActiveScene()->GetUIElement(id);
+	if (!el)
+		return 0;
+
+	el->Position = { x, y };
+	el->Scale = { w, h };
+	el->IsText = false;
+
+	return (EntityId) id;
+}
+
 SLIME_EXPORT void __cdecl UI_Destroy(EntityId id)
 {
 	if (!Scene::GetActiveScene() || id == 0)
@@ -65,6 +82,27 @@ SLIME_EXPORT void __cdecl UI_GetPosition(EntityId id, float* outX, float* outY)
 	{
 		if (outX) *outX = el->Position.x;
 		if (outY) *outY = el->Position.y;
+	}
+}
+
+SLIME_EXPORT void __cdecl UI_SetSize(EntityId id, float w, float h)
+{
+	if (!Scene::GetActiveScene() || id == 0)
+		return;
+	if (PersistentUIElement* el = Scene::GetActiveScene()->GetUIElement((ObjectId) id))
+	{
+		el->Scale = { w, h };
+	}
+}
+
+SLIME_EXPORT void __cdecl UI_GetSize(EntityId id, float* outW, float* outH)
+{
+	if (!Scene::GetActiveScene() || id == 0 || (!outW && !outH))
+		return;
+	if (PersistentUIElement* el = Scene::GetActiveScene()->GetUIElement((ObjectId) id))
+	{
+		if (outW) *outW = el->Scale.x;
+		if (outH) *outH = el->Scale.y;
 	}
 }
 

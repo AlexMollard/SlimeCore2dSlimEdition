@@ -3,6 +3,7 @@ using EngineManaged;
 using EngineManaged.Scene;
 using EngineManaged.UI;
 using EngineManaged.Numeric;
+using EngineManaged.Rendering;
 
 namespace GameModes.Dude;
 
@@ -19,10 +20,8 @@ public class StatePlaying : IDudeState
 
 		game.ScoreText.IsVisible = true;
 		game.LevelText.IsVisible = true;
-		var xpBgSprite = game.XPBarBg.GetComponent<SpriteComponent>();
-		xpBgSprite.IsVisible = true;
-		var xpFillSprite = game.XPBarFill.GetComponent<SpriteComponent>();
-		xpFillSprite.IsVisible = true;
+		game.XPBarBg.IsVisible = true;
+		game.XPBarFill.IsVisible = true;
 
 		_controlsText = UIText.Create("WASD Move | SPACE Dash", 1, 0, -8.0f);
 		_controlsText.Anchor = (0.5f, 0.5f); // Center anchor
@@ -42,6 +41,7 @@ public class StatePlaying : IDudeState
 		UpdateDiscoLights(game, dt);
 		UpdateShake(game, dt);
 		UpdateTrails(game, dt);
+		UpdateAmbientParticles(game, dt);
 
 		game.TimeAlive += dt;
 		game.Score += dt * 10;
@@ -56,14 +56,30 @@ public class StatePlaying : IDudeState
 		HandleGems(game, dt);
 	}
 
+	private void UpdateAmbientParticles(DudeGame game, float dt)
+	{
+		if (game.Rng.NextDouble() < 0.1)
+		{
+			ParticleProps props = new ParticleProps();
+			props.Position = new Vec2((float)(game.Rng.NextDouble() * 30 - 15), (float)(game.Rng.NextDouble() * 20 - 10));
+			props.Velocity = new Vec2(0, 0.5f);
+			props.VelocityVariation = new Vec2(0.2f, 0.2f);
+			props.ColorBegin = new Color(1f, 1f, 1f, 0.2f);
+			props.ColorEnd = new Color(1f, 1f, 1f, 0.0f);
+			props.SizeBegin = 0.1f;
+			props.SizeEnd = 0.0f;
+			props.LifeTime = 3.0f;
+			game.ParticleSys.Emit(props);
+		}
+	}
+
 	private void UpdateXPBar(DudeGame game, float dt)
 	{
 		float targetWidth = (game.XP / game.XPToNextLevel) * 28.0f;
 		if (targetWidth > 28) targetWidth = 28;
-		var xpTransform = game.XPBarFill.GetComponent<TransformComponent>();
-		var (curW, curH) = xpTransform.Scale;
+		var (curW, curH) = game.XPBarFill.Size;
 		float newW = Ease.Lerp(curW, targetWidth, 5.0f * dt);
-		xpTransform.Scale = (newW, 0.6f);
+		game.XPBarFill.Size = (newW, 0.6f);
 	}
 
 	private void UpdateTimers(DudeGame game, float dt)
@@ -103,17 +119,14 @@ public class StatePlaying : IDudeState
 
 		if (input.LengthSquared() > 0) input = input.Normalized();
 
-		// Apply Stats: Acceleration * Multiplier
-		game.DudeVel += input * (game.Stats.Acceleration * game.Stats.AccelMult * dt);
+		// Physics Movement
+		var rb = game.Dude.GetComponent<RigidBodyComponent>();
+		var (vx, vy) = rb.Velocity;
+		Vec2 currentVel = new Vec2(vx, vy);
 
-		// Apply Drag
-		float dragPower = MathF.Pow(game.Stats.Drag, dt * 60.0f);
-		game.DudeVel *= dragPower;
-
-		// Clamp Max Speed
-		float maxSpd = game.Stats.MoveSpeed * game.Stats.SpeedMult;
-		if (game.DudeVel.LengthSquared() > maxSpd * maxSpd)
-			game.DudeVel = game.DudeVel.Normalized() * maxSpd;
+		// Apply Acceleration
+		Vec2 targetVel = input * (game.Stats.MoveSpeed * game.Stats.SpeedMult);
+		Vec2 newVel = Vec2.Lerp(currentVel, targetVel, 10.0f * dt); // Smooth acceleration
 
 		if (Input.GetKeyDown(Keycode.SPACE) && game.DashTimer <= 0)
 		{
@@ -122,37 +135,30 @@ public class StatePlaying : IDudeState
 
 			// Use vector arithmetic
 			Vec2 dashDir = input.LengthSquared() > 0 ? input : new Vec2(1, 0);
-			game.DudeVel += dashDir * 40.0f;
+			newVel += dashDir * 40.0f;
 
 			game.DashTimer = game.Stats.DashCooldown;
 			game.ShakeAmount = 0.3f;
 			SpawnTrail(game, 1.0f);
 		}
+
+		rb.Velocity = (newVel.X, newVel.Y);
+		game.DudeVel = newVel; // Sync for other logic
 	}
 
 	private void MoveDude(DudeGame game, float dt)
 	{
-		// Vector integration
-		game.DudePos += game.DudeVel * dt;
+		// Sync Position from Physics Engine
+		var t = game.Dude.GetComponent<TransformComponent>();
+		var (px, py) = t.Position;
+		game.DudePos = new Vec2(px, py);
 
-		// Bounds checking (Manual AABB logic)
-		bool hitWall = false;
-		if (game.DudePos.X > 14) { game.DudePos.X = 14; game.DudeVel.X *= -0.8f; hitWall = true; }
-		if (game.DudePos.X < -14) { game.DudePos.X = -14; game.DudeVel.X *= -0.8f; hitWall = true; }
-		if (game.DudePos.Y > 9) { game.DudePos.Y = 9; game.DudeVel.Y *= -0.8f; hitWall = true; }
-		if (game.DudePos.Y < -9) { game.DudePos.Y = -9; game.DudeVel.Y *= -0.8f; hitWall = true; }
-
-		if (hitWall) game.ShakeAmount += 0.1f;
-
-		// Vectorized Shake Logic
-		Vec2 shakeOffset = new Vec2(
-			(float)(game.Rng.NextDouble() - 0.5),
-			(float)(game.Rng.NextDouble() - 0.5)
-		) * game.ShakeAmount;
-
-		Vec2 finalPos = game.DudePos + shakeOffset;
-		var dudeTransform = game.Dude.GetComponent<TransformComponent>();
-		dudeTransform.Position = (finalPos.X, finalPos.Y);
+		// Rotate towards movement direction
+		if (game.DudeVel.LengthSquared() > 0.1f)
+		{
+			float angle = MathF.Atan2(game.DudeVel.Y, game.DudeVel.X) * (180.0f / MathF.PI);
+			t.Rotation = angle;
+		}
 
 		// Squash & Stretch
 		float speed = game.DudeVel.Length();
@@ -161,11 +167,20 @@ public class StatePlaying : IDudeState
 		float baseScale = 0.9f * game.Stats.PlayerSize;
 
 		if (MathF.Abs(game.DudeVel.X) > MathF.Abs(game.DudeVel.Y))
-			dudeTransform.Scale = (stretch * baseScale, squash * baseScale);
+			t.Scale = (stretch * baseScale, squash * baseScale);
 		else
-			dudeTransform.Scale = (squash * baseScale, stretch * baseScale);
+			t.Scale = (squash * baseScale, stretch * baseScale);
 
-		if (speed > 15.0f) SpawnTrail(game, 0.4f);
+		// Trail Logic
+		if (speed > 15.0f)
+		{
+			game.TrailTimer -= dt;
+			if (game.TrailTimer <= 0)
+			{
+				SpawnTrail(game, 0.6f);
+				game.TrailTimer = 0.05f; // Spawn every 50ms
+			}
+		}
 	}
 
 	private void HandleHaters(DudeGame game, float dt)
@@ -213,11 +228,8 @@ public class StatePlaying : IDudeState
 			float speed = (me.Type == HaterType.Chonker ? 2.0f : 4.5f) * timeScale;
 			me.Pos += force.Normalized() * speed * dt;
 
-			// Shake logic using vectors
-			Vec2 shake = new Vec2((float)(game.Rng.NextDouble() - 0.5f), (float)(game.Rng.NextDouble() - 0.5f));
-			Vec2 drawPos = me.Pos + shake * (game.ShakeAmount * 0.5f);
 			var haterTransform = me.Ent.GetComponent<TransformComponent>();
-			haterTransform.Position = (drawPos.X, drawPos.Y);
+			haterTransform.Position = (me.Pos.X, me.Pos.Y);
 
 			float pulseSpeed = me.Type == HaterType.Chonker ? 5.0f : 15.0f;
 			float baseSize = me.Type == HaterType.Chonker ? 2.2f : 0.8f;
@@ -225,7 +237,8 @@ public class StatePlaying : IDudeState
 			haterTransform.Scale = (pulse, pulse);
 
 			// Distance check with Vector method
-			float killDist = (me.Type == HaterType.Chonker ? 1.5f : 0.7f) * game.Stats.PlayerSize;
+			// Increased kill distance slightly to account for physics collision radius preventing overlap
+			float killDist = (me.Type == HaterType.Chonker ? 1.5f : 0.7f) * game.Stats.PlayerSize * 1.3f;
 
 			if (Vec2.Distance(game.DudePos, me.Pos) < killDist)
 			{
@@ -316,8 +329,7 @@ public class StatePlaying : IDudeState
 			game.Level++;
 			game.XPToNextLevel *= 1.35f;
 			game.LevelText.Text = $"LVL {game.Level}";
-			var xpTransform = game.XPBarFill.GetComponent<TransformComponent>();
-			xpTransform.Scale = (28.0f, 0.6f);
+			game.XPBarFill.Size = (28.0f, 0.6f);
 			game.ChangeState(new StateLevelUp());
 		}
 	}
@@ -326,11 +338,30 @@ public class StatePlaying : IDudeState
 
 	private void SpawnTrail(DudeGame game, float alphaStart)
 	{
-		var ghost = game.CreateQuadEntity(game.DudePos.X, game.DudePos.Y, 0.9f, 0.9f, 0.2f, 1.0f, 0.2f, 15);
+		// Get Player Visuals
+		var playerSprite = game.Dude.GetComponent<SpriteComponent>();
+		var (r, g, b) = playerSprite.Color;
+
+		var ghost = game.CreateSpriteEntity(game.DudePos.X, game.DudePos.Y, 0.9f, 0.9f, r, g, b, 15, game.TexPlayer);
 		var ghostTransform = ghost.GetComponent<TransformComponent>();
 		ghostTransform.Anchor = (0.5f, 0.5f);
-		var (w, h) = game.Dude.GetComponent<TransformComponent>().Scale;
-		ghostTransform.Scale = (w, h);
+		
+		// Copy Rotation & Scale
+		var playerTransform = game.Dude.GetComponent<TransformComponent>();
+		ghostTransform.Rotation = playerTransform.Rotation;
+		ghostTransform.Scale = playerTransform.Scale;
+
+		// Set Initial Alpha
+		var ghostSprite = ghost.GetComponent<SpriteComponent>();
+		ghostSprite.Alpha = alphaStart;
+
+		// Copy Animation Frame (if any)
+		var playerAnim = game.Dude.GetComponent<AnimationComponent>();
+		var ghostAnim = ghost.GetComponent<AnimationComponent>();
+		ghostAnim.Frame = playerAnim.Frame;
+		ghostAnim.SpriteWidth = playerAnim.SpriteWidth;
+		
+		var (w, h) = playerTransform.Scale;
 		game.Trails.Add(new GhostTrail { Ent = ghost, Alpha = alphaStart, InitW = w, InitH = h });
 	}
 
@@ -343,7 +374,16 @@ public class StatePlaying : IDudeState
 		float size = type == HaterType.Chonker ? 2.2f : 0.8f;
 		float r = type == HaterType.Chonker ? 0.6f : 1.0f;
 		float b = type == HaterType.Chonker ? 0.8f : 0.2f;
-		var ent = game.CreateQuadEntity(pos.X, pos.Y, size, size, r, 0f, b, 5);
+		var ent = game.CreateSpriteEntity(pos.X, pos.Y, size, size, r, 0f, b, 5, game.TexEnemy);
+		
+		// Add Physics (Kinematic so we can control position manually but still collide with player)
+		ent.AddComponent<RigidBodyComponent>();
+		ent.AddComponent<BoxColliderComponent>();
+		var rb = ent.GetComponent<RigidBodyComponent>();
+		rb.IsKinematic = true;
+		var bc = ent.GetComponent<BoxColliderComponent>();
+		bc.Size = (size * 0.8f, size * 0.8f); // Slightly smaller hitbox
+
 		var haterTransform = ent.GetComponent<TransformComponent>();
 		haterTransform.Anchor = (0.5f, 0.5f);
 		game.Haters.Add(new Hater { Ent = ent, Pos = pos, Type = type });
@@ -352,7 +392,7 @@ public class StatePlaying : IDudeState
 	private void SpawnCollectable(DudeGame game, PowerupDef def)
 	{
 		Vec2 pos = new Vec2((game.Rng.NextSingle() * 24) - 12, (game.Rng.NextSingle() * 14) - 7);
-		var ent = game.CreateQuadEntity(pos.X, pos.Y, 0.6f, 0.6f, def.R, def.G, def.B, 8);
+		var ent = game.CreateSpriteEntity(pos.X, pos.Y, 0.6f, 0.6f, def.R, def.G, def.B, 8, game.TexParticle);
 		var collectableTransform = ent.GetComponent<TransformComponent>();
 		collectableTransform.Anchor = (0.5f, 0.5f);
 		game.Collectables.Add(new Collectable { Ent = ent, Pos = pos, Definition = def });
@@ -364,7 +404,7 @@ public class StatePlaying : IDudeState
 		float g = value > 10 ? 0.2f : 1.0f;
 		float b = value > 10 ? 1.0f : 0.8f;
 		float size = value > 10 ? 0.45f : 0.3f;
-		var ent = game.CreateQuadEntity(pos.X, pos.Y, size, size, r, g, b, 9);
+		var ent = game.CreateSpriteEntity(pos.X, pos.Y, size, size, r, g, b, 9, game.TexParticle);
 		var gemTransform = ent.GetComponent<TransformComponent>();
 		gemTransform.Anchor = (0.5f, 0.5f);
 		game.Gems.Add(new XPGem { Ent = ent, Pos = pos, Value = value });
@@ -377,14 +417,20 @@ public class StatePlaying : IDudeState
 		for (int i = game.Trails.Count - 1; i >= 0; i--)
 		{
 			var t = game.Trails[i];
-			t.Alpha -= dt * 3.0f;
+			t.Alpha -= dt * 2.0f; // Slower fade for smoother look
 			if (t.Alpha <= 0) { t.Ent.Destroy(); game.Trails.RemoveAt(i); }
 			else
 			{
 				var sprite = t.Ent.GetComponent<SpriteComponent>();
-				sprite.Color = (0.2f * t.Alpha, 1.0f * t.Alpha, 0.2f * t.Alpha);
+				sprite.Alpha = t.Alpha;
+				
+				// Optional: Tint it slightly green/blue as it fades?
+				// sprite.Color = (0.5f, 1.0f, 0.5f); 
+
+				// Expand slightly as it dissipates (smoke effect)
 				var transform = t.Ent.GetComponent<TransformComponent>();
-				transform.Scale = (t.InitW * t.Alpha, t.InitH * t.Alpha);
+				float expansion = 1.0f + (1.0f - t.Alpha) * 0.2f;
+				transform.Scale = (t.InitW * expansion, t.InitH * expansion);
 			}
 		}
 	}
@@ -392,6 +438,22 @@ public class StatePlaying : IDudeState
 	private void UpdateShake(DudeGame game, float dt)
 	{
 		if (game.ShakeAmount > 0) { game.ShakeAmount -= dt * 2.0f; if (game.ShakeAmount < 0) game.ShakeAmount = 0; }
+
+		// Apply shake to Camera
+		if (game.Camera.IsAlive)
+		{
+			var t = game.Camera.GetComponent<TransformComponent>();
+			if (game.ShakeAmount > 0)
+			{
+				float shakeX = (float)(game.Rng.NextDouble() - 0.5) * game.ShakeAmount;
+				float shakeY = (float)(game.Rng.NextDouble() - 0.5) * game.ShakeAmount;
+				t.Position = (shakeX, shakeY);
+			}
+			else
+			{
+				t.Position = (0, 0);
+			}
+		}
 	}
 
 	private void UpdateDiscoLights(DudeGame game, float dt)

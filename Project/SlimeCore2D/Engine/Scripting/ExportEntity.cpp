@@ -97,6 +97,27 @@ SLIME_EXPORT void __cdecl Entity_GetColor(EntityId id, float* outR, float* outG,
 	}
 }
 
+SLIME_EXPORT void __cdecl Entity_SetAlpha(EntityId id, float a)
+{
+	if (!Scene::GetActiveScene()) return;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* s = reg.TryGetComponent<SpriteComponent>((Entity)id))
+	{
+		s->Color.a = a;
+	}
+}
+
+SLIME_EXPORT float __cdecl Entity_GetAlpha(EntityId id)
+{
+	if (!Scene::GetActiveScene()) return 1.0f;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* s = reg.TryGetComponent<SpriteComponent>((Entity)id))
+	{
+		return s->Color.a;
+	}
+	return 1.0f;
+}
+
 SLIME_EXPORT void __cdecl Entity_SetLayer(EntityId id, int layer)
 {
 	if (!Scene::GetActiveScene()) return;
@@ -609,6 +630,23 @@ SLIME_EXPORT bool __cdecl Entity_GetKinematic(EntityId id)
 	auto& reg = Scene::GetActiveScene()->GetRegistry();
 	if (auto* rb = reg.TryGetComponent<RigidBodyComponent>((Entity)id))
 		return rb->IsKinematic;
+	return false;
+}
+
+SLIME_EXPORT void __cdecl Entity_SetFixedRotation(EntityId id, bool value)
+{
+	if (!Scene::GetActiveScene()) return;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* rb = reg.TryGetComponent<RigidBodyComponent>((Entity)id))
+		rb->FixedRotation = value;
+}
+
+SLIME_EXPORT bool __cdecl Entity_GetFixedRotation(EntityId id)
+{
+	if (!Scene::GetActiveScene()) return false;
+	auto& reg = Scene::GetActiveScene()->GetRegistry();
+	if (auto* rb = reg.TryGetComponent<RigidBodyComponent>((Entity)id))
+		return rb->FixedRotation;
 	return false;
 }
 

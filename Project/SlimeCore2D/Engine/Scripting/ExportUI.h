@@ -5,10 +5,13 @@
 // UI System
 // -----------------------------
 SLIME_EXPORT EntityId __cdecl UI_CreateText(const char* text, int fontSize, float x, float y);
+SLIME_EXPORT EntityId __cdecl UI_CreateImage(float x, float y, float w, float h);
 SLIME_EXPORT void __cdecl UI_Destroy(EntityId id);
 SLIME_EXPORT void __cdecl UI_SetText(EntityId id, const char* text);
 SLIME_EXPORT void __cdecl UI_SetPosition(EntityId id, float x, float y);
 SLIME_EXPORT void __cdecl UI_GetPosition(EntityId id, float* outX, float* outY);
+SLIME_EXPORT void __cdecl UI_SetSize(EntityId id, float w, float h);
+SLIME_EXPORT void __cdecl UI_GetSize(EntityId id, float* outW, float* outH);
 SLIME_EXPORT void __cdecl UI_SetAnchor(EntityId id, float ax, float ay);
 SLIME_EXPORT void __cdecl UI_SetColor(EntityId id, float r, float g, float b);
 SLIME_EXPORT void __cdecl UI_SetVisible(EntityId id, bool visible);

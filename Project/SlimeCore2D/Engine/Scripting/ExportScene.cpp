@@ -55,3 +55,9 @@ SLIME_EXPORT void __cdecl Scene_UnregisterParticleSystem(void* system)
 	if (Scene::GetActiveScene())
 		Scene::GetActiveScene()->UnregisterParticleSystem((ParticleSystem*)system);
 }
+
+SLIME_EXPORT void __cdecl Scene_SetGravity(float x, float y)
+{
+	if (Scene::GetActiveScene())
+		Scene::GetActiveScene()->SetGravity(glm::vec2(x, y));
+}

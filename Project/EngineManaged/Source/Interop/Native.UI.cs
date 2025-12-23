@@ -5,6 +5,9 @@ internal static partial class Native
     [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
 	internal static extern ulong UI_CreateText([MarshalAs(UnmanagedType.LPUTF8Str)] string text, int fontSize, float x, float y);
 
+    [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern ulong UI_CreateImage(float x, float y, float w, float h);
+
 	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
 	internal static extern void UI_Destroy(ulong id);
 
@@ -16,6 +19,12 @@ internal static partial class Native
 
 	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
 	internal static extern void UI_GetPosition(ulong id, out float x, out float y);
+
+    [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern void UI_SetSize(ulong id, float w, float h);
+
+    [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern void UI_GetSize(ulong id, out float w, out float h);
 
 	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
 	internal static extern void UI_SetAnchor(ulong id, float ax, float ay);

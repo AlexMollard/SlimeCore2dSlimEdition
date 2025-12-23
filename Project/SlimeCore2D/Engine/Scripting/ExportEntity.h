@@ -18,6 +18,8 @@ SLIME_EXPORT void __cdecl Entity_SetSize(EntityId id, float sx, float sy);
 SLIME_EXPORT void __cdecl Entity_GetSize(EntityId id, float* outSx, float* outSy);
 SLIME_EXPORT void __cdecl Entity_SetColor(EntityId id, float r, float g, float b);
 SLIME_EXPORT void __cdecl Entity_GetColor(EntityId id, float* outR, float* outG, float* outB);
+SLIME_EXPORT void __cdecl Entity_SetAlpha(EntityId id, float a);
+SLIME_EXPORT float __cdecl Entity_GetAlpha(EntityId id);
 SLIME_EXPORT void __cdecl Entity_SetRotation(EntityId id, float degrees);
 SLIME_EXPORT float __cdecl Entity_GetRotation(EntityId id);
 SLIME_EXPORT void __cdecl Entity_SetLayer(EntityId id, int layer);
@@ -94,6 +96,8 @@ SLIME_EXPORT void __cdecl Entity_SetMass(EntityId id, float mass);
 SLIME_EXPORT float __cdecl Entity_GetMass(EntityId id);
 SLIME_EXPORT void __cdecl Entity_SetKinematic(EntityId id, bool value);
 SLIME_EXPORT bool __cdecl Entity_GetKinematic(EntityId id);
+SLIME_EXPORT void __cdecl Entity_SetFixedRotation(EntityId id, bool value);
+SLIME_EXPORT bool __cdecl Entity_GetFixedRotation(EntityId id);
 
 SLIME_EXPORT void __cdecl Entity_SetColliderSize(EntityId id, float w, float h);
 SLIME_EXPORT void __cdecl Entity_GetColliderSize(EntityId id, float* outW, float* outH);

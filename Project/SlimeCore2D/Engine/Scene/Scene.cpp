@@ -2,6 +2,7 @@
 #include "Rendering/Renderer2D.h"
 #include "Rendering/ParticleSystem.h"
 #include "Core/Input.h"
+#include "Physics/RigidBody.h"
 #include <algorithm>
 
 Scene* Scene::s_ActiveScene = nullptr;
@@ -26,6 +27,7 @@ static glm::vec2 ScreenSpaceToUISpace(float screenX, float screenY)
 Scene::Scene()
 {
 	s_ActiveScene = this;
+	m_PhysicsScene = new PhysicsScene();
 }
 
 Scene::~Scene()
@@ -33,9 +35,27 @@ Scene::~Scene()
 	if (s_ActiveScene == this)
 		s_ActiveScene = nullptr;
 	
+	if (m_PhysicsScene)
+	{
+		delete m_PhysicsScene;
+		m_PhysicsScene = nullptr;
+	}
+	
 	// Registry cleans up itself, but we should clear active entities
 	m_ActiveEntities.clear();
 	m_UIElements.clear();
+}
+
+Entity Scene::GetPrimaryCameraEntity()
+{
+	auto view = m_Registry.View<CameraComponent>();
+	for (auto entity : view)
+	{
+		const auto& camera = m_Registry.GetComponent<CameraComponent>(entity);
+		if (camera.IsPrimary)
+			return entity;
+	}
+	return NullEntity;
 }
 
 Scene* Scene::GetActiveScene()
@@ -107,6 +127,18 @@ void Scene::DestroyObject(ObjectId id)
 	auto it = std::find(m_ActiveEntities.begin(), m_ActiveEntities.end(), id);
 	if (it != m_ActiveEntities.end())
 	{
+		// Cleanup Physics Body if exists
+		if (m_Registry.HasComponent<RigidBodyComponent>(id))
+		{
+			auto& rb = m_Registry.GetComponent<RigidBodyComponent>(id);
+			if (rb.RuntimeBody && m_PhysicsScene)
+			{
+				m_PhysicsScene->removeActor((RigidBody*)rb.RuntimeBody);
+				delete (RigidBody*)rb.RuntimeBody;
+				rb.RuntimeBody = nullptr;
+			}
+		}
+
 		m_ActiveEntities.erase(it);
 		m_Registry.DestroyEntity(id);
 	}
@@ -213,6 +245,81 @@ ObjectId Scene::GetIdAtIndex(int index) const
 
 void Scene::Update(float deltaTime)
 {
+	// Physics System Integration
+	if (m_PhysicsScene)
+	{
+		const auto& rbEntities = m_Registry.View<RigidBodyComponent>();
+		
+		for (Entity entity : rbEntities)
+		{
+			if (!m_Registry.HasComponent<TransformComponent>(entity))
+				continue;
+
+			auto& transform = m_Registry.GetComponent<TransformComponent>(entity);
+			auto& rb = m_Registry.GetComponent<RigidBodyComponent>(entity);
+
+			if (!rb.RuntimeBody)
+			{
+				// Create Physics Body
+				RigidBody* body = new RigidBody();
+				body->SetPos(transform.Position);
+				body->SetMass(rb.Mass);
+				body->SetKinematic(rb.IsKinematic);
+				body->SetFixedRotation(rb.FixedRotation);
+				body->SetVelocity(rb.Velocity);
+				
+				// Handle Colliders
+				if (m_Registry.HasComponent<BoxColliderComponent>(entity))
+				{
+					auto& bc = m_Registry.GetComponent<BoxColliderComponent>(entity);
+					body->SetBoundingBox(bc.Offset, bc.Size);
+				}
+
+				m_PhysicsScene->addActor(body, "Entity", rb.IsKinematic);
+				rb.RuntimeBody = body;
+			}
+			else
+			{
+				RigidBody* body = (RigidBody*)rb.RuntimeBody;
+				
+				// Sync ECS -> Physics (if Kinematic or properties changed)
+				if (rb.IsKinematic)
+				{
+					body->SetPos(transform.Position);
+				}
+				else
+				{
+					// Allow ECS to drive velocity for dynamic bodies (Arcade Physics style)
+					body->SetVelocity(rb.Velocity);
+				}
+				
+				// Sync properties that might change at runtime
+				body->SetMass(rb.Mass);
+				body->SetKinematic(rb.IsKinematic);
+				body->SetFixedRotation(rb.FixedRotation);
+			}
+		}
+
+		m_PhysicsScene->update(deltaTime);
+
+		// Sync Physics -> ECS
+		for (Entity entity : rbEntities)
+		{
+			if (!m_Registry.HasComponent<TransformComponent>(entity))
+				continue;
+
+			auto& transform = m_Registry.GetComponent<TransformComponent>(entity);
+			auto& rb = m_Registry.GetComponent<RigidBodyComponent>(entity);
+			RigidBody* body = (RigidBody*)rb.RuntimeBody;
+
+			if (body && !rb.IsKinematic)
+			{
+				transform.Position = body->GetPos();
+				rb.Velocity = body->GetVelocity();
+			}
+		}
+	}
+
 	// Animation System
 	for (Entity entity : m_ActiveEntities)
 	{
@@ -262,6 +369,12 @@ void Scene::UnregisterParticleSystem(ParticleSystem* system)
 	auto it = std::find(m_ParticleSystems.begin(), m_ParticleSystems.end(), system);
 	if (it != m_ParticleSystems.end())
 		m_ParticleSystems.erase(it);
+}
+
+void Scene::SetGravity(glm::vec2 gravity)
+{
+	if (m_PhysicsScene)
+		m_PhysicsScene->setGravity(glm::vec3(gravity, 0.0f));
 }
 
 void Scene::Render(Camera& camera)

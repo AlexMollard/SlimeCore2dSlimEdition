@@ -51,6 +51,12 @@ public record struct SpriteComponent : IComponent
         get { Native.Entity_GetColor(EntityId, out var r, out var g, out var b); return (r, g, b); }
         set => Native.Entity_SetColor(EntityId, value.r, value.g, value.b);
     }
+
+    public float Alpha
+    {
+        get => Native.Entity_GetAlpha(EntityId);
+        set => Native.Entity_SetAlpha(EntityId, value);
+    }
     
     public bool IsVisible
     {
@@ -114,6 +120,12 @@ public record struct RigidBodyComponent : IComponent
     {
         get => Native.Entity_GetKinematic(EntityId);
         set => Native.Entity_SetKinematic(EntityId, value);
+    }
+
+    public bool FixedRotation
+    {
+        get => Native.Entity_GetFixedRotation(EntityId);
+        set => Native.Entity_SetFixedRotation(EntityId, value);
     }
 }
 

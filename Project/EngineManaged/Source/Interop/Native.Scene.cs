@@ -22,4 +22,7 @@ internal static extern int Scene_GetEntityCount();
 
 [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
 internal static extern ulong Scene_GetEntityIdAtIndex(int index);
+
+[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+internal static extern void Scene_SetGravity(float x, float y);
 }

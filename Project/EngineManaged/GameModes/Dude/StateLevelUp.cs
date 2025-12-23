@@ -53,10 +53,8 @@ public class StateLevelUp : IDudeState
 		cardBgSprite.IsVisible = false;
 
 		// Reset Bar Visuals
-		var xpFillTransform = game.XPBarFill.GetComponent<TransformComponent>();
-		xpFillTransform.Scale = (0, 0.6f);
-		var xpFillSprite = game.XPBarFill.GetComponent<SpriteComponent>();
-		xpFillSprite.Color = (0.0f, 0.8f, 1.0f);
+		game.XPBarFill.Size = (0, 0.6f);
+		game.XPBarFill.Color = (0.0f, 0.8f, 1.0f);
 	}
 
 	public void Update(DudeGame game, float dt)

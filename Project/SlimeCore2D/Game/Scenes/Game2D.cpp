@@ -70,6 +70,19 @@ void Game2D::Draw()
 	// Render Scene Graph
 	if (m_scene)
 	{
+		// Check for primary camera in scene
+		Entity camEntity = m_scene->GetPrimaryCameraEntity();
+		if (camEntity != NullEntity)
+		{
+			auto& tc = m_scene->GetRegistry().GetComponent<TransformComponent>(camEntity);
+			auto& cc = m_scene->GetRegistry().GetComponent<CameraComponent>(camEntity);
+			
+			m_camera->SetPosition(tc.Position);
+			m_camera->SetRotation(tc.Rotation);
+			m_camera->SetZoom(cc.ZoomLevel);
+			m_camera->SetProjection(cc.OrthographicSize, m_camera->GetAspectRatio()); // Keep window aspect
+		}
+
 		m_scene->Render(*m_camera);
 	}
 

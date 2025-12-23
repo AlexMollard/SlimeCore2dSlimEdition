@@ -31,10 +31,8 @@ public class StateGameOver : IDudeState
 		game.Dude.Destroy();
 		game.ScoreText.IsVisible = false;
 		game.LevelText.IsVisible = false;
-		var xpBgSprite = game.XPBarBg.GetComponent<SpriteComponent>();
-		xpBgSprite.IsVisible = false;
-		var xpFillSprite = game.XPBarFill.GetComponent<SpriteComponent>();
-		xpFillSprite.IsVisible = false;
+		game.XPBarBg.IsVisible = false;
+		game.XPBarFill.IsVisible = false;
 
 		game.SpawnExplosion(game.DudePos, 50, 0.8f, 0.0f, 0.0f);
 		game.SpawnExplosion(game.DudePos, 20, 1.0f, 1.0f, 1.0f);
@@ -115,6 +113,22 @@ public class StateGameOver : IDudeState
 	{
 		_animTimer += dt;
 		game.ShakeAmount = MathF.Max(0, game.ShakeAmount - dt);
+
+		// Shake Camera
+		if (game.Camera.IsAlive)
+		{
+			var t = game.Camera.GetComponent<TransformComponent>();
+			if (game.ShakeAmount > 0)
+			{
+				float shakeX = (float)(game.Rng.NextDouble() - 0.5) * game.ShakeAmount;
+				float shakeY = (float)(game.Rng.NextDouble() - 0.5) * game.ShakeAmount;
+				t.Position = (shakeX, shakeY);
+			}
+			else
+			{
+				t.Position = (0, 0);
+			}
+		}
 
 		// 1. Animate Title (Vectorized Shake)
 		Vec2 shake = new Vec2(

@@ -28,6 +28,7 @@ public class DudeGame : IGameMode
 	internal Vec2 DudePos;
 	internal Vec2 DudeVel;
 	internal Entity Bg;
+	internal Entity Camera;
 	internal Entity DarkOverlay;
 	internal Entity CardBgBackdrop;
 
@@ -54,24 +55,32 @@ public class DudeGame : IGameMode
 	internal float SpawnTimer;
 	internal float DiscoTimer;
 	internal float ShakeAmount;
+	internal float TrailTimer;
 
 	// Lists
 	internal List<Hater> Haters = new();
 	internal List<Collectable> Collectables = new();
 	internal List<XPGem> Gems = new();
 	internal List<GhostTrail> Trails = new();
+	internal List<Entity> Boundaries = new();
 	internal ParticleSystem ParticleSys;
+
+	// Resources
+	internal IntPtr TexPlayer;
+	internal IntPtr TexEnemy;
+	internal IntPtr TexBg;
+	internal IntPtr TexParticle;
 
 	// UI
 	internal UIText ScoreText;
 	internal UIText LevelText;
-	internal Entity XPBarFill;
-	internal Entity XPBarBg;
+	internal UIImage XPBarFill;
+	internal UIImage XPBarBg;
 
 	internal Random Rng = new Random();
 
 	// Helper to create entities using the new ECS system
-	internal Entity CreateQuadEntity(float x, float y, float w, float h, float r, float g, float b, int layer)
+	internal Entity CreateSpriteEntity(float x, float y, float w, float h, float r, float g, float b, int layer, IntPtr texture = default)
 	{
 		var e = Entity.Create();
 		e.AddComponent<TransformComponent>();
@@ -85,6 +94,10 @@ public class DudeGame : IGameMode
 
 		var sprite = e.GetComponent<SpriteComponent>();
 		sprite.Color = (r, g, b);
+		if (texture != IntPtr.Zero)
+		{
+			sprite.TexturePtr = texture;
+		}
 
 		return e;
 	}
@@ -93,6 +106,15 @@ public class DudeGame : IGameMode
 	{
 		// 1. Initialize Content Registry
 		ContentRegistry.Init();
+		
+		// Set Gravity to Zero for Top-Down Game
+		Native.Scene_SetGravity(0, 0);
+
+		// Load Textures (Using debug.png as placeholder for now)
+		TexPlayer = Native.Resources_LoadTexture("Player", "Game/Resources/Textures/debug.png");
+		TexEnemy = Native.Resources_LoadTexture("Enemy", "Game/Resources/Textures/debug.png");
+		TexBg = Native.Resources_LoadTexture("Bg", "Game/Resources/Textures/debug.png");
+		TexParticle = Native.Resources_LoadTexture("Particle", "Game/Resources/Textures/debug.png");
 
 		// 2. Reset Data
 		Level = 1;
@@ -110,17 +132,25 @@ public class DudeGame : IGameMode
 		ParticleSys = new ParticleSystem(10000);
 
 		// 3. Create Entities
-		Bg = CreateQuadEntity(0, 0, 100, 100, 0.05f, 0.05f, 0.1f, -10);
+		Camera = Entity.Create();
+		Camera.AddComponent<TransformComponent>();
+		Camera.AddComponent<CameraComponent>();
+		var cam = Camera.GetComponent<CameraComponent>();
+		cam.IsPrimary = true;
+		cam.Zoom = 1.0f;
+		cam.Size = 20.0f; // Zoom out to see the whole arena
+
+		Bg = CreateSpriteEntity(0, 0, 100, 100, 0.05f, 0.05f, 0.1f, -10, TexBg);
 		var bgTransform = Bg.GetComponent<TransformComponent>();
 		bgTransform.Anchor = (0.5f, 0.5f);
 
-		DarkOverlay = CreateQuadEntity(0, 0, 100, 100, 0f, 0f, 0f, 90);
+		DarkOverlay = CreateSpriteEntity(0, 0, 100, 100, 0f, 0f, 0f, 90);
 		var darkTransform = DarkOverlay.GetComponent<TransformComponent>();
 		darkTransform.Anchor = (0.5f, 0.5f);
 		var darkSprite = DarkOverlay.GetComponent<SpriteComponent>();
 		darkSprite.IsVisible = false;
 
-		CardBgBackdrop = CreateQuadEntity(0, 0, 100, 100, 0.1f, 0.1f, 0.1f, 91);
+		CardBgBackdrop = CreateSpriteEntity(0, 0, 100, 100, 0.1f, 0.1f, 0.1f, 91);
 		var cardTransform = CardBgBackdrop.GetComponent<TransformComponent>();
 		cardTransform.Anchor = (0.5f, 0.5f);
 		var cardSprite = CardBgBackdrop.GetComponent<SpriteComponent>();
@@ -142,23 +172,34 @@ public class DudeGame : IGameMode
 
 		var dudeSprite = Dude.GetComponent<SpriteComponent>();
 		dudeSprite.Color = (0.2f, 1.0f, 0.2f);
+		dudeSprite.TexturePtr = TexPlayer;
 		
 		// Init Physics Props
 		var dudeRb = Dude.GetComponent<RigidBodyComponent>();
 		dudeRb.Mass = 1.0f;
 		dudeRb.IsKinematic = false;
+		dudeRb.FixedRotation = true;
 
 		var dudeCollider = Dude.GetComponent<BoxColliderComponent>();
 		dudeCollider.Size = (0.9f, 0.9f);
 
-		// XP Bar
-		XPBarBg = CreateQuadEntity(0, -7.0f, 28.0f, 0.6f, 0.2f, 0.2f, 0.2f, 80);
-		var xpBgTransform = XPBarBg.GetComponent<TransformComponent>();
-		xpBgTransform.Anchor = (0.5f, 0.5f);
+		// Create Walls (Physics Boundaries)
+		CreateBoundary(0, 10, 30, 1);  // Top
+		CreateBoundary(0, -10, 30, 1); // Bottom
+		CreateBoundary(-15, 0, 1, 20); // Left
+		CreateBoundary(15, 0, 1, 20);  // Right
 
-		XPBarFill = CreateQuadEntity(0.0f, -7.0f, 0f, 0.6f, 0.0f, 0.8f, 1.0f, 81);
-		var xpFillTransform = XPBarFill.GetComponent<TransformComponent>();
-		xpFillTransform.Anchor = (0.0f, 0.5f);
+		// XP Bar (UI System)
+		XPBarBg = UIImage.Create(0, -8.0f, 28.0f, 0.6f);
+		XPBarBg.Color = (0.2f, 0.2f, 0.2f);
+		XPBarBg.Anchor = (0.5f, 0.5f);
+		XPBarBg.Layer = -1; // Behind text
+
+		XPBarFill = UIImage.Create(0.0f, -8.0f, 0f, 0.6f);
+		XPBarFill.Color = (0.0f, 0.8f, 1.0f);
+		XPBarFill.Anchor = (0.0f, 0.5f);
+		XPBarFill.Position = (-14.0f, -8.0f); // Start from left edge of the bar (Center 0, Width 28 -> Left -14)
+		XPBarFill.Layer = 0;
 
 		// UI
 		ScoreText = UIText.Create("0", 1, -13.5f, 7.5f);
@@ -168,6 +209,31 @@ public class DudeGame : IGameMode
 
 		// 4. Start Gameplay
 		ChangeState(new StatePlaying());
+	}
+
+	private void CreateBoundary(float x, float y, float w, float h)
+	{
+		var wall = Entity.Create();
+		wall.AddComponent<TransformComponent>();
+		wall.AddComponent<BoxColliderComponent>();
+		wall.AddComponent<RigidBodyComponent>();
+		wall.AddComponent<SpriteComponent>();
+
+		var t = wall.GetComponent<TransformComponent>();
+		t.Position = (x, y);
+		t.Scale = (w, h);
+
+		var s = wall.GetComponent<SpriteComponent>();
+		s.Color = (0.3f, 0.3f, 0.4f); // Dark grey-blue walls
+
+		var bc = wall.GetComponent<BoxColliderComponent>();
+		bc.Size = (w, h);
+
+		var rb = wall.GetComponent<RigidBodyComponent>();
+		rb.Mass = 9999999.0f;
+		rb.IsKinematic = true;
+
+		Boundaries.Add(wall);
 	}
 
 	public void ChangeState(IDudeState newState)
@@ -188,6 +254,7 @@ public class DudeGame : IGameMode
 		if (_currentState != null) _currentState.Exit(this);
 
 		Bg.Destroy();
+		Camera.Destroy();
 		DarkOverlay.Destroy();
 		CardBgBackdrop.Destroy();
 		Dude.Destroy();
@@ -200,6 +267,7 @@ public class DudeGame : IGameMode
 		foreach (var c in Collectables) c.Ent.Destroy(); Collectables.Clear();
 		foreach (var g in Gems) g.Ent.Destroy(); Gems.Clear();
 		foreach (var t in Trails) t.Ent.Destroy(); Trails.Clear();
+		foreach (var b in Boundaries) b.Destroy(); Boundaries.Clear();
 		
 		if (ParticleSys != null) { ParticleSys.Dispose(); ParticleSys = null; }
 

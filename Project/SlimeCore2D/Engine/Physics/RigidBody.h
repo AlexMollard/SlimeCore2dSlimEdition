@@ -41,6 +41,9 @@ public:
 		isKinematic = value;
 	};
 
+	bool GetFixedRotation() { return fixedRotation; }
+	void SetFixedRotation(bool value) { fixedRotation = value; }
+
 	void ApplyDrag(float timeStep);
 
 	float GetMass()
@@ -84,6 +87,7 @@ public:
 
 	// Make these private
 	bool isKinematic = false;
+	bool fixedRotation = false;
 	int ID = -404;
 	bool useBoundingBox = false;
 

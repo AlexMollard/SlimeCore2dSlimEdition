@@ -37,6 +37,12 @@ internal static partial class Native
 	internal static extern void Entity_GetColor(ulong id, out float r, out float g, out float b);
 
 	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern void Entity_SetAlpha(ulong id, float a);
+
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern float Entity_GetAlpha(ulong id);
+
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
 	internal static extern void Entity_SetLayer(ulong id, int layer);
 
 	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
@@ -94,7 +100,7 @@ internal static partial class Native
 	public static extern IntPtr Entity_GetTexturePtr(ulong id);
 
 	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
-	public static extern IntPtr Entity_GetRotation(ulong id);
+	public static extern float Entity_GetRotation(ulong id);
 
 	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
 	public static extern void Entity_SetRotation(ulong id, float rotation);
@@ -187,6 +193,11 @@ internal static partial class Native
     internal static extern void Entity_SetKinematic(ulong id, bool value);
     [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
     internal static extern bool Entity_GetKinematic(ulong id);
+
+    [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+    internal static extern void Entity_SetFixedRotation(ulong id, bool value);
+    [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+    internal static extern bool Entity_GetFixedRotation(ulong id);
 
     [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
     internal static extern void Entity_SetColliderSize(ulong id, float w, float h);

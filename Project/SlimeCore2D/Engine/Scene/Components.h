@@ -56,6 +56,7 @@ struct RigidBodyComponent
 	float Drag = 0.0f;
 	bool IsKinematic = false;
 	bool FixedRotation = false;
+	void* RuntimeBody = nullptr;
 };
 
 struct BoxColliderComponent

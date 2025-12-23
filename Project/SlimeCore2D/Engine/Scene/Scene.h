@@ -6,6 +6,7 @@
 #include "Registry.h"
 #include "Core/Camera.h"
 #include "Rendering/Text.h"
+#include "Physics/PhysicsScene.h"
 
 class ParticleSystem;
 
@@ -60,8 +61,12 @@ public:
 	void Update(float deltaTime);
 	void Render(Camera& camera);
 
+	Entity GetPrimaryCameraEntity();
+
 	void RegisterParticleSystem(ParticleSystem* system);
 	void UnregisterParticleSystem(ParticleSystem* system);
+
+	void SetGravity(glm::vec2 gravity);
 
 	// --- Stats ---
 	int GetObjectCount() const { return (int)m_ActiveEntities.size(); }
@@ -78,5 +83,6 @@ private:
 	std::unordered_map<ObjectId, PersistentUIElement> m_UIElements;
 
 	std::vector<ParticleSystem*> m_ParticleSystems;
+	PhysicsScene* m_PhysicsScene = nullptr;
 };
 

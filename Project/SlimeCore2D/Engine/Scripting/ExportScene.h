@@ -14,3 +14,5 @@ SLIME_EXPORT EntityId __cdecl Scene_GetEntityIdAtIndex(int index);
 
 SLIME_EXPORT void __cdecl Scene_RegisterParticleSystem(void* system);
 SLIME_EXPORT void __cdecl Scene_UnregisterParticleSystem(void* system);
+
+SLIME_EXPORT void __cdecl Scene_SetGravity(float x, float y);
