@@ -39,9 +39,6 @@
     <ClCompile Include="Game\Scenes\Game2D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Utils\ObjectManager.cpp">
-      <Filter>Source Files\EngineCore</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\Physics\PhysicsScene.cpp">
       <Filter>Source Files\EngineCore</Filter>
     </ClCompile>
@@ -50,6 +47,9 @@
     </ClCompile>
     <ClCompile Include="Engine\Rendering\Renderer2D.cpp">
       <Filter>Source Files\EngineCore</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Scene\Scene.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Physics\RigidBody.cpp">
       <Filter>Source Files\EngineCore</Filter>
@@ -75,9 +75,6 @@
     <ClCompile Include="Engine\Rendering\Sprite.cpp">
       <Filter>Source Files\EngineCore</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Entities\Cell.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\Rendering\Text.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -93,9 +90,7 @@
     <ClCompile Include="Engine\Scripting\EngineExports.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Rendering\UIManager.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
+
     <ClCompile Include="Engine\Entities\Quad.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -116,9 +111,6 @@
     <ClInclude Include="Engine\Core\Keycode.h">
       <Filter>Header Files\EngineCore</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Utils\ObjectManager.h">
-      <Filter>Header Files\EngineCore</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Physics\PhysicsScene.h">
       <Filter>Header Files\EngineCore</Filter>
     </ClInclude>
@@ -127,6 +119,9 @@
     </ClInclude>
     <ClInclude Include="Engine\Rendering\Renderer2D.h">
       <Filter>Header Files\EngineCore</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Scene\Scene.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Physics\RigidBody.h">
       <Filter>Header Files\EngineCore</Filter>
@@ -155,9 +150,6 @@
     <ClInclude Include="Engine\Core\Math.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Entities\Cell.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Rendering\Text.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -176,9 +168,7 @@
     <ClInclude Include="Engine\Scripting\EngineExports.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Rendering\UIManager.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
+
     <ClInclude Include="Engine\Entities\Quad.h">
       <Filter>Header Files</Filter>
     </ClInclude>

@@ -181,10 +181,8 @@
     <ClCompile Include="Engine\Core\Camera.cpp" />
     <ClCompile Include="Engine\Scripting\DotNetHost.cpp" />
     <ClCompile Include="Engine\Scripting\EngineExports.cpp" />
-    <ClCompile Include="Engine\Entities\Cell.cpp" />
     <ClCompile Include="Engine\Physics\CollisionManager.cpp" />
     <ClCompile Include="Engine\Core\Input.cpp" />
-    <ClCompile Include="Engine\Utils\ObjectManager.cpp" />
     <ClCompile Include="Engine\Rendering\Quad.cpp" />
     <ClCompile Include="Engine\Entities\Quad.cpp" />
     <ClCompile Include="Game\Scenes\Dialogue.cpp" />
@@ -192,6 +190,7 @@
     <ClCompile Include="Engine\Entities\GameObject.cpp" />
     <ClCompile Include="Engine\Physics\PhysicsScene.cpp" />
     <ClCompile Include="Engine\Rendering\Renderer2D.cpp" />
+    <ClCompile Include="Engine\Scene\Scene.cpp" />
     <ClCompile Include="Engine\Physics\RigidBody.cpp" />
     <ClCompile Include="Engine\Rendering\Shader.cpp" />
     <ClCompile Include="Engine\Resources\ResourceManager.cpp" />
@@ -199,7 +198,7 @@
     <ClCompile Include="Engine\Rendering\Sprite.cpp" />
     <ClCompile Include="Engine\Rendering\Text.cpp" />
     <ClCompile Include="Engine\Rendering\Texture.cpp" />
-    <ClCompile Include="Engine\Rendering\UIManager.cpp" />
+
     <ClCompile Include="Engine\Core\Window.cpp" />
     <ClCompile Include="Game\Scenes\World.cpp" />
   </ItemGroup>
@@ -208,11 +207,9 @@
     <ClInclude Include="Engine\Core\Camera.h" />
     <ClInclude Include="Engine\Scripting\DotNetHost.h" />
     <ClInclude Include="Engine\Scripting\EngineExports.h" />
-    <ClInclude Include="Engine\Entities\Cell.h" />
     <ClInclude Include="Engine\Physics\CollisionManager.h" />
     <ClInclude Include="Engine\Core\Input.h" />
     <ClInclude Include="Engine\Core\Keycode.h" />
-    <ClInclude Include="Engine\Utils\ObjectManager.h" />
     <ClInclude Include="Engine\Rendering\Quad.h" />
     <ClInclude Include="Engine\Entities\Quad.h" />
     <ClInclude Include="Game\Scenes\Dialogue.h" />
@@ -220,6 +217,7 @@
     <ClInclude Include="Engine\Entities\GameObject.h" />
     <ClInclude Include="Engine\Physics\PhysicsScene.h" />
     <ClInclude Include="Engine\Rendering\Renderer2D.h" />
+    <ClInclude Include="Engine\Scene\Scene.h" />
     <ClInclude Include="Engine\Physics\RigidBody.h" />
     <ClInclude Include="Engine\Rendering\Shader.h" />
     <ClInclude Include="Engine\Resources\ResourceManager.h" />
@@ -227,7 +225,7 @@
     <ClInclude Include="Engine\Rendering\Sprite.h" />
     <ClInclude Include="Engine\Rendering\Text.h" />
     <ClInclude Include="Engine\Rendering\Texture.h" />
-    <ClInclude Include="Engine\Rendering\UIManager.h" />
+
     <ClInclude Include="Engine\Core\Window.h" />
     <ClInclude Include="Game\Scenes\World.h" />
     <ClInclude Include="Game\Scenes\WorldTypes.h" />

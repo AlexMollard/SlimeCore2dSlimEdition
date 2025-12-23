@@ -48,6 +48,11 @@ public:
 	static void DrawRotatedQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const glm::vec4& color);
 	static void DrawRotatedQuad(const glm::vec3& position, const glm::vec2& size, float rotation, Texture* texture, float tiling = 1.0f, const glm::vec4& tintColor = glm::vec4(1.0f));
 
+	// Matrix Transform (For Scene Graph)
+	static void DrawQuad(const glm::mat4& transform, const glm::vec4& color);
+	static void DrawQuad(const glm::mat4& transform, Texture* texture, float tiling = 1.0f, const glm::vec4& tintColor = glm::vec4(1.0f));
+	static void DrawQuadUV(const glm::mat4& transform, Texture* texture, const glm::vec2 uv[], const glm::vec4& tintColor = glm::vec4(1.0f));
+
 	// SubTexture / Explicit UVs (Useful for Sprite Sheets and Font Atlases)
 	// uv[] must be an array of 4 vec2s: { BL, BR, TR, TL }
 	static void DrawQuadUV(const glm::vec3& position, const glm::vec2& size, Texture* texture, const glm::vec2 uv[], const glm::vec4& tintColor = glm::vec4(1.0f));
@@ -55,6 +60,7 @@ public:
 	// --- Text Rendering (SDF) ---
 	// Draws a string using the provided Text object (which contains the font atlas)
 	static void DrawString(const std::string& text, Text* font, const glm::vec2& position, float scale, const glm::vec4& color);
+	static void DrawString(const std::string& text, Text* font, const glm::vec3& position, float scale, const glm::vec4& color);
 
 	// Stats
 	static Statistics GetStats();

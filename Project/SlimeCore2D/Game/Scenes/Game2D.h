@@ -3,6 +3,7 @@
 #include "Core/Input.h"
 #include "Physics/PhysicsScene.h"
 #include "Rendering/Renderer2D.h"
+#include "Scene/Scene.h"
 
 class Game2D
 {
@@ -19,6 +20,7 @@ private:
 	Input* m_inputManager = Input::GetInstance();
 	PhysicsScene* m_physicsScene = nullptr;
 	Camera* m_camera = nullptr;
+	Scene* m_scene = nullptr;
 
 	float m_timer = 0.0f;
 };

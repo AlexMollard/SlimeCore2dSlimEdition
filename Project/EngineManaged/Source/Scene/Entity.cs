@@ -106,6 +106,6 @@ public record Entity
 	/// </summary>
 	public void Destroy()
 	{
-		if (Id != 0) Native.ObjectManager_Destroy(Id);
+		if (Id != 0) Native.Entity_Destroy(Id);
 	}
 }

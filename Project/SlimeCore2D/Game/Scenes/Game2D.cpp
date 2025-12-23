@@ -1,10 +1,8 @@
 #include <iostream>
 
+#include "glew.h"
 #include "Game2D.h"
 #include "gtc/matrix_transform.hpp"
-
-#include "Rendering/UIManager.h"
-#include "Utils/ObjectManager.h"
 
 Game2D::Game2D()
 {
@@ -21,8 +19,11 @@ Game2D::~Game2D()
 	delete m_camera;
 	m_camera = nullptr;
 
+	// Cleanup Scene
+	delete m_scene;
+	m_scene = nullptr;
+
 	// Cleanup Singletons
-	ObjectManager::Destroy();
 	Renderer2D::Shutdown();
 }
 
@@ -36,14 +37,11 @@ void Game2D::Init()
 	m_camera = new Camera(18.0f, 16.0f / 9.0f);
 	Input::GetInstance()->SetCamera(m_camera);
 
-	// 3. Initialize Object Manager (Logic State)
-	ObjectManager::Create();
+	// 3. Initialize Scene
+	m_scene = new Scene();
 
 	// 4. Initialize Physics
 	m_physicsScene = new PhysicsScene();
-
-	// 5. Initialize UI (Optional, if UIManager does setup)
-	UIManager::Get().Init();
 }
 
 void Game2D::Update(float deltaTime)
@@ -54,11 +52,10 @@ void Game2D::Update(float deltaTime)
 	if (m_physicsScene)
 		m_physicsScene->update(deltaTime);
 
-	// Update Game Objects (Scripts, Logic, Animation)
-	if (ObjectManager::IsCreated())
+	// Update Scene (Handles all GameObjects)
+	if (m_scene)
 	{
-		ObjectManager::Get().Update(deltaTime);       // General Update
-		ObjectManager::Get().UpdateFrames(deltaTime); // Sprite Animation
+		m_scene->Update(deltaTime);
 	}
 }
 
@@ -70,23 +67,26 @@ void Game2D::Draw()
 	// Reset stats for the new frame
 	Renderer2D::ResetStats();
 
-	// Begin World Batch (Uses Camera View Projection)
-	Renderer2D::BeginScene(*m_camera);
-
-	// Submit all game objects to the renderer
-	if (ObjectManager::IsCreated())
+	// Render Scene Graph
+	if (m_scene)
 	{
-		ObjectManager::Get().RenderAll();
+		m_scene->Render(*m_camera);
 	}
-
-	// Flush world batch
-	Renderer2D::EndScene();
 
 	// -----------------------------------------------------------
 	// PASS 2: UI RENDERING
 	// -----------------------------------------------------------
 
-	// 1. Draw C++ internal UI (if any)
-	UIManager::Get().Draw();
-	
+	// Draw Scripting UI
+	if (m_scene)
+	{
+		// Create a UI camera that matches the window settings but stays at origin
+		// This ensures UI elements (HUD) don't move with the world camera
+		Camera uiCamera(m_camera->GetOrthographicSize(), m_camera->GetAspectRatio());
+		
+		glClear(GL_DEPTH_BUFFER_BIT);
+		Renderer2D::BeginScene(uiCamera);
+		m_scene->RenderUI();
+		Renderer2D::EndScene();
+	}
 }

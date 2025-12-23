@@ -1,6 +1,8 @@
 #include "GameObject.h"
 
 #include <iostream>
+#include <algorithm>
+#include <gtc/matrix_transform.hpp>
 
 GameObject::GameObject()
 {
@@ -104,3 +106,34 @@ void GameObject::SetTexture(Texture* tex)
 	// Reset animation frame when texture changes to be safe
 	m_Frame = 0;
 }
+
+void GameObject::AddChild(GameObject* child)
+{
+	child->m_Parent = this;
+	m_Children.push_back(child);
+}
+
+void GameObject::RemoveChild(GameObject* child)
+{
+	auto it = std::find(m_Children.begin(), m_Children.end(), child);
+	if (it != m_Children.end())
+	{
+		(*it)->m_Parent = nullptr;
+		m_Children.erase(it);
+	}
+}
+
+glm::mat4 GameObject::GetLocalTransform() const
+{
+	return glm::translate(glm::mat4(1.0f), m_Pos)
+		* glm::rotate(glm::mat4(1.0f), glm::radians(rotationDegrees), { 0.0f, 0.0f, 1.0f })
+		* glm::scale(glm::mat4(1.0f), { m_Scale.x, m_Scale.y, 1.0f });
+}
+
+glm::mat4 GameObject::GetWorldTransform() const
+{
+	if (m_Parent)
+		return m_Parent->GetWorldTransform() * GetLocalTransform();
+	return GetLocalTransform();
+}
+

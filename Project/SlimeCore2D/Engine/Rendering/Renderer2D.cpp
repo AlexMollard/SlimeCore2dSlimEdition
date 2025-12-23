@@ -95,6 +95,12 @@ void Renderer2D::Init()
 	s_Data.QuadVertexPositions[1] = { 0.5f, -0.5f, 0.0f, 1.0f };
 	s_Data.QuadVertexPositions[2] = { 0.5f, 0.5f, 0.0f, 1.0f };
 	s_Data.QuadVertexPositions[3] = { -0.5f, 0.5f, 0.0f, 1.0f };
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LEQUAL);
 }
 
 void Renderer2D::Shutdown()
@@ -371,6 +377,119 @@ void Renderer2D::DrawRotatedQuad(const glm::vec3& position, const glm::vec2& siz
 	s_Data.Stats.QuadCount++;
 }
 
+void Renderer2D::DrawQuad(const glm::mat4& transform, const glm::vec4& color)
+{
+	if (s_Data.IndexCount >= s_Data.MaxIndices)
+		NextBatch();
+
+	const float texIndex = 0.0f;
+	const float tiling = 1.0f;
+	const glm::vec2 texCoords[] = {
+		{ 0.0f, 0.0f },
+        { 1.0f, 0.0f },
+        { 1.0f, 1.0f },
+        { 0.0f, 1.0f }
+	};
+
+	for (int i = 0; i < 4; i++)
+	{
+		s_Data.QuadBufferPtr->Position = transform * s_Data.QuadVertexPositions[i];
+		s_Data.QuadBufferPtr->Color = color;
+		s_Data.QuadBufferPtr->TexCoord = texCoords[i];
+		s_Data.QuadBufferPtr->TexIndex = texIndex;
+		s_Data.QuadBufferPtr->TilingFactor = tiling;
+		s_Data.QuadBufferPtr->IsText = 0.0f;
+		s_Data.QuadBufferPtr++;
+	}
+
+	s_Data.IndexCount += 6;
+	s_Data.Stats.QuadCount++;
+}
+
+void Renderer2D::DrawQuad(const glm::mat4& transform, Texture* texture, float tiling, const glm::vec4& tintColor)
+{
+	if (s_Data.IndexCount >= s_Data.MaxIndices || s_Data.TextureSlotIndex > 31)
+		NextBatch();
+
+	float textureIndex = 0.0f;
+	for (uint32_t i = 1; i < s_Data.TextureSlotIndex; i++)
+	{
+		if (s_Data.TextureSlots[i] == texture->GetID())
+		{
+			textureIndex = (float) i;
+			break;
+		}
+	}
+
+	if (textureIndex == 0.0f)
+	{
+		if (s_Data.TextureSlotIndex >= s_Data.MaxTextureSlots)
+			NextBatch();
+		textureIndex = (float) s_Data.TextureSlotIndex;
+		s_Data.TextureSlots[s_Data.TextureSlotIndex] = texture->GetID();
+		s_Data.TextureSlotIndex++;
+	}
+
+	const glm::vec2 texCoords[] = {
+		{ 0.0f, 0.0f },
+        { 1.0f, 0.0f },
+        { 1.0f, 1.0f },
+        { 0.0f, 1.0f }
+	};
+
+	for (int i = 0; i < 4; i++)
+	{
+		s_Data.QuadBufferPtr->Position = transform * s_Data.QuadVertexPositions[i];
+		s_Data.QuadBufferPtr->Color = tintColor;
+		s_Data.QuadBufferPtr->TexCoord = texCoords[i];
+		s_Data.QuadBufferPtr->TexIndex = textureIndex;
+		s_Data.QuadBufferPtr->TilingFactor = tiling;
+		s_Data.QuadBufferPtr->IsText = 0.0f;
+		s_Data.QuadBufferPtr++;
+	}
+
+	s_Data.IndexCount += 6;
+	s_Data.Stats.QuadCount++;
+}
+
+void Renderer2D::DrawQuadUV(const glm::mat4& transform, Texture* texture, const glm::vec2 uv[], const glm::vec4& tintColor)
+{
+	if (s_Data.IndexCount >= s_Data.MaxIndices || s_Data.TextureSlotIndex > 31)
+		NextBatch();
+
+	float textureIndex = 0.0f;
+	for (uint32_t i = 1; i < s_Data.TextureSlotIndex; i++)
+	{
+		if (s_Data.TextureSlots[i] == texture->GetID())
+		{
+			textureIndex = (float) i;
+			break;
+		}
+	}
+	if (textureIndex == 0.0f)
+	{
+		if (s_Data.TextureSlotIndex >= s_Data.MaxTextureSlots)
+			NextBatch();
+		textureIndex = (float) s_Data.TextureSlotIndex;
+		s_Data.TextureSlots[s_Data.TextureSlotIndex] = texture->GetID();
+		s_Data.TextureSlotIndex++;
+	}
+
+	for (int i = 0; i < 4; i++)
+	{
+		s_Data.QuadBufferPtr->Position = transform * s_Data.QuadVertexPositions[i];
+		s_Data.QuadBufferPtr->Color = tintColor;
+		s_Data.QuadBufferPtr->TexCoord = uv[i];
+		s_Data.QuadBufferPtr->TexIndex = textureIndex;
+		s_Data.QuadBufferPtr->TilingFactor = 1.0f;
+		s_Data.QuadBufferPtr->IsText = 0.0f;
+		s_Data.QuadBufferPtr++;
+	}
+
+	s_Data.IndexCount += 6;
+	s_Data.Stats.QuadCount++;
+}
+
 void Renderer2D::DrawQuadUV(const glm::vec3& position, const glm::vec2& size, Texture* texture, const glm::vec2 uv[], const glm::vec4& tintColor)
 {
 	if (s_Data.IndexCount >= s_Data.MaxIndices || s_Data.TextureSlotIndex > 31)
@@ -423,6 +542,11 @@ void Renderer2D::DrawQuadUV(const glm::vec3& position, const glm::vec2& size, Te
 
 void Renderer2D::DrawString(const std::string& text, Text* font, const glm::vec2& position, float scale, const glm::vec4& color)
 {
+	DrawString(text, font, { position.x, position.y, 0.0f }, scale, color);
+}
+
+void Renderer2D::DrawString(const std::string& text, Text* font, const glm::vec3& position, float scale, const glm::vec4& color)
+{
 	// Assuming Text class has GetAtlasTexture() and GetCharacters() map
 	// You need to ensure your Text class has these accessors.
 	Texture* atlas = font->GetAtlasTexture();
@@ -452,6 +576,7 @@ void Renderer2D::DrawString(const std::string& text, Text* font, const glm::vec2
 
 	float x = position.x;
 	float y = position.y;
+	float z = position.z;
 
 	std::string::const_iterator c;
 	for (c = text.begin(); c != text.end(); c++)
@@ -496,10 +621,10 @@ void Renderer2D::DrawString(const std::string& text, Text* font, const glm::vec2
 
 			// Positions relative to cursor (BL, BR, TR, TL). y grows upward.
 			glm::vec3 pos[4] = {
-				{     xpos,     ypos, 0.0f },
-                { xpos + w,     ypos, 0.0f },
-                { xpos + w, ypos + h, 0.0f },
-                {     xpos, ypos + h, 0.0f }
+				{     xpos,     ypos, z },
+                { xpos + w,     ypos, z },
+                { xpos + w, ypos + h, z },
+                {     xpos, ypos + h, z }
 			};
 
 			// Add to buffer

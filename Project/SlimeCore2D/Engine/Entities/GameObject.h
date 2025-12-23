@@ -2,6 +2,7 @@
 
 #include "glm.hpp"
 #include "Rendering/Texture.h"
+#include <vector>
 
 class GameObject
 {
@@ -18,6 +19,15 @@ public:
 	// Animation Logic
 	void UpdateSpriteTimer(float deltaTime);
 	void AdvanceFrame();
+
+	// --- Hierarchy ---
+	void AddChild(GameObject* child);
+	void RemoveChild(GameObject* child);
+	const std::vector<GameObject*>& GetChildren() const { return m_Children; }
+	GameObject* GetParent() const { return m_Parent; }
+
+	glm::mat4 GetLocalTransform() const;
+	glm::mat4 GetWorldTransform() const;
 
 	// --- Getters & Setters ---
 
@@ -173,4 +183,8 @@ protected:
 	float m_Timer = 0.0f;
 
 	float rotationDegrees = 0.0f;
+
+	// Hierarchy
+	GameObject* m_Parent = nullptr;
+	std::vector<GameObject*> m_Children;
 };

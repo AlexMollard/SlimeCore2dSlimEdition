@@ -11,9 +11,8 @@
 #include "Rendering/Renderer2D.h"
 #include "Rendering/Text.h"
 #include "Rendering/Texture.h"
-#include "Rendering/UIManager.h"
 #include "Resources/ResourceManager.h"
-#include "Utils/ObjectManager.h"
+#include "Scene/Scene.h"
 
 // -------------------------------------------------------------------------
 // LOGGING
@@ -78,27 +77,27 @@ SLIME_EXPORT void __cdecl Font_Free(void* font)
 }
 
 // -------------------------------------------------------------------------
-// ENTITY LIFECYCLE (Delegates to ObjectManager)
+// ENTITY LIFECYCLE (Delegates to Scene)
 // -------------------------------------------------------------------------
 SLIME_EXPORT EntityId __cdecl Entity_CreateQuad(float px, float py, float sx, float sy, float r, float g, float b)
 {
-	if (!ObjectManager::IsCreated())
+	if (!Scene::GetActiveScene())
 		return 0;
-	return (EntityId) ObjectManager::Get().CreateQuad(glm::vec3(px, py, 0.0f), glm::vec2(sx, sy), glm::vec3(r, g, b));
+	return (EntityId) Scene::GetActiveScene()->CreateQuad(glm::vec3(px, py, 0.0f), glm::vec2(sx, sy), glm::vec3(r, g, b));
 }
 
 SLIME_EXPORT void __cdecl Entity_Destroy(EntityId id)
 {
-	if (!ObjectManager::IsCreated() || id == 0)
+	if (!Scene::GetActiveScene() || id == 0)
 		return;
-	ObjectManager::Get().DestroyObject((ObjectId) id);
+	Scene::GetActiveScene()->DestroyObject((ObjectId) id);
 }
 
 SLIME_EXPORT bool __cdecl Entity_IsAlive(EntityId id)
 {
-	if (!ObjectManager::IsCreated() || id == 0)
+	if (!Scene::GetActiveScene() || id == 0)
 		return false;
-	return ObjectManager::Get().IsAlive((ObjectId) id);
+	return Scene::GetActiveScene()->IsAlive((ObjectId) id);
 }
 
 // -------------------------------------------------------------------------
@@ -106,7 +105,8 @@ SLIME_EXPORT bool __cdecl Entity_IsAlive(EntityId id)
 // -------------------------------------------------------------------------
 SLIME_EXPORT void __cdecl Entity_SetPosition(EntityId id, float x, float y)
 {
-	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
+	if (!Scene::GetActiveScene()) return;
+	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
 	{
 		glm::vec3 p = obj->GetPos();
 		obj->SetPos(glm::vec3(x, y, p.z));
@@ -115,7 +115,8 @@ SLIME_EXPORT void __cdecl Entity_SetPosition(EntityId id, float x, float y)
 
 SLIME_EXPORT void __cdecl Entity_GetPosition(EntityId id, float* outX, float* outY)
 {
-	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
+	if (!Scene::GetActiveScene()) return;
+	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
 	{
 		if (outX)
 			*outX = obj->GetPos().x;
@@ -126,13 +127,15 @@ SLIME_EXPORT void __cdecl Entity_GetPosition(EntityId id, float* outX, float* ou
 
 SLIME_EXPORT void __cdecl Entity_SetSize(EntityId id, float sx, float sy)
 {
-	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
+	if (!Scene::GetActiveScene()) return;
+	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
 		obj->SetScale(glm::vec2(sx, sy));
 }
 
 SLIME_EXPORT void __cdecl Entity_GetSize(EntityId id, float* outSx, float* outSy)
 {
-	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
+	if (!Scene::GetActiveScene()) return;
+	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
 	{
 		if (outSx)
 			*outSx = obj->GetScale().x;
@@ -143,45 +146,52 @@ SLIME_EXPORT void __cdecl Entity_GetSize(EntityId id, float* outSx, float* outSy
 
 SLIME_EXPORT void __cdecl Entity_SetColor(EntityId id, float r, float g, float b)
 {
-	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
+	if (!Scene::GetActiveScene()) return;
+	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
 		obj->SetColor(r, g, b);
 }
 
 SLIME_EXPORT void __cdecl Entity_SetLayer(EntityId id, int layer)
 {
-	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
+	if (!Scene::GetActiveScene()) return;
+	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
 		obj->SetLayer(layer);
 }
 
 SLIME_EXPORT int __cdecl Entity_GetLayer(EntityId id)
 {
-	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
+	if (!Scene::GetActiveScene()) return 0;
+	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
 		return obj->GetLayer();
 	return 0;
 }
 
 SLIME_EXPORT void __cdecl Entity_SetRotation(EntityId id, float degrees)
 {
-	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
+	if (!Scene::GetActiveScene()) return;
+	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
 		obj->SetRotation(degrees);
 }
 
 SLIME_EXPORT float __cdecl Entity_GetRotation(EntityId id)
 {
-	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
+	if (!Scene::GetActiveScene()) return 0.0f;
+	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
 		return obj->GetRotation();
 	return 0.0f;
 }
 
 SLIME_EXPORT void __cdecl Entity_SetAnchor(EntityId id, float ax, float ay)
 {
-	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
+	if (!Scene::GetActiveScene()) return;
+	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
 		obj->SetAnchor(glm::vec2(ax, ay));
 }
 
 SLIME_EXPORT void __cdecl Entity_GetAnchor(EntityId id, float* outAx, float* outAy)
 {
-	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
+	if (!Scene::GetActiveScene()) return;
+	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
 	{
 		if (outAx)
 			*outAx = obj->GetAnchor().x;
@@ -197,9 +207,9 @@ SLIME_EXPORT void __cdecl Entity_GetAnchor(EntityId id, float* outAx, float* out
 // Assigns a texture by raw OpenGL ID (Low-level)
 SLIME_EXPORT void __cdecl Entity_SetTexture(EntityId id, unsigned int texId, int width, int height)
 {
-	if (!ObjectManager::IsCreated() || id == 0)
+	if (!Scene::GetActiveScene() || id == 0)
 		return;
-	GameObject* obj = ObjectManager::Get().Get((ObjectId) id);
+	GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id);
 	if (!obj)
 		return;
 
@@ -216,9 +226,9 @@ SLIME_EXPORT void __cdecl Entity_SetTexture(EntityId id, unsigned int texId, int
 // Assigns a Texture pointer retrieved via Resources_LoadTexture
 SLIME_EXPORT void __cdecl Entity_SetTexturePtr(EntityId id, void* texPtr)
 {
-	if (!ObjectManager::IsCreated() || id == 0)
+	if (!Scene::GetActiveScene() || id == 0)
 		return;
-	GameObject* obj = ObjectManager::Get().Get((ObjectId) id);
+	GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id);
 	if (!obj)
 		return;
 
@@ -237,10 +247,10 @@ SLIME_EXPORT void __cdecl Entity_SetTexturePtr(EntityId id, void* texPtr)
 
 SLIME_EXPORT void* __cdecl Entity_GetTexturePtr(EntityId id)
 {
-	if (!ObjectManager::IsCreated() || id == 0)
+	if (!Scene::GetActiveScene() || id == 0)
 		return nullptr;
 
-	GameObject* obj = ObjectManager::Get().Get((ObjectId) id);
+	GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id);
 	if (!obj)
 		return nullptr;
 
@@ -249,64 +259,74 @@ SLIME_EXPORT void* __cdecl Entity_GetTexturePtr(EntityId id)
 
 SLIME_EXPORT void __cdecl Entity_SetRender(EntityId id, bool value)
 {
-	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
+	if (!Scene::GetActiveScene()) return;
+	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
 		obj->SetRender(value);
 }
 
 SLIME_EXPORT bool __cdecl Entity_GetRender(EntityId id)
 {
-	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
+	if (!Scene::GetActiveScene()) return false;
+	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
 		return obj->GetRender();
 	return false;
 }
 
 SLIME_EXPORT void __cdecl Entity_SetFrame(EntityId id, int frame)
 {
-	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
+	if (!Scene::GetActiveScene()) return;
+	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
 		obj->SetFrame(frame);
 }
 
 SLIME_EXPORT int __cdecl Entity_GetFrame(EntityId id)
 {
-	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
+	if (!Scene::GetActiveScene()) return 0;
+	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
 		return obj->GetFrame();
 	return 0;
 }
 
 SLIME_EXPORT void __cdecl Entity_AdvanceFrame(EntityId id)
 {
-	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
+	if (!Scene::GetActiveScene()) return;
+	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
 		obj->AdvanceFrame();
 }
 
 SLIME_EXPORT void __cdecl Entity_SetSpriteWidth(EntityId id, int width)
 {
-	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
+	if (!Scene::GetActiveScene()) return;
+	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
 		obj->SetSpriteWidth(width);
 }
 
 SLIME_EXPORT int __cdecl Entity_GetSpriteWidth(EntityId id)
 {
-	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
+	if (!Scene::GetActiveScene()) return 0;
+	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
 		return obj->GetSpriteWidth();
 	return 0;
 }
 
 SLIME_EXPORT void __cdecl Entity_SetHasAnimation(EntityId id, bool value)
 {
-	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
+	if (!Scene::GetActiveScene()) return;
+	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
 		obj->SetHasAnimation(value);
 }
 
 SLIME_EXPORT void __cdecl Entity_SetFrameRate(EntityId id, float rate)
 {
-	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
+	if (!Scene::GetActiveScene()) return;
+	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
 		obj->SetFrameRate(rate);
 }
 
 SLIME_EXPORT float __cdecl Entity_GetFrameRate(EntityId id)
 {
-	if (GameObject* obj = ObjectManager::Get().Get((ObjectId) id))
+	if (!Scene::GetActiveScene()) return 0.0f;
+	if (GameObject* obj = Scene::GetActiveScene()->GetGameObject((ObjectId) id))
 		return obj->GetFrameRate();
 	return 0.0f;
 }
@@ -378,11 +398,11 @@ SLIME_EXPORT float __cdecl Input_GetScroll()
 // -------------------------------------------------------------------------
 SLIME_EXPORT EntityId __cdecl UI_CreateText(const char* text, int fontSize, float x, float y)
 {
-	if (!ObjectManager::IsCreated())
+	if (!Scene::GetActiveScene())
 		return 0;
 
-	ObjectId id = ObjectManager::Get().CreateUIElement(true);
-	PersistentUIElement* el = ObjectManager::Get().GetUIElement(id);
+	ObjectId id = Scene::GetActiveScene()->CreateUIElement(true);
+	PersistentUIElement* el = Scene::GetActiveScene()->GetUIElement(id);
 	if (!el)
 		return 0;
 
@@ -408,16 +428,16 @@ SLIME_EXPORT EntityId __cdecl UI_CreateText(const char* text, int fontSize, floa
 
 SLIME_EXPORT void __cdecl UI_Destroy(EntityId id)
 {
-	if (!ObjectManager::IsCreated() || id == 0)
+	if (!Scene::GetActiveScene() || id == 0)
 		return;
-	ObjectManager::Get().DestroyObject((ObjectId) id);
+	Scene::GetActiveScene()->DestroyObject((ObjectId) id);
 }
 
 SLIME_EXPORT void __cdecl UI_SetText(EntityId id, const char* text)
 {
-	if (!ObjectManager::IsCreated() || id == 0 || !text)
+	if (!Scene::GetActiveScene() || id == 0 || !text)
 		return;
-	if (PersistentUIElement* el = ObjectManager::Get().GetUIElement((ObjectId) id))
+	if (PersistentUIElement* el = Scene::GetActiveScene()->GetUIElement((ObjectId) id))
 	{
 		el->TextContent = text;
 	}
@@ -425,9 +445,9 @@ SLIME_EXPORT void __cdecl UI_SetText(EntityId id, const char* text)
 
 SLIME_EXPORT void __cdecl UI_SetPosition(EntityId id, float x, float y)
 {
-	if (!ObjectManager::IsCreated() || id == 0)
+	if (!Scene::GetActiveScene() || id == 0)
 		return;
-	if (PersistentUIElement* el = ObjectManager::Get().GetUIElement((ObjectId) id))
+	if (PersistentUIElement* el = Scene::GetActiveScene()->GetUIElement((ObjectId) id))
 	{
 		el->Position = { x, y };
 	}
@@ -435,9 +455,9 @@ SLIME_EXPORT void __cdecl UI_SetPosition(EntityId id, float x, float y)
 
 SLIME_EXPORT void __cdecl UI_GetPosition(EntityId id, float* outX, float* outY)
 {
-	if (!ObjectManager::IsCreated() || id == 0 || (!outX && !outY))
+	if (!Scene::GetActiveScene() || id == 0 || (!outX && !outY))
 		return;
-	if (PersistentUIElement* el = ObjectManager::Get().GetUIElement((ObjectId) id))
+	if (PersistentUIElement* el = Scene::GetActiveScene()->GetUIElement((ObjectId) id))
 	{
 		if (outX)
 			*outX = el->Position.x;
@@ -455,9 +475,9 @@ SLIME_EXPORT void __cdecl UI_GetPosition(EntityId id, float* outX, float* outY)
 
 SLIME_EXPORT void __cdecl UI_SetColor(EntityId id, float r, float g, float b)
 {
-	if (!ObjectManager::IsCreated() || id == 0)
+	if (!Scene::GetActiveScene() || id == 0)
 		return;
-	if (PersistentUIElement* el = ObjectManager::Get().GetUIElement((ObjectId) id))
+	if (PersistentUIElement* el = Scene::GetActiveScene()->GetUIElement((ObjectId) id))
 	{
 		el->Color = { r, g, b, 1.0f };
 	}
@@ -465,9 +485,9 @@ SLIME_EXPORT void __cdecl UI_SetColor(EntityId id, float r, float g, float b)
 
 SLIME_EXPORT void __cdecl UI_SetVisible(EntityId id, bool visible)
 {
-	if (!ObjectManager::IsCreated() || id == 0)
+	if (!Scene::GetActiveScene() || id == 0)
 		return;
-	if (PersistentUIElement* el = ObjectManager::Get().GetUIElement((ObjectId) id))
+	if (PersistentUIElement* el = Scene::GetActiveScene()->GetUIElement((ObjectId) id))
 	{
 		el->IsVisible = visible;
 	}
@@ -475,9 +495,9 @@ SLIME_EXPORT void __cdecl UI_SetVisible(EntityId id, bool visible)
 
 SLIME_EXPORT void __cdecl UI_SetLayer(EntityId id, int layer)
 {
-	if (!ObjectManager::IsCreated() || id == 0)
+	if (!Scene::GetActiveScene() || id == 0)
 		return;
-	if (PersistentUIElement* el = ObjectManager::Get().GetUIElement((ObjectId) id))
+	if (PersistentUIElement* el = Scene::GetActiveScene()->GetUIElement((ObjectId) id))
 	{
 		el->Layer = layer;
 	}
@@ -485,9 +505,9 @@ SLIME_EXPORT void __cdecl UI_SetLayer(EntityId id, int layer)
 
 SLIME_EXPORT void __cdecl UI_SetAnchor(EntityId id, float ax, float ay)
 {
-	if (!ObjectManager::IsCreated() || id == 0)
+	if (!Scene::GetActiveScene() || id == 0)
 		return;
-	if (PersistentUIElement* el = ObjectManager::Get().GetUIElement((ObjectId) id))
+	if (PersistentUIElement* el = Scene::GetActiveScene()->GetUIElement((ObjectId) id))
 	{
 		el->Anchor = { ax, ay };
 	}
@@ -495,9 +515,9 @@ SLIME_EXPORT void __cdecl UI_SetAnchor(EntityId id, float ax, float ay)
 
 SLIME_EXPORT void __cdecl UI_SetUseScreenSpace(EntityId id, bool useScreenSpace)
 {
-	if (!ObjectManager::IsCreated() || id == 0)
+	if (!Scene::GetActiveScene() || id == 0)
 		return;
-	if (PersistentUIElement* el = ObjectManager::Get().GetUIElement((ObjectId) id))
+	if (PersistentUIElement* el = Scene::GetActiveScene()->GetUIElement((ObjectId) id))
 	{
 		el->UseScreenSpace = useScreenSpace;
 	}
@@ -505,9 +525,9 @@ SLIME_EXPORT void __cdecl UI_SetUseScreenSpace(EntityId id, bool useScreenSpace)
 
 SLIME_EXPORT void __cdecl UI_GetTextSize(EntityId id, float* outWidth, float* outHeight)
 {
-	if (!ObjectManager::IsCreated() || id == 0 || (!outWidth && !outHeight))
+	if (!Scene::GetActiveScene() || id == 0 || (!outWidth && !outHeight))
 		return;
-	if (PersistentUIElement* el = ObjectManager::Get().GetUIElement((ObjectId) id))
+	if (PersistentUIElement* el = Scene::GetActiveScene()->GetUIElement((ObjectId) id))
 	{
 		if (el->IsText && el->Font)
 		{
@@ -529,9 +549,9 @@ SLIME_EXPORT void __cdecl UI_GetTextSize(EntityId id, float* outWidth, float* ou
 
 SLIME_EXPORT float __cdecl UI_GetTextWidth(EntityId id)
 {
-	if (!ObjectManager::IsCreated() || id == 0)
+	if (!Scene::GetActiveScene() || id == 0)
 		return 0.0f;
-	if (PersistentUIElement* el = ObjectManager::Get().GetUIElement((ObjectId) id))
+	if (PersistentUIElement* el = Scene::GetActiveScene()->GetUIElement((ObjectId) id))
 	{
 		if (el->IsText && el->Font)
 		{
@@ -544,9 +564,9 @@ SLIME_EXPORT float __cdecl UI_GetTextWidth(EntityId id)
 
 SLIME_EXPORT float __cdecl UI_GetTextHeight(EntityId id)
 {
-	if (!ObjectManager::IsCreated() || id == 0)
+	if (!Scene::GetActiveScene() || id == 0)
 		return 0.0f;
-	if (PersistentUIElement* el = ObjectManager::Get().GetUIElement((ObjectId) id))
+	if (PersistentUIElement* el = Scene::GetActiveScene()->GetUIElement((ObjectId) id))
 	{
 		if (el->IsText && el->Font)
 		{
@@ -558,45 +578,45 @@ SLIME_EXPORT float __cdecl UI_GetTextHeight(EntityId id)
 }
 
 // -------------------------------------------------------------------------
-// OBJECT MANAGER WRAPPERS
+// SCENE WRAPPERS
 // -------------------------------------------------------------------------
-SLIME_EXPORT EntityId __cdecl ObjectManager_CreateGameObject(float px, float py, float sx, float sy, float r, float g, float b)
+SLIME_EXPORT EntityId __cdecl Scene_CreateGameObject(float px, float py, float sx, float sy, float r, float g, float b)
 {
-	if (!ObjectManager::IsCreated())
+	if (!Scene::GetActiveScene())
 		return 0;
-	return (EntityId) ObjectManager::Get().CreateGameObject(glm::vec3(px, py, 0.0f), glm::vec2(sx, sy), glm::vec3(r, g, b));
+	return (EntityId) Scene::GetActiveScene()->CreateGameObject(glm::vec3(px, py, 0.0f), glm::vec2(sx, sy), glm::vec3(r, g, b));
 }
 
-SLIME_EXPORT EntityId __cdecl ObjectManager_CreateQuad(float px, float py, float sx, float sy, float r, float g, float b)
+SLIME_EXPORT EntityId __cdecl Scene_CreateQuad(float px, float py, float sx, float sy, float r, float g, float b)
 {
 	return Entity_CreateQuad(px, py, sx, sy, r, g, b);
 }
 
-SLIME_EXPORT EntityId __cdecl ObjectManager_CreateQuadWithTexture(float px, float py, float sx, float sy, unsigned int texId)
+SLIME_EXPORT EntityId __cdecl Scene_CreateQuadWithTexture(float px, float py, float sx, float sy, unsigned int texId)
 {
-	if (!ObjectManager::IsCreated())
+	if (!Scene::GetActiveScene())
 		return 0;
-	ObjectId id = ObjectManager::Get().CreateQuad(glm::vec3(px, py, 0.0f), glm::vec2(sx, sy), glm::vec3(1.0f));
+	ObjectId id = Scene::GetActiveScene()->CreateQuad(glm::vec3(px, py, 0.0f), glm::vec2(sx, sy), glm::vec3(1.0f));
 	Entity_SetTexture((EntityId) id, texId, 0, 0);
 	return (EntityId) id;
 }
 
-SLIME_EXPORT void __cdecl ObjectManager_Destroy(EntityId id)
+SLIME_EXPORT void __cdecl Scene_Destroy(EntityId id)
 {
 	Entity_Destroy(id);
 }
 
-SLIME_EXPORT bool __cdecl ObjectManager_IsAlive(EntityId id)
+SLIME_EXPORT bool __cdecl Scene_IsAlive(EntityId id)
 {
 	return Entity_IsAlive(id);
 }
 
-SLIME_EXPORT int __cdecl ObjectManager_GetSize()
+SLIME_EXPORT int __cdecl Scene_GetEntityCount()
 {
-	return ObjectManager::IsCreated() ? ObjectManager::Get().Size() : 0;
+	return Scene::GetActiveScene() ? Scene::GetActiveScene()->GetObjectCount() : 0;
 }
 
-SLIME_EXPORT EntityId __cdecl ObjectManager_GetIdAtIndex(int index)
+SLIME_EXPORT EntityId __cdecl Scene_GetEntityIdAtIndex(int index)
 {
-	return ObjectManager::IsCreated() ? (EntityId) ObjectManager::Get().GetIdAtIndex(index) : 0;
+	return Scene::GetActiveScene() ? (EntityId) Scene::GetActiveScene()->GetIdAtIndex(index) : 0;
 }

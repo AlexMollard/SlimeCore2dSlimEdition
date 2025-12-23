@@ -111,12 +111,12 @@ SLIME_EXPORT float __cdecl UI_GetTextWidth(EntityId id);
 SLIME_EXPORT float __cdecl UI_GetTextHeight(EntityId id);
 
 // -----------------------------
-// ObjectManager Wrappers
+// Scene Wrappers (Replaces ObjectManager)
 // -----------------------------
-SLIME_EXPORT EntityId __cdecl ObjectManager_CreateGameObject(float px, float py, float sx, float sy, float r, float g, float b);
-SLIME_EXPORT EntityId __cdecl ObjectManager_CreateQuad(float px, float py, float sx, float sy, float r, float g, float b);
-SLIME_EXPORT EntityId __cdecl ObjectManager_CreateQuadWithTexture(float px, float py, float sx, float sy, unsigned int texId);
-SLIME_EXPORT void __cdecl ObjectManager_Destroy(EntityId id);
-SLIME_EXPORT bool __cdecl ObjectManager_IsAlive(EntityId id);
-SLIME_EXPORT int __cdecl ObjectManager_GetSize();
-SLIME_EXPORT EntityId __cdecl ObjectManager_GetIdAtIndex(int index);
+SLIME_EXPORT EntityId __cdecl Scene_CreateGameObject(float px, float py, float sx, float sy, float r, float g, float b);
+SLIME_EXPORT EntityId __cdecl Scene_CreateQuad(float px, float py, float sx, float sy, float r, float g, float b);
+SLIME_EXPORT EntityId __cdecl Scene_CreateQuadWithTexture(float px, float py, float sx, float sy, unsigned int texId);
+SLIME_EXPORT void __cdecl Scene_Destroy(EntityId id);
+SLIME_EXPORT bool __cdecl Scene_IsAlive(EntityId id);
+SLIME_EXPORT int __cdecl Scene_GetEntityCount();
+SLIME_EXPORT EntityId __cdecl Scene_GetEntityIdAtIndex(int index);
