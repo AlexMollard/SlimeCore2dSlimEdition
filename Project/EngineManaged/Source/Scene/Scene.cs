@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace EngineManaged.Scene;
+﻿namespace EngineManaged.Scene;
 
 public static class Scene
 {
@@ -48,14 +46,30 @@ public static class Scene
 	/// <summary>
 	/// Iterates over all active entities in the native scene.
 	/// </summary>
-	public static IEnumerable<Entity> Enumerate()
+	public static EntityEnumerator Enumerate()
 	{
-		// We cache count to avoid calling C++ boundary too often, 
-		// though be careful if you destroy objects *inside* this loop.
-		int count = Count;
-		for (int i = 0; i < count; i++)
+		return new EntityEnumerator();
+	}
+
+	public struct EntityEnumerator
+	{
+		private int _index;
+		private readonly int _count;
+
+		public EntityEnumerator()
 		{
-			yield return GetAt(i);
+			_index = -1;
+			_count = Native.Scene_GetEntityCount();
 		}
+
+		public Entity Current => Scene.GetAt(_index);
+
+		public bool MoveNext()
+		{
+			_index++;
+			return _index < _count;
+		}
+
+		public EntityEnumerator GetEnumerator() => this;
 	}
 }

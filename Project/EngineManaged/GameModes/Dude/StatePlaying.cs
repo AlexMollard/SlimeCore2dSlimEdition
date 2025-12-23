@@ -12,13 +12,17 @@ public class StatePlaying : IDudeState
 
 	public void Enter(DudeGame game)
 	{
-		game.DarkOverlay.GetComponent<SpriteComponent>().IsVisible = false;
-		game.CardBgBackdrop.GetComponent<SpriteComponent>().IsVisible = false;
+		var darkSprite = game.DarkOverlay.GetComponent<SpriteComponent>();
+		darkSprite.IsVisible = false;
+		var cardSprite = game.CardBgBackdrop.GetComponent<SpriteComponent>();
+		cardSprite.IsVisible = false;
 
 		game.ScoreText.IsVisible = true;
 		game.LevelText.IsVisible = true;
-		game.XPBarBg.GetComponent<SpriteComponent>().IsVisible = true;
-		game.XPBarFill.GetComponent<SpriteComponent>().IsVisible = true;
+		var xpBgSprite = game.XPBarBg.GetComponent<SpriteComponent>();
+		xpBgSprite.IsVisible = true;
+		var xpFillSprite = game.XPBarFill.GetComponent<SpriteComponent>();
+		xpFillSprite.IsVisible = true;
 
 		_controlsText = UIText.Create("WASD Move | SPACE Dash", 1, 0, -8.0f);
 		_controlsText.Anchor = (0.5f, 0.5f); // Center anchor
@@ -57,9 +61,10 @@ public class StatePlaying : IDudeState
 	{
 		float targetWidth = (game.XP / game.XPToNextLevel) * 28.0f;
 		if (targetWidth > 28) targetWidth = 28;
-		var (curW, curH) = game.XPBarFill.GetComponent<TransformComponent>().Scale;
+		var xpTransform = game.XPBarFill.GetComponent<TransformComponent>();
+		var (curW, curH) = xpTransform.Scale;
 		float newW = Ease.Lerp(curW, targetWidth, 5.0f * dt);
-		game.XPBarFill.GetComponent<TransformComponent>().Scale = (newW, 0.6f);
+		xpTransform.Scale = (newW, 0.6f);
 	}
 
 	private void UpdateTimers(DudeGame game, float dt)
@@ -69,20 +74,23 @@ public class StatePlaying : IDudeState
 		if (game.ChillTimer > 0)
 		{
 			game.ChillTimer -= dt;
-			game.Bg.GetComponent<SpriteComponent>().Color = (0.1f, 0.3f, 0.4f);
+			var bgSprite = game.Bg.GetComponent<SpriteComponent>();
+			bgSprite.Color = (0.1f, 0.3f, 0.4f);
 		}
 
 		if (game.ShieldTimer > 0)
 		{
 			game.ShieldTimer -= dt;
 			float flash = 0.5f + 0.5f * MathF.Sin(game.TimeAlive * 25);
-			game.Dude.GetComponent<SpriteComponent>().Color = (flash, flash, flash);
-			game.Dude.GetComponent<SpriteComponent>().IsVisible = game.ShieldTimer > 1.0f || (int)(game.TimeAlive * 15) % 2 == 0;
+			var dudeSprite = game.Dude.GetComponent<SpriteComponent>();
+			dudeSprite.Color = (flash, flash, flash);
+			dudeSprite.IsVisible = game.ShieldTimer > 1.0f || (int)(game.TimeAlive * 15) % 2 == 0;
 		}
 		else
 		{
-			game.Dude.GetComponent<SpriteComponent>().Color = (0.2f, 1.0f, 0.2f);
-			game.Dude.GetComponent<SpriteComponent>().IsVisible = true;
+			var dudeSprite = game.Dude.GetComponent<SpriteComponent>();
+			dudeSprite.Color = (0.2f, 1.0f, 0.2f);
+			dudeSprite.IsVisible = true;
 		}
 	}
 
@@ -144,7 +152,8 @@ public class StatePlaying : IDudeState
 		) * game.ShakeAmount;
 
 		Vec2 finalPos = game.DudePos + shakeOffset;
-		game.Dude.GetComponent<TransformComponent>().Position = (finalPos.X, finalPos.Y);
+		var dudeTransform = game.Dude.GetComponent<TransformComponent>();
+		dudeTransform.Position = (finalPos.X, finalPos.Y);
 
 		// Squash & Stretch
 		float speed = game.DudeVel.Length();
@@ -153,9 +162,9 @@ public class StatePlaying : IDudeState
 		float baseScale = 0.9f * game.Stats.PlayerSize;
 
 		if (MathF.Abs(game.DudeVel.X) > MathF.Abs(game.DudeVel.Y))
-			game.Dude.GetComponent<TransformComponent>().Scale = (stretch * baseScale, squash * baseScale);
+			dudeTransform.Scale = (stretch * baseScale, squash * baseScale);
 		else
-			game.Dude.GetComponent<TransformComponent>().Scale = (squash * baseScale, stretch * baseScale);
+			dudeTransform.Scale = (squash * baseScale, stretch * baseScale);
 
 		if (speed > 15.0f) SpawnTrail(game, 0.4f);
 	}
@@ -208,12 +217,13 @@ public class StatePlaying : IDudeState
 			// Shake logic using vectors
 			Vec2 shake = new Vec2((float)(game.Rng.NextDouble() - 0.5f), (float)(game.Rng.NextDouble() - 0.5f));
 			Vec2 drawPos = me.Pos + shake * (game.ShakeAmount * 0.5f);
-			me.Ent.GetComponent<TransformComponent>().Position = (drawPos.X, drawPos.Y);
+			var haterTransform = me.Ent.GetComponent<TransformComponent>();
+			haterTransform.Position = (drawPos.X, drawPos.Y);
 
 			float pulseSpeed = me.Type == HaterType.Chonker ? 5.0f : 15.0f;
 			float baseSize = me.Type == HaterType.Chonker ? 2.2f : 0.8f;
 			float pulse = baseSize + 0.1f * MathF.Sin(game.TimeAlive * pulseSpeed + i);
-			me.Ent.GetComponent<TransformComponent>().Scale = (pulse, pulse);
+			haterTransform.Scale = (pulse, pulse);
 
 			// Distance check with Vector method
 			float killDist = (me.Type == HaterType.Chonker ? 1.5f : 0.7f) * game.Stats.PlayerSize;
@@ -257,8 +267,9 @@ public class StatePlaying : IDudeState
 				c.Pos += dir * 10.0f * dt;
 			}
 
-			c.Ent.GetComponent<TransformComponent>().Position = (c.Pos.X, c.Pos.Y);
-			c.Ent.GetComponent<TransformComponent>().Scale = (0.6f + 0.1f * MathF.Sin(game.TimeAlive * 8), 0.6f);
+			var collectableTransform = c.Ent.GetComponent<TransformComponent>();
+			collectableTransform.Position = (c.Pos.X, c.Pos.Y);
+			collectableTransform.Scale = (0.6f + 0.1f * MathF.Sin(game.TimeAlive * 8), 0.6f);
 
 			// Use Stat: Player Size for pickup radius
 			// Use LengthSquared for cheaper check if not needed
@@ -285,7 +296,8 @@ public class StatePlaying : IDudeState
 			{
 				g.Pos += (game.DudePos - g.Pos).Normalized() * 18.0f * dt;
 			}
-			g.Ent.GetComponent<TransformComponent>().Position = (g.Pos.X, g.Pos.Y);
+			var gemTransform = g.Ent.GetComponent<TransformComponent>();
+			gemTransform.Position = (g.Pos.X, g.Pos.Y);
 
 			if (distSq < 0.5f * game.Stats.PlayerSize)
 			{
@@ -305,7 +317,8 @@ public class StatePlaying : IDudeState
 			game.Level++;
 			game.XPToNextLevel *= 1.35f;
 			game.LevelText.Text = $"LVL {game.Level}";
-			game.XPBarFill.GetComponent<TransformComponent>().Scale = (28.0f, 0.6f);
+			var xpTransform = game.XPBarFill.GetComponent<TransformComponent>();
+			xpTransform.Scale = (28.0f, 0.6f);
 			game.ChangeState(new StateLevelUp());
 		}
 	}
@@ -315,9 +328,10 @@ public class StatePlaying : IDudeState
 	private void SpawnTrail(DudeGame game, float alphaStart)
 	{
 		var ghost = game.CreateQuadEntity(game.DudePos.X, game.DudePos.Y, 0.9f, 0.9f, 0.2f, 1.0f, 0.2f, 15);
-		ghost.GetComponent<TransformComponent>().Anchor = (0.5f, 0.5f);
+		var ghostTransform = ghost.GetComponent<TransformComponent>();
+		ghostTransform.Anchor = (0.5f, 0.5f);
 		var (w, h) = game.Dude.GetComponent<TransformComponent>().Scale;
-		ghost.GetComponent<TransformComponent>().Scale = (w, h);
+		ghostTransform.Scale = (w, h);
 		game.Trails.Add(new GhostTrail { Ent = ghost, Alpha = alphaStart, InitW = w, InitH = h });
 	}
 
@@ -331,7 +345,8 @@ public class StatePlaying : IDudeState
 		float r = type == HaterType.Chonker ? 0.6f : 1.0f;
 		float b = type == HaterType.Chonker ? 0.8f : 0.2f;
 		var ent = game.CreateQuadEntity(pos.X, pos.Y, size, size, r, 0f, b, 5);
-		ent.GetComponent<TransformComponent>().Anchor = (0.5f, 0.5f);
+		var haterTransform = ent.GetComponent<TransformComponent>();
+		haterTransform.Anchor = (0.5f, 0.5f);
 		game.Haters.Add(new Hater { Ent = ent, Pos = pos, Type = type });
 	}
 
@@ -339,7 +354,8 @@ public class StatePlaying : IDudeState
 	{
 		Vec2 pos = new Vec2((game.Rng.NextSingle() * 24) - 12, (game.Rng.NextSingle() * 14) - 7);
 		var ent = game.CreateQuadEntity(pos.X, pos.Y, 0.6f, 0.6f, def.R, def.G, def.B, 8);
-		ent.GetComponent<TransformComponent>().Anchor = (0.5f, 0.5f);
+		var collectableTransform = ent.GetComponent<TransformComponent>();
+		collectableTransform.Anchor = (0.5f, 0.5f);
 		game.Collectables.Add(new Collectable { Ent = ent, Pos = pos, Definition = def });
 	}
 
@@ -350,7 +366,8 @@ public class StatePlaying : IDudeState
 		float b = value > 10 ? 1.0f : 0.8f;
 		float size = value > 10 ? 0.45f : 0.3f;
 		var ent = game.CreateQuadEntity(pos.X, pos.Y, size, size, r, g, b, 9);
-		ent.GetComponent<TransformComponent>().Anchor = (0.5f, 0.5f);
+		var gemTransform = ent.GetComponent<TransformComponent>();
+		gemTransform.Anchor = (0.5f, 0.5f);
 		game.Gems.Add(new XPGem { Ent = ent, Pos = pos, Value = value });
 	}
 
@@ -365,8 +382,10 @@ public class StatePlaying : IDudeState
 			if (t.Alpha <= 0) { t.Ent.Destroy(); game.Trails.RemoveAt(i); }
 			else
 			{
-				t.Ent.GetComponent<SpriteComponent>().Color = (0.2f * t.Alpha, 1.0f * t.Alpha, 0.2f * t.Alpha);
-				t.Ent.GetComponent<TransformComponent>().Scale = (t.InitW * t.Alpha, t.InitH * t.Alpha);
+				var sprite = t.Ent.GetComponent<SpriteComponent>();
+				sprite.Color = (0.2f * t.Alpha, 1.0f * t.Alpha, 0.2f * t.Alpha);
+				var transform = t.Ent.GetComponent<TransformComponent>();
+				transform.Scale = (t.InitW * t.Alpha, t.InitH * t.Alpha);
 			}
 		}
 	}
@@ -383,10 +402,11 @@ public class StatePlaying : IDudeState
 				// Vectorized physics
 				p.Pos += p.Vel * dt;
 				p.Vel *= 0.95f;
-				p.Ent.GetComponent<TransformComponent>().Position = (p.Pos.X, p.Pos.Y);
+				var transform = p.Ent.GetComponent<TransformComponent>();
+				transform.Position = (p.Pos.X, p.Pos.Y);
 
 				float s = p.InitSize * p.Life;
-				p.Ent.GetComponent<TransformComponent>().Scale = (s, s);
+				transform.Scale = (s, s);
 			}
 		}
 	}
@@ -403,6 +423,7 @@ public class StatePlaying : IDudeState
 		float r = 0.1f + 0.05f * MathF.Sin(game.DiscoTimer * 2f);
 		float g = 0.1f + 0.05f * MathF.Sin(game.DiscoTimer * 1.5f);
 		float b = 0.15f + 0.05f * MathF.Sin(game.DiscoTimer * 0.8f);
-		game.Bg.GetComponent<SpriteComponent>().Color = (r, g, b);
+		var bgSprite = game.Bg.GetComponent<SpriteComponent>();
+		bgSprite.Color = (r, g, b);
 	}
 }

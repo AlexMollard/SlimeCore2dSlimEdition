@@ -7,7 +7,7 @@ public interface IComponent
     ulong EntityId { get; set; }
 }
 
-public class TransformComponent : IComponent
+public record struct TransformComponent : IComponent
 {
     public ulong EntityId { get; set; }
 
@@ -42,7 +42,7 @@ public class TransformComponent : IComponent
     }
 }
 
-public class SpriteComponent : IComponent
+public record struct SpriteComponent : IComponent
 {
     public ulong EntityId { get; set; }
 
@@ -66,7 +66,7 @@ public class SpriteComponent : IComponent
     }
 }
 
-public class AnimationComponent : IComponent
+public record struct AnimationComponent : IComponent
 {
     public ulong EntityId { get; set; }
     
@@ -94,7 +94,7 @@ public class AnimationComponent : IComponent
     }
 }
 
-public class RigidBodyComponent : IComponent
+public record struct RigidBodyComponent : IComponent
 {
     public ulong EntityId { get; set; }
     
@@ -117,7 +117,7 @@ public class RigidBodyComponent : IComponent
     }
 }
 
-public class BoxColliderComponent : IComponent
+public record struct BoxColliderComponent : IComponent
 {
     public ulong EntityId { get; set; }
     
@@ -140,7 +140,7 @@ public class BoxColliderComponent : IComponent
     }
 }
 
-public class CameraComponent : IComponent
+public record struct CameraComponent : IComponent
 {
     public ulong EntityId { get; set; }
     
@@ -163,22 +163,22 @@ public class CameraComponent : IComponent
     }
 }
 
-public class AudioSourceComponent : IComponent
+public record struct AudioSourceComponent : IComponent
 {
     public ulong EntityId { get; set; }
 }
 
-public class TagComponent : IComponent
+public record struct TagComponent : IComponent
 {
     public ulong EntityId { get; set; }
 }
 
-public class RelationshipComponent : IComponent
+public record struct RelationshipComponent : IComponent
 {
     public ulong EntityId { get; set; }
 }
 
-public class CircleColliderComponent : IComponent
+public record struct CircleColliderComponent : IComponent
 {
     public ulong EntityId { get; set; }
 }

@@ -78,10 +78,14 @@ public class DudeGame : IGameMode
 		e.AddComponent<SpriteComponent>();
 		e.AddComponent<AnimationComponent>();
 		
-		e.GetComponent<TransformComponent>().Position = (x, y);
-		e.GetComponent<TransformComponent>().Scale = (w, h);
-		e.GetComponent<SpriteComponent>().Color = (r, g, b);
-		e.GetComponent<TransformComponent>().Layer = layer;
+		var transform = e.GetComponent<TransformComponent>();
+		transform.Position = (x, y);
+		transform.Scale = (w, h);
+		transform.Layer = layer;
+
+		var sprite = e.GetComponent<SpriteComponent>();
+		sprite.Color = (r, g, b);
+
 		return e;
 	}
 
@@ -105,15 +109,20 @@ public class DudeGame : IGameMode
 
 		// 3. Create Entities
 		Bg = CreateQuadEntity(0, 0, 100, 100, 0.05f, 0.05f, 0.1f, -10);
-		Bg.GetComponent<TransformComponent>().Anchor = (0.5f, 0.5f);
+		var bgTransform = Bg.GetComponent<TransformComponent>();
+		bgTransform.Anchor = (0.5f, 0.5f);
 
 		DarkOverlay = CreateQuadEntity(0, 0, 100, 100, 0f, 0f, 0f, 90);
-		DarkOverlay.GetComponent<TransformComponent>().Anchor = (0.5f, 0.5f);
-		DarkOverlay.GetComponent<SpriteComponent>().IsVisible = false;
+		var darkTransform = DarkOverlay.GetComponent<TransformComponent>();
+		darkTransform.Anchor = (0.5f, 0.5f);
+		var darkSprite = DarkOverlay.GetComponent<SpriteComponent>();
+		darkSprite.IsVisible = false;
 
 		CardBgBackdrop = CreateQuadEntity(0, 0, 100, 100, 0.1f, 0.1f, 0.1f, 91);
-		CardBgBackdrop.GetComponent<TransformComponent>().Anchor = (0.5f, 0.5f);
-		CardBgBackdrop.GetComponent<SpriteComponent>().IsVisible = false;
+		var cardTransform = CardBgBackdrop.GetComponent<TransformComponent>();
+		cardTransform.Anchor = (0.5f, 0.5f);
+		var cardSprite = CardBgBackdrop.GetComponent<SpriteComponent>();
+		cardSprite.IsVisible = false;
 
 		// Create Dude with full ECS components
 		Dude = Entity.Create();
@@ -123,22 +132,31 @@ public class DudeGame : IGameMode
 		Dude.AddComponent<RigidBodyComponent>();
 		Dude.AddComponent<BoxColliderComponent>();
 		
-		Dude.GetComponent<TransformComponent>().Position = (0, 0);
-		Dude.GetComponent<TransformComponent>().Scale = (0.9f, 0.9f);
-		Dude.GetComponent<SpriteComponent>().Color = (0.2f, 1.0f, 0.2f);
-		Dude.GetComponent<TransformComponent>().Layer = 20;
-		Dude.GetComponent<TransformComponent>().Anchor = (0.5f, 0.5f);
+		var dudeTransform = Dude.GetComponent<TransformComponent>();
+		dudeTransform.Position = (0, 0);
+		dudeTransform.Scale = (0.9f, 0.9f);
+		dudeTransform.Layer = 20;
+		dudeTransform.Anchor = (0.5f, 0.5f);
+
+		var dudeSprite = Dude.GetComponent<SpriteComponent>();
+		dudeSprite.Color = (0.2f, 1.0f, 0.2f);
 		
 		// Init Physics Props
-		Dude.GetComponent<RigidBodyComponent>().Mass = 1.0f;
-		Dude.GetComponent<RigidBodyComponent>().IsKinematic = false;
-		Dude.GetComponent<BoxColliderComponent>().Size = (0.9f, 0.9f);
+		var dudeRb = Dude.GetComponent<RigidBodyComponent>();
+		dudeRb.Mass = 1.0f;
+		dudeRb.IsKinematic = false;
+
+		var dudeCollider = Dude.GetComponent<BoxColliderComponent>();
+		dudeCollider.Size = (0.9f, 0.9f);
 
 		// XP Bar
 		XPBarBg = CreateQuadEntity(0, -7.0f, 28.0f, 0.6f, 0.2f, 0.2f, 0.2f, 80);
-		XPBarBg.GetComponent<TransformComponent>().Anchor = (0.5f, 0.5f);
+		var xpBgTransform = XPBarBg.GetComponent<TransformComponent>();
+		xpBgTransform.Anchor = (0.5f, 0.5f);
+
 		XPBarFill = CreateQuadEntity(0.0f, -7.0f, 0f, 0.6f, 0.0f, 0.8f, 1.0f, 81);
-		XPBarFill.GetComponent<TransformComponent>().Anchor = (0.0f, 0.5f);
+		var xpFillTransform = XPBarFill.GetComponent<TransformComponent>();
+		xpFillTransform.Anchor = (0.0f, 0.5f);
 
 		// UI
 		ScoreText = UIText.Create("0", 1, -13.5f, 7.5f);
@@ -196,7 +214,8 @@ public class DudeGame : IGameMode
 			Vec2 vel = new Vec2(MathF.Cos(angle), MathF.Sin(angle)) * speed;
 
 			var ent = CreateQuadEntity(pos.X, pos.Y, size, size, r, g, b, 30);
-			ent.GetComponent<TransformComponent>().Anchor = (0.5f, 0.5f);
+			var transform = ent.GetComponent<TransformComponent>();
+			transform.Anchor = (0.5f, 0.5f);
 			Particles.Add(new Particle { Ent = ent, Pos = pos, Vel = vel, Life = 1.0f, InitSize = size });
 		}
 	}

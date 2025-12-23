@@ -31,15 +31,19 @@ public class StateGameOver : IDudeState
 		game.Dude.Destroy();
 		game.ScoreText.IsVisible = false;
 		game.LevelText.IsVisible = false;
-		game.XPBarBg.GetComponent<SpriteComponent>().IsVisible = false;
-		game.XPBarFill.GetComponent<SpriteComponent>().IsVisible = false;
+		var xpBgSprite = game.XPBarBg.GetComponent<SpriteComponent>();
+		xpBgSprite.IsVisible = false;
+		var xpFillSprite = game.XPBarFill.GetComponent<SpriteComponent>();
+		xpFillSprite.IsVisible = false;
 
 		game.SpawnExplosion(game.DudePos, 50, 0.8f, 0.0f, 0.0f);
 		game.SpawnExplosion(game.DudePos, 20, 1.0f, 1.0f, 1.0f);
 
-		game.DarkOverlay.GetComponent<SpriteComponent>().Color = (0.2f, 0.0f, 0.0f);
-		game.DarkOverlay.GetComponent<SpriteComponent>().IsVisible = true;
-		game.Bg.GetComponent<SpriteComponent>().Color = (0, 0, 0);
+		var darkSprite = game.DarkOverlay.GetComponent<SpriteComponent>();
+		darkSprite.Color = (0.2f, 0.0f, 0.0f);
+		darkSprite.IsVisible = true;
+		var bgSprite = game.Bg.GetComponent<SpriteComponent>();
+		bgSprite.Color = (0, 0, 0);
 
 		// 2. UI Construction
 
@@ -49,10 +53,12 @@ public class StateGameOver : IDudeState
 
 		// Panel Background (14x10 to fit button comfortably)
 		_panelBorder = SceneFactory.CreateQuad(0, -15, 14.5f, 10.5f, 0.8f, 0f, 0f, layer: 91);
-		_panelBorder.GetComponent<TransformComponent>().Anchor = (0.5f, 0.5f);
+		var borderTransform = _panelBorder.GetComponent<TransformComponent>();
+		borderTransform.Anchor = (0.5f, 0.5f);
 
 		_panelBg = SceneFactory.CreateQuad(0, -15, panelBGWidth, 10.0f, 0.1f, 0.1f, 0.1f, layer: 92);
-		_panelBg.GetComponent<TransformComponent>().Anchor = (0.5f, 0.5f);
+		var bgTransform = _panelBg.GetComponent<TransformComponent>();
+		bgTransform.Anchor = (0.5f, 0.5f);
 
 		// Stats Text - Positioned relative to panel center (0, -15)
 		_scoreLabel = UIText.Create($"SCORE: {(int)game.Score}", 1, 0, -15 + 3.0f);
@@ -94,7 +100,11 @@ public class StateGameOver : IDudeState
 		_timeLabel.Destroy();
 		_retryBtn.Destroy();
 
-		if (game.DarkOverlay.IsAlive) game.DarkOverlay.GetComponent<SpriteComponent>().IsVisible = false;
+		if (game.DarkOverlay.IsAlive)
+		{
+			var darkSprite = game.DarkOverlay.GetComponent<SpriteComponent>();
+			darkSprite.IsVisible = false;
+		}
 
 		foreach (var h in game.Haters) h.Ent.Destroy(); game.Haters.Clear();
 		foreach (var c in game.Collectables) c.Ent.Destroy(); game.Collectables.Clear();
@@ -119,8 +129,10 @@ public class StateGameOver : IDudeState
 		float slideT = MathF.Min(1.0f, _animTimer * 1.5f);
 		float panelY = Ease.Lerp(-18.0f, -1.0f, Ease.OutBack(slideT));
 
-		_panelBg.GetComponent<TransformComponent>().Position = (0, panelY);
-		_panelBorder.GetComponent<TransformComponent>().Position = (0, panelY);
+		var bgTransform = _panelBg.GetComponent<TransformComponent>();
+		bgTransform.Position = (0, panelY);
+		var borderTransform = _panelBorder.GetComponent<TransformComponent>();
+		borderTransform.Position = (0, panelY);
 
 		// Layout Elements inside Panel
 		_scoreLabel.Position = (0, panelY + 3.0f);
@@ -142,9 +154,10 @@ public class StateGameOver : IDudeState
 				p.Pos += p.Vel * dt;
 				p.Vel *= 0.9f;
 
-				p.Ent.GetComponent<TransformComponent>().Position = (p.Pos.X, p.Pos.Y);
+				var transform = p.Ent.GetComponent<TransformComponent>();
+				transform.Position = (p.Pos.X, p.Pos.Y);
 				float s = p.InitSize * p.Life;
-				p.Ent.GetComponent<TransformComponent>().Scale = (s, s);
+				transform.Scale = (s, s);
 			}
 		}
 	}

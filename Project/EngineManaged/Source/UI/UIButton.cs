@@ -35,13 +35,15 @@ public class UIButton
 
 		SetBaseColor(r, g, b);
 		_curR = r; _curG = g; _curB = b;
-		Background.GetComponent<SpriteComponent>().Color = (_curR, _curG, _curB);
+		var sprite = Background.GetComponent<SpriteComponent>();
+		sprite.Color = (_curR, _curG, _curB);
 	}
 
 	public static UIButton Create(string text, float x, float y, float w, float h, float r = 0.2f, float g = 0.2f, float b = 0.2f, int layer = 100, int fontSize = 1, bool useScreenSpace = false)
 	{
 		var bg = SceneFactory.CreateQuad(x, y, w, h, r, g, b, layer);
-		bg.GetComponent<TransformComponent>().Anchor = (0.5f, 0.5f);
+		var transform = bg.GetComponent<TransformComponent>();
+		transform.Anchor = (0.5f, 0.5f);
 
 		var lbl = UIText.Create(text, fontSize, x, y);
 		lbl.UseScreenSpace = useScreenSpace;
@@ -75,7 +77,8 @@ public class UIButton
 
 	public void SetVisible(bool visible)
 	{
-		Background.GetComponent<SpriteComponent>().IsVisible = visible;
+		var sprite = Background.GetComponent<SpriteComponent>();
+		sprite.IsVisible = visible;
 		Label.IsVisible = visible;
 	}
 
@@ -104,7 +107,8 @@ public class UIButton
 
 	public void SetPosition(float x, float y)
 	{
-		Background.GetComponent<TransformComponent>().Position = (x, y);
+		var transform = Background.GetComponent<TransformComponent>();
+		transform.Position = (x, y);
 		Label.Position = (x, y);
 	}
 
@@ -168,7 +172,8 @@ public class UIButton
 		_curG = Lerp(_curG, targetG, ColorLerp);
 		_curB = Lerp(_curB, targetB, ColorLerp);
 
-		Background.GetComponent<SpriteComponent>().Color = (_curR, _curG, _curB);
+		var sprite = Background.GetComponent<SpriteComponent>();
+		sprite.Color = (_curR, _curG, _curB);
 	}
 
 	private static float Lerp(float a, float b, float t) => a + (b - a) * t;

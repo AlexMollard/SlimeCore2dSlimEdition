@@ -1,24 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace EngineManaged.Scene;
 
-public class Entity : IEquatable<Entity>
+public readonly record struct Entity(ulong Id)
 {
-	public readonly ulong Id;
-    private readonly Dictionary<Type, IComponent> _componentCache = new();
-
-	public Entity(ulong id) => Id = id;
-
 	// Valid check
 	public bool IsAlive => Id != 0 && Native.Entity_IsAlive(Id);
-
-    public override bool Equals(object? obj) => Equals(obj as Entity);
-    public bool Equals(Entity? other) => other is not null && Id == other.Id;
-    public override int GetHashCode() => Id.GetHashCode();
-
-    public static bool operator ==(Entity? left, Entity? right) => EqualityComparer<Entity>.Default.Equals(left, right);
-    public static bool operator !=(Entity? left, Entity? right) => !(left == right);
 
 	// ---------------------------------------------------------------------
 	// Lifecycle
@@ -41,19 +28,15 @@ public class Entity : IEquatable<Entity>
 	// Component Management
 	// ---------------------------------------------------------------------
 
-	public T GetComponent<T>() where T : class, IComponent, new()
+	public T GetComponent<T>() where T : struct, IComponent
 	{
-        if (_componentCache.TryGetValue(typeof(T), out var cached))
-            return (T)cached;
-
 		if (!HasComponent<T>()) throw new ArgumentException($"Entity {Id} does not have component {typeof(T).Name}");
 		T component = new T();
 		component.EntityId = Id;
-        _componentCache[typeof(T)] = component;
 		return component;
 	}
 
-	public void AddComponent<T>() where T : class, IComponent, new()
+	public void AddComponent<T>() where T : struct, IComponent
 	{
 		var type = typeof(T);
 		if (type == typeof(TransformComponent)) Native.Entity_AddComponent_Transform(Id);
@@ -69,10 +52,8 @@ public class Entity : IEquatable<Entity>
 		else throw new ArgumentException($"Component type {type.Name} is not supported.");
 	}
 
-	public bool HasComponent<T>() where T : class, IComponent, new()
+	public bool HasComponent<T>() where T : struct, IComponent
 	{
-        if (_componentCache.ContainsKey(typeof(T))) return true;
-
 		var type = typeof(T);
 		if (type == typeof(TransformComponent)) return Native.Entity_HasComponent_Transform(Id);
 		else if (type == typeof(SpriteComponent)) return Native.Entity_HasComponent_Sprite(Id);
@@ -87,10 +68,8 @@ public class Entity : IEquatable<Entity>
 		else throw new ArgumentException($"Component type {type.Name} is not supported.");
 	}
 
-	public void RemoveComponent<T>() where T : class, IComponent, new()
+	public void RemoveComponent<T>() where T : struct, IComponent
 	{
-        _componentCache.Remove(typeof(T));
-
 		var type = typeof(T);
 		if (type == typeof(TransformComponent)) Native.Entity_RemoveComponent_Transform(Id);
 		else if (type == typeof(SpriteComponent)) Native.Entity_RemoveComponent_Sprite(Id);

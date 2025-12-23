@@ -22,8 +22,9 @@ public class StateLevelUp : IDudeState
 
 	public void Enter(DudeGame game)
 	{
-		game.CardBgBackdrop.GetComponent<SpriteComponent>().IsVisible = true;
-		game.CardBgBackdrop.GetComponent<SpriteComponent>().Color = (0.05f, 0.05f, 0.1f);
+		var cardBgSprite = game.CardBgBackdrop.GetComponent<SpriteComponent>();
+		cardBgSprite.IsVisible = true;
+		cardBgSprite.Color = (0.05f, 0.05f, 0.1f);
 
 		_upgradeTitle = UIText.Create("LEVEL UP!", 1, -10, 7.5f);
 		_upgradeTitle.Anchor = (0.5f, 0.5f);
@@ -48,11 +49,14 @@ public class StateLevelUp : IDudeState
 		foreach (var t in _sidebarText) t.Destroy();
 		_sidebarText.Clear();
 
-		game.CardBgBackdrop.GetComponent<SpriteComponent>().IsVisible = false;
+		var cardBgSprite = game.CardBgBackdrop.GetComponent<SpriteComponent>();
+		cardBgSprite.IsVisible = false;
 
 		// Reset Bar Visuals
-		game.XPBarFill.GetComponent<TransformComponent>().Scale = (0, 0.6f);
-		game.XPBarFill.GetComponent<SpriteComponent>().Color = (0.0f, 0.8f, 1.0f);
+		var xpFillTransform = game.XPBarFill.GetComponent<TransformComponent>();
+		xpFillTransform.Scale = (0, 0.6f);
+		var xpFillSprite = game.XPBarFill.GetComponent<SpriteComponent>();
+		xpFillSprite.Color = (0.0f, 0.8f, 1.0f);
 	}
 
 	public void Update(DudeGame game, float dt)
@@ -169,13 +173,16 @@ public class StateLevelUp : IDudeState
 			Def = def;
 
 			_shadow = SceneFactory.CreateQuad(x + 0.3f, y - 0.3f, W, H, 0f, 0f, 0f, layer: 92);
-			_shadow.GetComponent<TransformComponent>().Anchor = (0.5f, 0.5f);
+			var shadowTransform = _shadow.GetComponent<TransformComponent>();
+			shadowTransform.Anchor = (0.5f, 0.5f);
 
 			_border = SceneFactory.CreateQuad(x, y, W + 0.25f, H + 0.25f, 1f, 1f, 1f, layer: 93);
-			_border.GetComponent<TransformComponent>().Anchor = (0.5f, 0.5f);
+			var borderTransform = _border.GetComponent<TransformComponent>();
+			borderTransform.Anchor = (0.5f, 0.5f);
 
 			_bg = SceneFactory.CreateQuad(x, y, W, H, def.R, def.G, def.B, layer: 94);
-			_bg.GetComponent<TransformComponent>().Anchor = (0.5f, 0.5f);
+			var bgTransform = _bg.GetComponent<TransformComponent>();
+			bgTransform.Anchor = (0.5f, 0.5f);
 
 			_title = UIText.Create(def.Title, 1, x, y + 2.5f);
 			_title.Anchor = (0.5f, 0.5f); // Center anchor for title
@@ -197,9 +204,12 @@ public class StateLevelUp : IDudeState
 
 		public void SetPosition(float x, float y)
 		{
-			_shadow.GetComponent<TransformComponent>().Position = (x + 0.3f * Scale, y - 0.3f * Scale);
-			_border.GetComponent<TransformComponent>().Position = (x, y);
-			_bg.GetComponent<TransformComponent>().Position = (x, y);
+			var shadowTransform = _shadow.GetComponent<TransformComponent>();
+			shadowTransform.Position = (x + 0.3f * Scale, y - 0.3f * Scale);
+			var borderTransform = _border.GetComponent<TransformComponent>();
+			borderTransform.Position = (x, y);
+			var bgTransform = _bg.GetComponent<TransformComponent>();
+			bgTransform.Position = (x, y);
 			// Text positions are centered at x (since anchor is 0.5, 0.5)
 			_title.Position = (x, y + 2.0f * Scale);
 			_desc.Position = (x, y - 0.5f * Scale);
@@ -208,9 +218,12 @@ public class StateLevelUp : IDudeState
 
 		public void SetScale(float s)
 		{
-			_shadow.GetComponent<TransformComponent>().Scale = (W * s, H * s);
-			_border.GetComponent<TransformComponent>().Scale = ((W + 0.25f) * s, (H + 0.25f) * s);
-			_bg.GetComponent<TransformComponent>().Scale = (W * s, H * s);
+			var shadowTransform = _shadow.GetComponent<TransformComponent>();
+			shadowTransform.Scale = (W * s, H * s);
+			var borderTransform = _border.GetComponent<TransformComponent>();
+			borderTransform.Scale = ((W + 0.25f) * s, (H + 0.25f) * s);
+			var bgTransform = _bg.GetComponent<TransformComponent>();
+			bgTransform.Scale = (W * s, H * s);
 		}
 
 		public bool Contains(float mx, float my)
