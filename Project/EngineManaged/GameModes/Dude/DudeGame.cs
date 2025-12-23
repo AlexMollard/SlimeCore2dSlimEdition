@@ -4,6 +4,7 @@ using SlimeCore.Interfaces;
 using EngineManaged.Scene;
 using EngineManaged.UI;
 using EngineManaged.Numeric;
+using EngineManaged.Rendering;
 
 namespace GameModes.Dude;
 
@@ -14,7 +15,6 @@ internal class Collectable { public Entity Ent; public Vec2 Pos; public PowerupD
 internal class GhostTrail { public Entity Ent; public float Alpha; public float InitW; public float InitH; }
 
 // Refactored to use Vec2 for position and velocity
-internal class Particle { public Entity Ent; public Vec2 Pos; public Vec2 Vel; public float Life; public float InitSize; }
 internal class XPGem { public Entity Ent; public Vec2 Pos; public int Value; }
 
 // --- GAME CONTEXT ---
@@ -60,7 +60,7 @@ public class DudeGame : IGameMode
 	internal List<Collectable> Collectables = new();
 	internal List<XPGem> Gems = new();
 	internal List<GhostTrail> Trails = new();
-	internal List<Particle> Particles = new();
+	internal ParticleSystem ParticleSys;
 
 	// UI
 	internal UIText ScoreText;
@@ -106,6 +106,8 @@ public class DudeGame : IGameMode
 		Stats.Reset();
 		Events.Clear();
 		UpgradeCounts.Clear();
+
+		ParticleSys = new ParticleSystem(10000);
 
 		// 3. Create Entities
 		Bg = CreateQuadEntity(0, 0, 100, 100, 0.05f, 0.05f, 0.1f, -10);
@@ -177,6 +179,7 @@ public class DudeGame : IGameMode
 
 	public void Update(float dt)
 	{
+		if (ParticleSys != null) ParticleSys.OnUpdate(dt);
 		if (_currentState != null) _currentState.Update(this, dt);
 	}
 
@@ -197,7 +200,8 @@ public class DudeGame : IGameMode
 		foreach (var c in Collectables) c.Ent.Destroy(); Collectables.Clear();
 		foreach (var g in Gems) g.Ent.Destroy(); Gems.Clear();
 		foreach (var t in Trails) t.Ent.Destroy(); Trails.Clear();
-		foreach (var p in Particles) p.Ent.Destroy(); Particles.Clear();
+		
+		if (ParticleSys != null) { ParticleSys.Dispose(); ParticleSys = null; }
 
 		Events.Clear();
 		UpgradeCounts.Clear();
@@ -205,18 +209,23 @@ public class DudeGame : IGameMode
 
 	internal void SpawnExplosion(Vec2 pos, int count, float r, float g, float b)
 	{
+		ParticleProps props = new ParticleProps();
+		props.Position = pos;
+		props.VelocityVariation = new Vec2(8.0f, 8.0f); // Speed variation handled by random direction + speed
+		props.ColorBegin = new Color(r, g, b, 1.0f);
+		props.ColorEnd = new Color(r, g, b, 0.0f);
+		props.SizeBegin = 0.5f;
+		props.SizeEnd = 0.0f;
+		props.SizeVariation = 0.3f;
+		props.LifeTime = 1.0f;
+
 		for (int i = 0; i < count; i++)
 		{
-			float size = (float)Rng.NextDouble() * 0.4f + 0.1f;
 			float angle = (float)Rng.NextDouble() * 6.28f;
 			float speed = (float)Rng.NextDouble() * 8.0f + 2.0f;
-
-			Vec2 vel = new Vec2(MathF.Cos(angle), MathF.Sin(angle)) * speed;
-
-			var ent = CreateQuadEntity(pos.X, pos.Y, size, size, r, g, b, 30);
-			var transform = ent.GetComponent<TransformComponent>();
-			transform.Anchor = (0.5f, 0.5f);
-			Particles.Add(new Particle { Ent = ent, Pos = pos, Vel = vel, Life = 1.0f, InitSize = size });
+			props.Velocity = new Vec2(MathF.Cos(angle), MathF.Sin(angle)) * speed;
+			
+			ParticleSys.Emit(props);
 		}
 	}
 

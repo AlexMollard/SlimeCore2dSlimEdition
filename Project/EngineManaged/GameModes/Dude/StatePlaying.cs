@@ -41,7 +41,6 @@ public class StatePlaying : IDudeState
 
 		UpdateDiscoLights(game, dt);
 		UpdateShake(game, dt);
-		UpdateParticles(game, dt);
 		UpdateTrails(game, dt);
 
 		game.TimeAlive += dt;
@@ -386,27 +385,6 @@ public class StatePlaying : IDudeState
 				sprite.Color = (0.2f * t.Alpha, 1.0f * t.Alpha, 0.2f * t.Alpha);
 				var transform = t.Ent.GetComponent<TransformComponent>();
 				transform.Scale = (t.InitW * t.Alpha, t.InitH * t.Alpha);
-			}
-		}
-	}
-
-	private void UpdateParticles(DudeGame game, float dt)
-	{
-		for (int i = game.Particles.Count - 1; i >= 0; i--)
-		{
-			var p = game.Particles[i];
-			p.Life -= dt * 1.5f;
-			if (p.Life <= 0) { p.Ent.Destroy(); game.Particles.RemoveAt(i); }
-			else
-			{
-				// Vectorized physics
-				p.Pos += p.Vel * dt;
-				p.Vel *= 0.95f;
-				var transform = p.Ent.GetComponent<TransformComponent>();
-				transform.Position = (p.Pos.X, p.Pos.Y);
-
-				float s = p.InitSize * p.Life;
-				transform.Scale = (s, s);
 			}
 		}
 	}

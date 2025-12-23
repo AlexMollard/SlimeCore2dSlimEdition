@@ -187,6 +187,7 @@
     <ClCompile Include="Engine\Scripting\ExportInput.cpp" />
     <ClCompile Include="Engine\Scripting\ExportResource.cpp" />
     <ClCompile Include="Engine\Scripting\ExportScene.cpp" />
+    <ClCompile Include="Engine\Scripting\ExportParticles.cpp" />
     <ClCompile Include="Engine\Scripting\ExportText.cpp" />
     <ClCompile Include="Engine\Scripting\ExportUI.cpp" />
     <ClCompile Include="Engine\Physics\CollisionManager.cpp" />
@@ -198,6 +199,7 @@
     <ClCompile Include="Engine\Entities\GameObject.cpp" />
     <ClCompile Include="Engine\Physics\PhysicsScene.cpp" />
     <ClCompile Include="Engine\Rendering\Renderer2D.cpp" />
+    <ClCompile Include="Engine\Rendering\ParticleSystem.cpp" />
     <ClCompile Include="Engine\Scene\Scene.cpp" />
     <ClCompile Include="Engine\Physics\RigidBody.cpp" />
     <ClCompile Include="Engine\Rendering\Shader.cpp" />
@@ -222,6 +224,7 @@
     <ClInclude Include="Engine\Scripting\ExportInput.h" />
     <ClInclude Include="Engine\Scripting\ExportResource.h" />
     <ClInclude Include="Engine\Scripting\ExportScene.h" />
+    <ClInclude Include="Engine\Scripting\ExportParticles.h" />
     <ClInclude Include="Engine\Scripting\ExportText.h" />
     <ClInclude Include="Engine\Scripting\ExportUI.h" />
     <ClInclude Include="Engine\Physics\CollisionManager.h" />
@@ -234,6 +237,7 @@
     <ClInclude Include="Engine\Entities\GameObject.h" />
     <ClInclude Include="Engine\Physics\PhysicsScene.h" />
     <ClInclude Include="Engine\Rendering\Renderer2D.h" />
+    <ClInclude Include="Engine\Rendering\ParticleSystem.h" />
     <ClInclude Include="Engine\Scene\Scene.h" />
     <ClInclude Include="Engine\Physics\RigidBody.h" />
     <ClInclude Include="Engine\Rendering\Shader.h" />

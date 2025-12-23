@@ -7,6 +7,8 @@
 #include "Core/Camera.h"
 #include "Rendering/Text.h"
 
+class ParticleSystem;
+
 // Stable handle type for scripting/interop
 using ObjectId = Entity;
 static constexpr ObjectId InvalidObjectId = 0;
@@ -58,6 +60,9 @@ public:
 	void Update(float deltaTime);
 	void Render(Camera& camera);
 
+	void RegisterParticleSystem(ParticleSystem* system);
+	void UnregisterParticleSystem(ParticleSystem* system);
+
 	// --- Stats ---
 	int GetObjectCount() const { return (int)m_ActiveEntities.size(); }
 	ObjectId GetIdAtIndex(int index) const;
@@ -71,5 +76,7 @@ private:
 	// ID Management
 	ObjectId m_NextUIId = 100000; // Start UI IDs high to avoid collision with Entity IDs for now
 	std::unordered_map<ObjectId, PersistentUIElement> m_UIElements;
+
+	std::vector<ParticleSystem*> m_ParticleSystems;
 };
 

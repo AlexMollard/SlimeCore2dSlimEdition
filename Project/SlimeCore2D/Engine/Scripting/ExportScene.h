@@ -11,3 +11,6 @@ SLIME_EXPORT void __cdecl Scene_Destroy(EntityId id);
 SLIME_EXPORT bool __cdecl Scene_IsAlive(EntityId id);
 SLIME_EXPORT int __cdecl Scene_GetEntityCount();
 SLIME_EXPORT EntityId __cdecl Scene_GetEntityIdAtIndex(int index);
+
+SLIME_EXPORT void __cdecl Scene_RegisterParticleSystem(void* system);
+SLIME_EXPORT void __cdecl Scene_UnregisterParticleSystem(void* system);

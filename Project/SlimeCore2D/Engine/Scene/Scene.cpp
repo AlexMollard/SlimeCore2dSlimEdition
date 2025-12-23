@@ -1,5 +1,6 @@
 #include "Scene.h"
 #include "Rendering/Renderer2D.h"
+#include "Rendering/ParticleSystem.h"
 #include "Core/Input.h"
 #include <algorithm>
 
@@ -251,6 +252,18 @@ void Scene::Update(float deltaTime)
 	}
 }
 
+void Scene::RegisterParticleSystem(ParticleSystem* system)
+{
+	m_ParticleSystems.push_back(system);
+}
+
+void Scene::UnregisterParticleSystem(ParticleSystem* system)
+{
+	auto it = std::find(m_ParticleSystems.begin(), m_ParticleSystems.end(), system);
+	if (it != m_ParticleSystems.end())
+		m_ParticleSystems.erase(it);
+}
+
 void Scene::Render(Camera& camera)
 {
 	Renderer2D::BeginScene(camera);
@@ -309,6 +322,9 @@ void Scene::Render(Camera& camera)
 			}
 		}
 	}
+
+	for (auto ps : m_ParticleSystems)
+		ps->OnRender();
 
 	Renderer2D::EndScene();
 }

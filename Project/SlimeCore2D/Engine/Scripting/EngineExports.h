@@ -21,4 +21,5 @@ using EntityId = std::uint64_t;
 #include "Scripting/ExportScene.h"
 #include "Scripting/ExportText.h"
 #include "Scripting/ExportUI.h"
+#include "Scripting/ExportParticles.h"
 

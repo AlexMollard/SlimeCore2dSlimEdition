@@ -110,7 +110,6 @@ public class StateGameOver : IDudeState
 		foreach (var c in game.Collectables) c.Ent.Destroy(); game.Collectables.Clear();
 		foreach (var g in game.Gems) g.Ent.Destroy(); game.Gems.Clear();
 		foreach (var t in game.Trails) t.Ent.Destroy(); game.Trails.Clear();
-		foreach (var p in game.Particles) p.Ent.Destroy(); game.Particles.Clear();
 	}
 	public void Update(DudeGame game, float dt)
 	{
@@ -142,23 +141,5 @@ public class StateGameOver : IDudeState
 		// Animate Button WITH the panel
 		_retryBtn.SetPosition(0, panelY - 3.5f);
 
-		// 3. Particles
-		for (int i = game.Particles.Count - 1; i >= 0; i--)
-		{
-			var p = game.Particles[i];
-			p.Life -= dt * 0.5f;
-			if (p.Life <= 0) { p.Ent.Destroy(); game.Particles.RemoveAt(i); }
-			else
-			{
-				// Vectorized Physics
-				p.Pos += p.Vel * dt;
-				p.Vel *= 0.9f;
-
-				var transform = p.Ent.GetComponent<TransformComponent>();
-				transform.Position = (p.Pos.X, p.Pos.Y);
-				float s = p.InitSize * p.Life;
-				transform.Scale = (s, s);
-			}
-		}
 	}
 }

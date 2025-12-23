@@ -1,6 +1,7 @@
 #include "Scripting/ExportScene.h"
 #include "Scene/Scene.h"
 #include "Scripting/ExportEntity.h"
+#include "Rendering/ParticleSystem.h"
 
 SLIME_EXPORT EntityId __cdecl Scene_CreateGameObject(float px, float py, float sx, float sy, float r, float g, float b)
 {
@@ -41,4 +42,16 @@ SLIME_EXPORT int __cdecl Scene_GetEntityCount()
 SLIME_EXPORT EntityId __cdecl Scene_GetEntityIdAtIndex(int index)
 {
 	return Scene::GetActiveScene() ? (EntityId) Scene::GetActiveScene()->GetIdAtIndex(index) : 0;
+}
+
+SLIME_EXPORT void __cdecl Scene_RegisterParticleSystem(void* system)
+{
+	if (Scene::GetActiveScene())
+		Scene::GetActiveScene()->RegisterParticleSystem((ParticleSystem*)system);
+}
+
+SLIME_EXPORT void __cdecl Scene_UnregisterParticleSystem(void* system)
+{
+	if (Scene::GetActiveScene())
+		Scene::GetActiveScene()->UnregisterParticleSystem((ParticleSystem*)system);
 }
