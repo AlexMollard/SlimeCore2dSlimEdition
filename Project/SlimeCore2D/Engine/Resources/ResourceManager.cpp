@@ -3,6 +3,7 @@
 #include "Rendering/Shader.h"
 #include "Rendering/Text.h"
 #include "Rendering/Texture.h"
+#include "Core/Logger.h"
 
 #if defined(_WIN32)
 #	include <windows.h>
@@ -155,11 +156,11 @@ bool ResourceManager::LoadShadersFromDir(const std::string& dir)
 
 	if (chosen.empty())
 	{
-		std::cout << "ResourceManager: no shader directory found (tried " << candidates.size() << " locations)" << std::endl;
+		Logger::Error("ResourceManager: no shader directory found (tried " + std::to_string(candidates.size()) + " locations)");
 		return false;
 	}
 
-	std::cout << "ResourceManager: using shader directory: " << chosen << std::endl;
+	Logger::Info("ResourceManager: using shader directory: " + chosen);
 
 	std::unordered_map<std::string, std::string> vmap;
 	std::unordered_map<std::string, std::string> fmap;
@@ -174,7 +175,7 @@ bool ResourceManager::LoadShadersFromDir(const std::string& dir)
 	HANDLE hFind = FindFirstFileA(search.c_str(), &findData);
 	if (hFind == INVALID_HANDLE_VALUE)
 	{
-		std::cout << "ResourceManager: directory exists but no files found: " << chosen << std::endl;
+		Logger::Warn("ResourceManager: directory exists but no files found: " + chosen);
 		return false;
 	}
 
@@ -234,7 +235,7 @@ bool ResourceManager::LoadShadersFromDir(const std::string& dir)
 	DIR* dirPtr = opendir(chosen.c_str());
 	if (!dirPtr)
 	{
-		std::cout << "ResourceManager: directory exists but could not open: " << chosen << " (" << strerror(errno) << ")" << std::endl;
+		Logger::Error("ResourceManager: directory exists but could not open: " + chosen + " (" + strerror(errno) + ")");
 		return false;
 	}
 
@@ -293,11 +294,11 @@ bool ResourceManager::LoadShadersFromDir(const std::string& dir)
 		if (fmap.find(base) != fmap.end())
 		{
 			AddShader(base, vmap[base], fmap[base]);
-			std::cout << "ResourceManager: loaded shader: " << base << std::endl;
+			Logger::Info("ResourceManager: loaded shader: " + base);
 		}
 		else
 		{
-			std::cout << "ResourceManager: vertex shader without fragment: " << kv.second << std::endl;
+			Logger::Warn("ResourceManager: vertex shader without fragment: " + kv.second);
 		}
 	}
 
@@ -345,7 +346,7 @@ Texture* ResourceManager::LoadTexture(const std::string& name, const std::string
 
 	if (fullPath.empty())
 	{
-		std::cout << "ResourceManager: Failed to locate texture: " << searchPath << std::endl;
+		Logger::Error("ResourceManager: Failed to locate texture: " + searchPath);
 		return nullptr;
 	}
 
@@ -356,14 +357,14 @@ Texture* ResourceManager::LoadTexture(const std::string& name, const std::string
 	// Check for load failure (usually width 0)
 	if (tex->GetWidth() == 0)
 	{
-		std::cout << "ResourceManager: Failed to load texture data from: " << fullPath << std::endl;
+		Logger::Error("ResourceManager: Failed to load texture data from: " + fullPath);
 		delete tex;
 		return nullptr;
 	}
 
 	// 4. Store
 	m_textures[key] = tex;
-	std::cout << "ResourceManager: Loaded Texture '" << key << "' (" << tex->GetWidth() << "x" << tex->GetHeight() << ")" << std::endl;
+	Logger::Info("ResourceManager: Loaded Texture '" + key + "' (" + std::to_string(tex->GetWidth()) + "x" + std::to_string(tex->GetHeight()) + ")");
 
 	return tex;
 }
@@ -398,7 +399,7 @@ Text* ResourceManager::LoadFont(const std::string& name, const std::string& rela
 
 	if (fullPath.empty())
 	{
-		std::cout << "ResourceManager: Failed to locate font: " << searchPath << std::endl;
+		Logger::Error("ResourceManager: Failed to locate font: " + searchPath);
 		return nullptr;
 	}
 
@@ -408,7 +409,7 @@ Text* ResourceManager::LoadFont(const std::string& name, const std::string& rela
 
 	// 4. Store
 	m_fonts[key] = font;
-	std::cout << "ResourceManager: Loaded Font '" << key << "' from " << fullPath << std::endl;
+	Logger::Info("ResourceManager: Loaded Font '" + key + "' from " + fullPath);
 
 	return font;
 }
@@ -510,9 +511,9 @@ std::string ResourceManager::GetManagedRuntimeConfigPath()
 			return p;
 	}
 
-	std::cout << "ResourceManager: EngineManaged.runtimeconfig.json not found. Tried:\n";
+	Logger::Error("ResourceManager: EngineManaged.runtimeconfig.json not found. Tried:");
 	for (const auto& p: candidates)
-		std::cout << "  " << p << "\n";
+		Logger::Error("  " + p);
 
 	return std::string();
 }
@@ -558,5 +559,5 @@ void ResourceManager::Clear()
 	}
 	m_fonts.clear();
 
-	std::cout << "ResourceManager: Resources cleared." << std::endl;
+	Logger::Info("ResourceManager: Resources cleared.");
 }

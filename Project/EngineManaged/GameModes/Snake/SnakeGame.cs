@@ -102,7 +102,7 @@ namespace SlimeCore.GameModes.Snake
 			_scoreCached = -1;
 
 			_testBtn = UIButton.Create("Click me", x: 0.0f, y: 6.0f, w: 3.75f, h: 1.5f, r: 0.2f, g: 0.6f, b: 0.9f, layer: 100, fontSize: 1);
-			_testBtn.Clicked += () => { Console.WriteLine("PRESSED!"); };
+			_testBtn.Clicked += () => { Logger.Info("PRESSED!"); };
 		}
 
 		public void Shutdown()
@@ -123,7 +123,7 @@ namespace SlimeCore.GameModes.Snake
 			else _seed = new Random().Next();
 
 			_rng = new Random(_seed);
-			Console.WriteLine($"Seed: {_seed}");
+			Logger.Info($"Seed: {_seed}");
 
 			var gen = new SlimeCore.Core.World.WorldGenerator(_seed);
 			gen.Generate(_world);

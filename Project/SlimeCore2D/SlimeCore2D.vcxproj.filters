@@ -30,6 +30,9 @@
     <ClCompile Include="Engine\Core\Camera.cpp">
       <Filter>Source Files\EngineCore</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Core\Logger.cpp">
+      <Filter>Source Files\EngineCore</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Physics\CollisionManager.cpp">
       <Filter>Source Files\EngineCore</Filter>
     </ClCompile>
@@ -120,6 +123,9 @@
       <Filter>Header Files\EngineCore</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Core\Camera.h">
+      <Filter>Header Files\EngineCore</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Core\Logger.h">
       <Filter>Header Files\EngineCore</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Physics\CollisionManager.h">

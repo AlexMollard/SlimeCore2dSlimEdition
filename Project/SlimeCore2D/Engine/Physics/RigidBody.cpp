@@ -1,4 +1,5 @@
 #include "RigidBody.h"
+#include "Core/Logger.h"
 
 #include <iostream>
 
@@ -92,7 +93,7 @@ RigidBody* RigidBody::GetChild(int index)
 {
 	if (index < 0 || index > children.size())
 	{
-		std::cout << "Child dosent exist" << std::endl;
+		Logger::Warn("Child doesn't exist");
 		return nullptr;
 	}
 	return children[index];

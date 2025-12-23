@@ -1,4 +1,5 @@
 #include "Text.h"
+#include "Core/Logger.h"
 
 #include <algorithm>
 #include <iostream>
@@ -15,14 +16,14 @@ Text::Text(const std::string& fontPath, unsigned int fontSize)
 	FT_Library ft;
 	if (FT_Init_FreeType(&ft))
 	{
-		std::cout << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
+		Logger::Error("ERROR::FREETYPE: Could not init FreeType Library");
 		return;
 	}
 
 	FT_Face face;
 	if (FT_New_Face(ft, fontPath.c_str(), 0, &face))
 	{
-		std::cout << "ERROR::FREETYPE: Failed to load font: " << fontPath << std::endl;
+		Logger::Error("ERROR::FREETYPE: Failed to load font: " + fontPath);
 		FT_Done_FreeType(ft);
 		return;
 	}
@@ -73,7 +74,7 @@ void Text::GenerateAtlas(FT_Face face)
 		// Load glyph outline first (no render) then render with the best mode available.
 		if (FT_Load_Char(face, c, FT_LOAD_DEFAULT))
 		{
-			std::cout << "ERROR::FREETYPE: Failed to load Glyph: " << c << std::endl;
+			Logger::Warn("ERROR::FREETYPE: Failed to load Glyph: " + std::to_string(c));
 			continue;
 		}
 
@@ -85,7 +86,7 @@ void Text::GenerateAtlas(FT_Face face)
 
 		if (FT_Render_Glyph(face->glyph, renderMode))
 		{
-			std::cout << "ERROR::FREETYPE: Failed to render Glyph: " << c << std::endl;
+			Logger::Warn("ERROR::FREETYPE: Failed to render Glyph: " + std::to_string(c));
 			continue;
 		}
 
@@ -104,7 +105,7 @@ void Text::GenerateAtlas(FT_Face face)
 		// Check if we ran out of space in the texture
 		if (yOffset + height > atlasHeight)
 		{
-			std::cout << "ERROR::TEXT: Font Atlas is too small for this font size!" << std::endl;
+			Logger::Error("ERROR::TEXT: Font Atlas is too small for this font size!");
 			break;
 		}
 

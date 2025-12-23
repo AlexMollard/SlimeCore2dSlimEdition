@@ -1,4 +1,5 @@
 #include "PhysicsScene.h"
+#include "Core/Logger.h"
 
 #include <iostream>
 #include <sstream>
@@ -18,7 +19,7 @@ void PhysicsScene::addActor(RigidBody* actor, std::string name, bool isKinematic
 	{
 		if (actors[i] == actor)
 		{
-			std::cout << "Actor already exist in physics scene" << std::endl;
+			Logger::Warn("Actor already exists in physics scene");
 			break;
 		}
 	}

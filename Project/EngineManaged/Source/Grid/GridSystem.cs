@@ -50,7 +50,7 @@ public class GridSystem<TEnum>
         }
         else
         {
-            Native.Engine_Log($"Position {x}, {y} was not found");
+            Logger.Warn($"Position {x}, {y} was not found");
         }
     }
 
@@ -58,7 +58,7 @@ public class GridSystem<TEnum>
     {
         if (!Grid.TryGetValue(new Vec2i(x, y), out var tile))
         {
-            Native.Engine_Log($"Position {x}, {y} was not found");
+            Logger.Warn($"Position {x}, {y} was not found");
         }
         return tile;
     }

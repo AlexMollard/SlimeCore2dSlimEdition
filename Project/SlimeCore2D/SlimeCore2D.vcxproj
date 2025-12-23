@@ -179,6 +179,7 @@
   <ItemGroup>
     <ClCompile Include="Engine\Physics\BoundingBox.cpp" />
     <ClCompile Include="Engine\Core\Camera.cpp" />
+    <ClCompile Include="Engine\Core\Logger.cpp" />
     <ClCompile Include="Engine\Scene\Components.cpp" />
     <ClCompile Include="Engine\Scripting\DotNetHost.cpp" />
     <ClCompile Include="Engine\Scripting\ExportCore.cpp" />
@@ -211,6 +212,7 @@
   <ItemGroup>
     <ClInclude Include="Engine\Physics\BoundingBox.h" />
     <ClInclude Include="Engine\Core\Camera.h" />
+    <ClInclude Include="Engine\Core\Logger.h" />
     <ClInclude Include="Engine\Scene\Components.h" />
     <ClInclude Include="Engine\Scene\Registry.h" />
     <ClInclude Include="Engine\Scripting\DotNetHost.h" />

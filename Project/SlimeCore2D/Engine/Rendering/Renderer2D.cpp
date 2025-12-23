@@ -1,4 +1,5 @@
 #include "Renderer2D.h"
+#include "Core/Logger.h"
 
 #include <array>
 #include <gtc/matrix_transform.hpp>
@@ -87,7 +88,7 @@ void Renderer2D::Init()
 	s_Data.TextureShader = ResourceManager::GetInstance().GetShader("basic");
 	if (!s_Data.TextureShader)
 	{
-		std::cout << "Renderer2D Warning: 'BatchShader' not found. Make sure to load a shader capable of batching." << std::endl;
+		Logger::Warn("Renderer2D Warning: 'BatchShader' not found. Make sure to load a shader capable of batching.");
 	}
 
 	// Helper for rotation

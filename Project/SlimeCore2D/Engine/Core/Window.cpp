@@ -1,6 +1,7 @@
 #include "Window.h"
 #include "Input.h"
 #include "Camera.h"
+#include "Logger.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 
@@ -11,7 +12,7 @@ Window::Window(int width, int height, char* name)
 
 	if (!Window_intit(width, height, name))
 	{
-		std::cout << "Failed to load window" << std::endl;
+		Logger::Error("Failed to load window");
 	}
 }
 
@@ -56,11 +57,11 @@ int Window::Window_intit(int width, int height, char* name)
 	glewExperimental = GL_TRUE;
 	if (glewInit() != GLEW_OK)
 	{
-		std::cout << "Glew is not havig a good time" << std::endl;
+		Logger::Error("Glew is not having a good time");
 	}
 
 	// Outputting OpenGL Version and build
-	std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << std::endl;
+	Logger::Info("OpenGL Version: " + std::string((char*)glGetString(GL_VERSION)));
 
 	return 1;
 }

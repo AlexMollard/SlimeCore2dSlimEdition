@@ -1,9 +1,13 @@
 #include "Core/Window.h"
 #include "Game2D.h"
 #include "Scripting/DotNetHost.h"
+#include "Core/Logger.h"
 
 int main()
 {
+	Logger::Init();
+	Logger::Info("Engine Initializing...");
+
 	Window* app = new Window(1536, 852, (char*) "SlimeCore2D");
 	Game2D* game = new Game2D();
 	Input* inputManager = Input::GetInstance();

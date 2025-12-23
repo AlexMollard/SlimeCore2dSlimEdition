@@ -1,6 +1,7 @@
 #include "DotNetHost.h"
 
 #include "EngineExports.h"
+#include "Core/Logger.h"
 
 #include <cassert>
 #include <cstdio>
@@ -40,17 +41,17 @@ static void LogLastError(const char* what)
 {
 	DWORD e = GetLastError();
 	char buf[512];
-	std::snprintf(buf, sizeof(buf), "%s failed. GetLastError=%lu (0x%08lX)\n", what, e, e);
+	std::snprintf(buf, sizeof(buf), "%s failed. GetLastError=%lu (0x%08lX)", what, e, e);
 	OutputDebugStringA(buf);
-	std::printf("%s", buf);
+	Logger::Error(buf);
 }
 
 static void LogRc(const char* what, int rc)
 {
 	char buf[512];
-	std::snprintf(buf, sizeof(buf), "%s failed. rc=%d (0x%08X)\n", what, rc, (unsigned) rc);
+	std::snprintf(buf, sizeof(buf), "%s failed. rc=%d (0x%08X)", what, rc, (unsigned) rc);
 	OutputDebugStringA(buf);
-	std::printf("%s", buf);
+	Logger::Error(buf);
 }
 
 static hostfxr_initialize_for_runtime_config_fn init_fptr = nullptr;
@@ -105,10 +106,9 @@ bool DotNetHost::Init()
 {
 	const std::wstring& runtimeConfigPath = GetRuntimeConfigPath();
 
-	std::wprintf(L"runtimeconfig: %ls\n", runtimeConfigPath.c_str());
 	if (!std::filesystem::exists(runtimeConfigPath))
 	{
-		std::wprintf(L"runtimeconfig missing!\n");
+		Logger::Error("runtimeconfig missing!");
 		return false;
 	}
 

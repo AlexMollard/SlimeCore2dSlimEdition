@@ -1,4 +1,5 @@
 #include "Texture.h"
+#include "Core/Logger.h"
 
 #include <iostream>
 
@@ -77,7 +78,7 @@ Texture::Texture(const std::string& path, Filter filter, Wrap wrap)
 	}
 	else
 	{
-		std::cout << "ERROR::TEXTURE::LOAD_FAILED: " << path << std::endl;
+		Logger::Error("ERROR::TEXTURE::LOAD_FAILED: " + path);
 	}
 }
 
