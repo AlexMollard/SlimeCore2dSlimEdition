@@ -1,109 +1,31 @@
-#include "Scripting/EngineExports.h"
-
-#include <cstdio>
-#include <iostream>
-#include <map>
-#include <string>
-#include <unordered_map>
-#include <vector>
-
-#include "Core/Input.h"
-#include "Rendering/Renderer2D.h"
-#include "Rendering/Text.h"
-#include "Rendering/Texture.h"
-#include "Resources/ResourceManager.h"
+#include "Scripting/ExportEntity.h"
 #include "Scene/Scene.h"
+#include "Rendering/Texture.h"
 
 // -------------------------------------------------------------------------
-// LOGGING
-// -------------------------------------------------------------------------
-SLIME_EXPORT void __cdecl Engine_Log(const char* msg)
-{
-	std::cout << "[C#] " << (msg ? msg : "null") << std::endl;
-}
-
-// -------------------------------------------------------------------------
-// RESOURCES
-// -------------------------------------------------------------------------
-
-SLIME_EXPORT void* __cdecl Resources_LoadTexture(const char* name, const char* path)
-{
-	if (!name)
-		return nullptr;
-	std::string strName = name;
-	std::string strPath = path ? path : ""; // If path is null, it might be resolved by name in RM
-	return (void*) ResourceManager::GetInstance().LoadTexture(strName, strPath);
-}
-
-SLIME_EXPORT void* __cdecl Resources_GetTexture(const char* name)
-{
-	if (!name)
-		return nullptr;
-	return (void*) ResourceManager::GetInstance().GetTexture(name);
-}
-
-SLIME_EXPORT void* __cdecl Resources_LoadFont(const char* name, const char* path, int fontSize)
-{
-	if (!name)
-		return nullptr;
-	std::string strName = name;
-	std::string strPath = path ? path : "";
-	return (void*) ResourceManager::GetInstance().LoadFont(strName, strPath, fontSize);
-}
-
-// Legacy / Deprecated Wrapper (maintains binary compatibility)
-SLIME_EXPORT void* __cdecl Texture_Load(const char* path)
-{
-	if (!path)
-		return nullptr;
-	// Use path as the key name
-	return (void*) ResourceManager::GetInstance().LoadTexture(path, path);
-}
-
-// Legacy / Deprecated Wrapper
-SLIME_EXPORT void* __cdecl Font_LoadFromFile(const char* path)
-{
-	if (!path)
-		return nullptr;
-	// Default to 48px for legacy loading
-	return (void*) ResourceManager::GetInstance().LoadFont(path, path, 48);
-}
-
-SLIME_EXPORT void __cdecl Font_Free(void* font)
-{
-	// ResourceManager owns the pointers now.
-	// We do not delete them here to prevent double-free issues if C# calls this manually.
-	// If explicit unloading is required, add UnloadResource to RM.
-}
-
-// -------------------------------------------------------------------------
-// ENTITY LIFECYCLE (Delegates to Scene)
+// ENTITY LIFECYCLE
 // -------------------------------------------------------------------------
 SLIME_EXPORT EntityId __cdecl Entity_Create()
 {
-	if (!Scene::GetActiveScene())
-		return 0;
+	if (!Scene::GetActiveScene()) return 0;
 	return (EntityId) Scene::GetActiveScene()->CreateEntity();
 }
 
 SLIME_EXPORT EntityId __cdecl Entity_CreateQuad(float px, float py, float sx, float sy, float r, float g, float b)
 {
-	if (!Scene::GetActiveScene())
-		return 0;
+	if (!Scene::GetActiveScene()) return 0;
 	return (EntityId) Scene::GetActiveScene()->CreateQuad(glm::vec3(px, py, 0.0f), glm::vec2(sx, sy), glm::vec3(r, g, b));
 }
 
 SLIME_EXPORT void __cdecl Entity_Destroy(EntityId id)
 {
-	if (!Scene::GetActiveScene() || id == 0)
-		return;
+	if (!Scene::GetActiveScene() || id == 0) return;
 	Scene::GetActiveScene()->DestroyObject((ObjectId) id);
 }
 
 SLIME_EXPORT bool __cdecl Entity_IsAlive(EntityId id)
 {
-	if (!Scene::GetActiveScene() || id == 0)
-		return false;
+	if (!Scene::GetActiveScene() || id == 0) return false;
 	return Scene::GetActiveScene()->IsAlive((ObjectId) id);
 }
 
@@ -245,25 +167,16 @@ SLIME_EXPORT void __cdecl Entity_GetAnchor(EntityId id, float* outAx, float* out
 // -------------------------------------------------------------------------
 // ENTITY VISUALS & ANIMATION
 // -------------------------------------------------------------------------
-
-// Assigns a texture by raw OpenGL ID (Low-level)
 SLIME_EXPORT void __cdecl Entity_SetTexture(EntityId id, unsigned int texId, int width, int height)
 {
-	if (!Scene::GetActiveScene() || id == 0)
-		return;
-	
+	if (!Scene::GetActiveScene() || id == 0) return;
 	auto& reg = Scene::GetActiveScene()->GetRegistry();
 	if (auto* s = reg.TryGetComponent<SpriteComponent>((Entity)id))
 	{
-		// Create temp texture wrapper
-		// Note: This leaks if we don't manage it. 
-		// Ideally Texture* in SpriteComponent should be managed resource.
-		// For now, we just new it as before.
 		Texture* t = new Texture(width, height, GL_RGBA8);
 		t->SetID(texId, width, height);
 		s->Texture = t;
 	}
-	
 	if (width > 0)
 	{
 		if (auto* a = reg.TryGetComponent<AnimationComponent>((Entity)id))
@@ -273,12 +186,9 @@ SLIME_EXPORT void __cdecl Entity_SetTexture(EntityId id, unsigned int texId, int
 	}
 }
 
-// Assigns a Texture pointer retrieved via Resources_LoadTexture
 SLIME_EXPORT void __cdecl Entity_SetTexturePtr(EntityId id, void* texPtr)
 {
-	if (!Scene::GetActiveScene() || id == 0)
-		return;
-	
+	if (!Scene::GetActiveScene() || id == 0) return;
 	auto& reg = Scene::GetActiveScene()->GetRegistry();
 	if (auto* s = reg.TryGetComponent<SpriteComponent>((Entity)id))
 	{
@@ -286,7 +196,6 @@ SLIME_EXPORT void __cdecl Entity_SetTexturePtr(EntityId id, void* texPtr)
 		{
 			Texture* tex = (Texture*) texPtr;
 			s->Texture = tex;
-			
 			if (auto* a = reg.TryGetComponent<AnimationComponent>((Entity)id))
 			{
 				a->SpriteWidth = tex->GetWidth();
@@ -301,9 +210,7 @@ SLIME_EXPORT void __cdecl Entity_SetTexturePtr(EntityId id, void* texPtr)
 
 SLIME_EXPORT void* __cdecl Entity_GetTexturePtr(EntityId id)
 {
-	if (!Scene::GetActiveScene() || id == 0)
-		return nullptr;
-
+	if (!Scene::GetActiveScene() || id == 0) return nullptr;
 	auto& reg = Scene::GetActiveScene()->GetRegistry();
 	if (auto* s = reg.TryGetComponent<SpriteComponent>((Entity)id))
 	{
@@ -356,8 +263,6 @@ SLIME_EXPORT int __cdecl Entity_GetFrame(EntityId id)
 
 SLIME_EXPORT void __cdecl Entity_AdvanceFrame(EntityId id)
 {
-	// Manual advance not fully implemented in component logic yet, 
-	// but we can just increment frame.
 	if (!Scene::GetActiveScene()) return;
 	auto& reg = Scene::GetActiveScene()->GetRegistry();
 	if (auto* a = reg.TryGetComponent<AnimationComponent>((Entity)id))
@@ -414,252 +319,6 @@ SLIME_EXPORT float __cdecl Entity_GetFrameRate(EntityId id)
 	if (auto* a = reg.TryGetComponent<AnimationComponent>((Entity)id))
 	{
 		return a->FrameRate;
-	}
-	return 0.0f;
-}
-
-// -------------------------------------------------------------------------
-// INPUT
-// -------------------------------------------------------------------------
-SLIME_EXPORT bool __cdecl Input_GetKeyDown(int key)
-{
-	return Input::GetInstance()->GetKey(Keycode(key));
-}
-
-SLIME_EXPORT bool __cdecl Input_GetKeyReleased(int key)
-{
-	return Input::GetInstance()->GetKeyUp(Keycode(key));
-}
-
-SLIME_EXPORT bool __cdecl Input_GetMouseDown(int button)
-{
-	return Input::GetInstance()->GetMouseButtonDown(button);
-}
-
-SLIME_EXPORT void __cdecl Input_GetMousePos(float* outX, float* outY)
-{
-	if (!outX || !outY)
-		return;
-	auto p = Input::GetInstance()->GetMousePosition();
-	*outX = (float) p.x;
-	*outY = (float) p.y;
-}
-
-SLIME_EXPORT void __cdecl Input_GetMouseToWorldPos(float* outX, float* outY)
-{
-	if (!outX || !outY)
-		return;
-	auto p = Input::GetInstance()->GetMousePositionWorld();
-	*outX = (float) p.x;
-	*outY = (float) p.y;
-}
-
-SLIME_EXPORT void __cdecl Input_SetViewportRect(int x, int y, int w, int h)
-{
-	Input::GetInstance()->SetViewportRect(x, y, w, h);
-}
-
-SLIME_EXPORT void __cdecl Input_GetViewportRect(int* x, int* y, int* w, int* h)
-{
-	if (!x || !y || !w || !h)
-		return;
-	auto v = Input::GetInstance()->GetViewportRect();
-	*x = (int) v.x;
-	*y = (int) v.y;
-	*w = (int) v.z;
-	*h = (int) v.w;
-}
-
-SLIME_EXPORT void __cdecl Input_SetScroll(float v, float h)
-{
-	Input::GetInstance()->SetScrollInternal(v, h);
-}
-
-SLIME_EXPORT float __cdecl Input_GetScroll()
-{
-	return Input::GetInstance()->GetScroll();
-}
-
-// -------------------------------------------------------------------------
-// UI SYSTEM (Using Persistent Bridge)
-// -------------------------------------------------------------------------
-SLIME_EXPORT EntityId __cdecl UI_CreateText(const char* text, int fontSize, float x, float y)
-{
-	if (!Scene::GetActiveScene())
-		return 0;
-
-	ObjectId id = Scene::GetActiveScene()->CreateUIElement(true);
-	PersistentUIElement* el = Scene::GetActiveScene()->GetUIElement(id);
-	if (!el)
-		return 0;
-
-	el->TextContent = text ? std::string(text) : " ";
-	el->Position = { x, y };
-
-	// Calculate relative scale (SDF is baked at 48px)
-	float scale = (float) fontSize / 48.0f;
-	el->Scale = { scale, scale };
-
-	// Default font resolution logic
-	// Check if a font named "DefaultFont" is loaded
-	Text* defaultFont = ResourceManager::GetInstance().GetFont("DefaultFont");
-	if (!defaultFont)
-	{
-		// Try to load a fallback from common locations if not found
-		defaultFont = ResourceManager::GetInstance().LoadFont("DefaultFont", "Fonts/Chilanka-Regular.ttf", 48);
-	}
-	el->Font = defaultFont;
-
-	return (EntityId) id;
-}
-
-SLIME_EXPORT void __cdecl UI_Destroy(EntityId id)
-{
-	if (!Scene::GetActiveScene() || id == 0)
-		return;
-	Scene::GetActiveScene()->DestroyObject((ObjectId) id);
-}
-
-SLIME_EXPORT void __cdecl UI_SetText(EntityId id, const char* text)
-{
-	if (!Scene::GetActiveScene() || id == 0 || !text)
-		return;
-	if (PersistentUIElement* el = Scene::GetActiveScene()->GetUIElement((ObjectId) id))
-	{
-		el->TextContent = text;
-	}
-}
-
-SLIME_EXPORT void __cdecl UI_SetPosition(EntityId id, float x, float y)
-{
-	if (!Scene::GetActiveScene() || id == 0)
-		return;
-	if (PersistentUIElement* el = Scene::GetActiveScene()->GetUIElement((ObjectId) id))
-	{
-		el->Position = { x, y };
-	}
-}
-
-SLIME_EXPORT void __cdecl UI_GetPosition(EntityId id, float* outX, float* outY)
-{
-	if (!Scene::GetActiveScene() || id == 0 || (!outX && !outY))
-		return;
-	if (PersistentUIElement* el = Scene::GetActiveScene()->GetUIElement((ObjectId) id))
-	{
-		if (outX)
-			*outX = el->Position.x;
-		if (outY)
-			*outY = el->Position.y;
-	}
-	else
-	{
-		if (outX)
-			*outX = 0.0f;
-		if (outY)
-			*outY = 0.0f;
-	}
-}
-
-SLIME_EXPORT void __cdecl UI_SetColor(EntityId id, float r, float g, float b)
-{
-	if (!Scene::GetActiveScene() || id == 0)
-		return;
-	if (PersistentUIElement* el = Scene::GetActiveScene()->GetUIElement((ObjectId) id))
-	{
-		el->Color = { r, g, b, 1.0f };
-	}
-}
-
-SLIME_EXPORT void __cdecl UI_SetVisible(EntityId id, bool visible)
-{
-	if (!Scene::GetActiveScene() || id == 0)
-		return;
-	if (PersistentUIElement* el = Scene::GetActiveScene()->GetUIElement((ObjectId) id))
-	{
-		el->IsVisible = visible;
-	}
-}
-
-SLIME_EXPORT void __cdecl UI_SetLayer(EntityId id, int layer)
-{
-	if (!Scene::GetActiveScene() || id == 0)
-		return;
-	if (PersistentUIElement* el = Scene::GetActiveScene()->GetUIElement((ObjectId) id))
-	{
-		el->Layer = layer;
-	}
-}
-
-SLIME_EXPORT void __cdecl UI_SetAnchor(EntityId id, float ax, float ay)
-{
-	if (!Scene::GetActiveScene() || id == 0)
-		return;
-	if (PersistentUIElement* el = Scene::GetActiveScene()->GetUIElement((ObjectId) id))
-	{
-		el->Anchor = { ax, ay };
-	}
-}
-
-SLIME_EXPORT void __cdecl UI_SetUseScreenSpace(EntityId id, bool useScreenSpace)
-{
-	if (!Scene::GetActiveScene() || id == 0)
-		return;
-	if (PersistentUIElement* el = Scene::GetActiveScene()->GetUIElement((ObjectId) id))
-	{
-		el->UseScreenSpace = useScreenSpace;
-	}
-}
-
-SLIME_EXPORT void __cdecl UI_GetTextSize(EntityId id, float* outWidth, float* outHeight)
-{
-	if (!Scene::GetActiveScene() || id == 0 || (!outWidth && !outHeight))
-		return;
-	if (PersistentUIElement* el = Scene::GetActiveScene()->GetUIElement((ObjectId) id))
-	{
-		if (el->IsText && el->Font)
-		{
-			glm::vec2 size = el->Font->CalculateSize(el->TextContent, el->Scale.x);
-			if (outWidth)
-				*outWidth = size.x;
-			if (outHeight)
-				*outHeight = size.y;
-		}
-		else
-		{
-			if (outWidth)
-				*outWidth = 0.0f;
-			if (outHeight)
-				*outHeight = 0.0f;
-		}
-	}
-}
-
-SLIME_EXPORT float __cdecl UI_GetTextWidth(EntityId id)
-{
-	if (!Scene::GetActiveScene() || id == 0)
-		return 0.0f;
-	if (PersistentUIElement* el = Scene::GetActiveScene()->GetUIElement((ObjectId) id))
-	{
-		if (el->IsText && el->Font)
-		{
-			glm::vec2 size = el->Font->CalculateSize(el->TextContent, el->Scale.x);
-			return size.x;
-		}
-	}
-	return 0.0f;
-}
-
-SLIME_EXPORT float __cdecl UI_GetTextHeight(EntityId id)
-{
-	if (!Scene::GetActiveScene() || id == 0)
-		return 0.0f;
-	if (PersistentUIElement* el = Scene::GetActiveScene()->GetUIElement((ObjectId) id))
-	{
-		if (el->IsText && el->Font)
-		{
-			glm::vec2 size = el->Font->CalculateSize(el->TextContent, el->Scale.x);
-			return size.y;
-		}
 	}
 	return 0.0f;
 }
@@ -782,11 +441,6 @@ SLIME_EXPORT void __cdecl Entity_RemoveComponent_Relationship(EntityId id)
 		reg.RemoveComponent<RelationshipComponent>((Entity)id);
 }
 
-// -------------------------------------------------------------------------
-// NEW COMPONENTS
-// -------------------------------------------------------------------------
-
-// RigidBody
 SLIME_EXPORT void __cdecl Entity_AddComponent_RigidBody(EntityId id)
 {
 	if (!Scene::GetActiveScene()) return;
@@ -794,12 +448,14 @@ SLIME_EXPORT void __cdecl Entity_AddComponent_RigidBody(EntityId id)
 	if (!reg.HasComponent<RigidBodyComponent>((Entity)id))
 		reg.AddComponent<RigidBodyComponent>((Entity)id, RigidBodyComponent());
 }
+
 SLIME_EXPORT bool __cdecl Entity_HasComponent_RigidBody(EntityId id)
 {
 	if (!Scene::GetActiveScene()) return false;
 	auto& reg = Scene::GetActiveScene()->GetRegistry();
 	return reg.HasComponent<RigidBodyComponent>((Entity)id);
 }
+
 SLIME_EXPORT void __cdecl Entity_RemoveComponent_RigidBody(EntityId id)
 {
 	if (!Scene::GetActiveScene()) return;
@@ -808,7 +464,6 @@ SLIME_EXPORT void __cdecl Entity_RemoveComponent_RigidBody(EntityId id)
 		reg.RemoveComponent<RigidBodyComponent>((Entity)id);
 }
 
-// BoxCollider
 SLIME_EXPORT void __cdecl Entity_AddComponent_BoxCollider(EntityId id)
 {
 	if (!Scene::GetActiveScene()) return;
@@ -816,12 +471,14 @@ SLIME_EXPORT void __cdecl Entity_AddComponent_BoxCollider(EntityId id)
 	if (!reg.HasComponent<BoxColliderComponent>((Entity)id))
 		reg.AddComponent<BoxColliderComponent>((Entity)id, BoxColliderComponent());
 }
+
 SLIME_EXPORT bool __cdecl Entity_HasComponent_BoxCollider(EntityId id)
 {
 	if (!Scene::GetActiveScene()) return false;
 	auto& reg = Scene::GetActiveScene()->GetRegistry();
 	return reg.HasComponent<BoxColliderComponent>((Entity)id);
 }
+
 SLIME_EXPORT void __cdecl Entity_RemoveComponent_BoxCollider(EntityId id)
 {
 	if (!Scene::GetActiveScene()) return;
@@ -830,7 +487,6 @@ SLIME_EXPORT void __cdecl Entity_RemoveComponent_BoxCollider(EntityId id)
 		reg.RemoveComponent<BoxColliderComponent>((Entity)id);
 }
 
-// CircleCollider
 SLIME_EXPORT void __cdecl Entity_AddComponent_CircleCollider(EntityId id)
 {
 	if (!Scene::GetActiveScene()) return;
@@ -838,12 +494,14 @@ SLIME_EXPORT void __cdecl Entity_AddComponent_CircleCollider(EntityId id)
 	if (!reg.HasComponent<CircleColliderComponent>((Entity)id))
 		reg.AddComponent<CircleColliderComponent>((Entity)id, CircleColliderComponent());
 }
+
 SLIME_EXPORT bool __cdecl Entity_HasComponent_CircleCollider(EntityId id)
 {
 	if (!Scene::GetActiveScene()) return false;
 	auto& reg = Scene::GetActiveScene()->GetRegistry();
 	return reg.HasComponent<CircleColliderComponent>((Entity)id);
 }
+
 SLIME_EXPORT void __cdecl Entity_RemoveComponent_CircleCollider(EntityId id)
 {
 	if (!Scene::GetActiveScene()) return;
@@ -852,7 +510,6 @@ SLIME_EXPORT void __cdecl Entity_RemoveComponent_CircleCollider(EntityId id)
 		reg.RemoveComponent<CircleColliderComponent>((Entity)id);
 }
 
-// Camera
 SLIME_EXPORT void __cdecl Entity_AddComponent_Camera(EntityId id)
 {
 	if (!Scene::GetActiveScene()) return;
@@ -860,12 +517,14 @@ SLIME_EXPORT void __cdecl Entity_AddComponent_Camera(EntityId id)
 	if (!reg.HasComponent<CameraComponent>((Entity)id))
 		reg.AddComponent<CameraComponent>((Entity)id, CameraComponent());
 }
+
 SLIME_EXPORT bool __cdecl Entity_HasComponent_Camera(EntityId id)
 {
 	if (!Scene::GetActiveScene()) return false;
 	auto& reg = Scene::GetActiveScene()->GetRegistry();
 	return reg.HasComponent<CameraComponent>((Entity)id);
 }
+
 SLIME_EXPORT void __cdecl Entity_RemoveComponent_Camera(EntityId id)
 {
 	if (!Scene::GetActiveScene()) return;
@@ -874,7 +533,6 @@ SLIME_EXPORT void __cdecl Entity_RemoveComponent_Camera(EntityId id)
 		reg.RemoveComponent<CameraComponent>((Entity)id);
 }
 
-// AudioSource
 SLIME_EXPORT void __cdecl Entity_AddComponent_AudioSource(EntityId id)
 {
 	if (!Scene::GetActiveScene()) return;
@@ -882,12 +540,14 @@ SLIME_EXPORT void __cdecl Entity_AddComponent_AudioSource(EntityId id)
 	if (!reg.HasComponent<AudioSourceComponent>((Entity)id))
 		reg.AddComponent<AudioSourceComponent>((Entity)id, AudioSourceComponent());
 }
+
 SLIME_EXPORT bool __cdecl Entity_HasComponent_AudioSource(EntityId id)
 {
 	if (!Scene::GetActiveScene()) return false;
 	auto& reg = Scene::GetActiveScene()->GetRegistry();
 	return reg.HasComponent<AudioSourceComponent>((Entity)id);
 }
+
 SLIME_EXPORT void __cdecl Entity_RemoveComponent_AudioSource(EntityId id)
 {
 	if (!Scene::GetActiveScene()) return;
@@ -1059,48 +719,4 @@ SLIME_EXPORT bool __cdecl Entity_GetPrimaryCamera(EntityId id)
 	if (auto* c = reg.TryGetComponent<CameraComponent>((Entity)id))
 		return c->IsPrimary;
 	return false;
-}
-
-// -------------------------------------------------------------------------
-// SCENE WRAPPERS
-// -------------------------------------------------------------------------
-SLIME_EXPORT EntityId __cdecl Scene_CreateGameObject(float px, float py, float sx, float sy, float r, float g, float b)
-{
-	if (!Scene::GetActiveScene())
-		return 0;
-	return (EntityId) Scene::GetActiveScene()->CreateGameObject(glm::vec3(px, py, 0.0f), glm::vec2(sx, sy), glm::vec3(r, g, b));
-}
-
-SLIME_EXPORT EntityId __cdecl Scene_CreateQuad(float px, float py, float sx, float sy, float r, float g, float b)
-{
-	return Entity_CreateQuad(px, py, sx, sy, r, g, b);
-}
-
-SLIME_EXPORT EntityId __cdecl Scene_CreateQuadWithTexture(float px, float py, float sx, float sy, unsigned int texId)
-{
-	if (!Scene::GetActiveScene())
-		return 0;
-	ObjectId id = Scene::GetActiveScene()->CreateQuad(glm::vec3(px, py, 0.0f), glm::vec2(sx, sy), glm::vec3(1.0f));
-	Entity_SetTexture((EntityId) id, texId, 0, 0);
-	return (EntityId) id;
-}
-
-SLIME_EXPORT void __cdecl Scene_Destroy(EntityId id)
-{
-	Entity_Destroy(id);
-}
-
-SLIME_EXPORT bool __cdecl Scene_IsAlive(EntityId id)
-{
-	return Entity_IsAlive(id);
-}
-
-SLIME_EXPORT int __cdecl Scene_GetEntityCount()
-{
-	return Scene::GetActiveScene() ? Scene::GetActiveScene()->GetObjectCount() : 0;
-}
-
-SLIME_EXPORT EntityId __cdecl Scene_GetEntityIdAtIndex(int index)
-{
-	return Scene::GetActiveScene() ? (EntityId) Scene::GetActiveScene()->GetIdAtIndex(index) : 0;
 }
