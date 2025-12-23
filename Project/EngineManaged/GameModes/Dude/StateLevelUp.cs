@@ -108,7 +108,7 @@ public class StateLevelUp : IDudeState
 
 	private void CreateSidebar(DudeGame game)
 	{
-		float xPos = 10.5f;
+		float xPos = 12.5f;
 		float yStart = 5.0f;
 
 		_sidebarHeader = UIText.Create("Equiped", 1, xPos, yStart);
@@ -177,15 +177,16 @@ public class StateLevelUp : IDudeState
 			_bg = SceneFactory.CreateQuad(x, y, W, H, def.R, def.G, def.B, layer: 94);
 			_bg.SetAnchor(0.5f, 0.5f);
 
-			_title = UIText.Create(def.Title, 1, x - W, y + 2.5f);
+			_title = UIText.Create(def.Title, 1, x, y + 2.5f);
+			_title.SetAnchor(0.5f, 0.5f); // Center anchor for title
 			_title.SetLayer(95);
 
-			_desc = UIText.Create(def.Desc, 1, x - W, y - 0.5f);
+			_desc = UIText.Create(def.Desc, 1, x, y - 0.5f);
 			_desc.SetAnchor(0.5f, 0.5f);
 			_desc.SetColor(0.1f, 0.1f, 0.1f);
 			_desc.SetLayer(95);
 
-			_lvlLabel = UIText.Create($"LVL {nextLevel}", 1, x - W, y - 3.0f);
+			_lvlLabel = UIText.Create($"LVL {nextLevel}", 1, x, y - 3.0f);
 			_lvlLabel.SetAnchor(0.5f, 0.5f);
 			_lvlLabel.SetColor(0.1f, 0.1f, 0.1f);
 			_lvlLabel.SetLayer(95);
@@ -199,9 +200,10 @@ public class StateLevelUp : IDudeState
 			_shadow.SetPosition(x + 0.3f * Scale, y - 0.3f * Scale);
 			_border.SetPosition(x, y);
 			_bg.SetPosition(x, y);
-			_title.SetPosition(x - W / 2, y + 2.0f * Scale);
-			_desc.SetPosition(x - W / 2, y - 0.5f * Scale);
-			_lvlLabel.SetPosition(x - W / 2, y - 3.5f * Scale);
+			// Text positions are centered at x (since anchor is 0.5, 0.5)
+			_title.SetPosition(x, y + 2.0f * Scale);
+			_desc.SetPosition(x, y - 0.5f * Scale);
+			_lvlLabel.SetPosition(x, y - 3.5f * Scale);
 		}
 
 		public void SetScale(float s)

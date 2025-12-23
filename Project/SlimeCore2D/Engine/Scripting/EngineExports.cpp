@@ -16,88 +16,6 @@
 #include "Utils/ObjectManager.h"
 
 // -------------------------------------------------------------------------
-// INTERNAL STATE BRIDGE (Retained Mode -> Immediate Mode)
-// -------------------------------------------------------------------------
-
-// We need this struct to store UI state between frames because C# sets it once,
-// but Renderer2D needs it drawn every frame.
-struct PersistentUIElement
-{
-	bool IsVisible = true;
-	bool IsText = false;
-
-	// Transform
-	glm::vec2 Position = { 0.0f, 0.0f };
-	glm::vec2 Scale = { 1.0f, 1.0f }; // Doubles as FontSize relative to 48px
-	glm::vec2 Anchor = { 0.5f, 0.5f };
-	glm::vec4 Color = { 1.0f, 1.0f, 1.0f, 1.0f };
-	int Layer = 0;
-
-	// Content
-	std::string TextContent;
-	Text* Font = nullptr;     // Pointer to SDF Atlas
-	Texture* Image = nullptr; // Pointer to standard Texture
-};
-
-// Global storage for UI
-static std::map<int, PersistentUIElement> s_UIElements;
-static int s_NextUIID = 1;
-
-// -------------------------------------------------------------------------
-// PUBLIC API FOR GAME LOOP (Call this in your C++ Main Loop!)
-// -------------------------------------------------------------------------
-void EngineExports_RenderUI()
-{
-	// Iterate over all persistent UI elements and submit them to the immediate renderer
-	for (auto& [id, element]: s_UIElements)
-	{
-		if (!element.IsVisible)
-			continue;
-
-		// Calculate Draw Position based on Anchor
-		// Renderer2D draws at center/position. We need to offset based on anchor.
-		glm::vec3 drawPos = glm::vec3(element.Position.x, element.Position.y, 0.9f + (element.Layer * 0.001f));
-
-		if (element.IsText && element.Font)
-		{
-			// Anchor-aware positioning for text: measure and offset
-			glm::vec2 textSize = element.Font->CalculateSize(element.TextContent, element.Scale.x);
-			glm::vec3 finalPos = drawPos;
-			finalPos.x += (0.5f - element.Anchor.x) * textSize.x;
-			finalPos.y += (0.5f - element.Anchor.y) * textSize.y;
-
-			// SDF Text Render
-			Renderer2D::DrawString(element.TextContent,
-			        element.Font,
-			        glm::vec2(finalPos.x, finalPos.y),
-			        element.Scale.x, // Scale 1.0 = 48px
-			        element.Color);
-		}
-		else if (!element.IsText)
-		{
-			// UI Quad Render
-			// Apply anchor offset logic for Quads
-			// (0.5 - Anchor) * Scale
-			float offX = (0.5f - element.Anchor.x) * element.Scale.x;
-			float offY = (0.5f - element.Anchor.y) * element.Scale.y;
-
-			glm::vec3 finalPos = drawPos;
-			finalPos.x += offX;
-			finalPos.y += offY;
-
-			if (element.Image)
-			{
-				Renderer2D::DrawQuad(finalPos, element.Scale, element.Image, 1.0f, element.Color);
-			}
-			else
-			{
-				Renderer2D::DrawQuad(finalPos, element.Scale, element.Color);
-			}
-		}
-	}
-}
-
-// -------------------------------------------------------------------------
 // LOGGING
 // -------------------------------------------------------------------------
 SLIME_EXPORT void __cdecl Engine_Log(const char* msg)
@@ -460,16 +378,20 @@ SLIME_EXPORT float __cdecl Input_GetScroll()
 // -------------------------------------------------------------------------
 SLIME_EXPORT EntityId __cdecl UI_CreateText(const char* text, int fontSize, float x, float y)
 {
-	int id = s_NextUIID++;
+	if (!ObjectManager::IsCreated())
+		return 0;
 
-	PersistentUIElement el;
-	el.IsText = true;
-	el.TextContent = text ? std::string(text) : " ";
-	el.Position = { x, y };
+	ObjectId id = ObjectManager::Get().CreateUIElement(true);
+	PersistentUIElement* el = ObjectManager::Get().GetUIElement(id);
+	if (!el)
+		return 0;
+
+	el->TextContent = text ? std::string(text) : " ";
+	el->Position = { x, y };
 
 	// Calculate relative scale (SDF is baked at 48px)
 	float scale = (float) fontSize / 48.0f;
-	el.Scale = { scale, scale };
+	el->Scale = { scale, scale };
 
 	// Default font resolution logic
 	// Check if a font named "DefaultFont" is loaded
@@ -479,83 +401,160 @@ SLIME_EXPORT EntityId __cdecl UI_CreateText(const char* text, int fontSize, floa
 		// Try to load a fallback from common locations if not found
 		defaultFont = ResourceManager::GetInstance().LoadFont("DefaultFont", "Fonts/Chilanka-Regular.ttf", 48);
 	}
-	el.Font = defaultFont;
+	el->Font = defaultFont;
 
-	s_UIElements[id] = el;
 	return (EntityId) id;
 }
 
 SLIME_EXPORT void __cdecl UI_Destroy(EntityId id)
 {
-	if (id == 0)
+	if (!ObjectManager::IsCreated() || id == 0)
 		return;
-	s_UIElements.erase((int) id);
+	ObjectManager::Get().DestroyObject((ObjectId) id);
 }
 
 SLIME_EXPORT void __cdecl UI_SetText(EntityId id, const char* text)
 {
-	if (id == 0 || !text)
+	if (!ObjectManager::IsCreated() || id == 0 || !text)
 		return;
-	auto it = s_UIElements.find((int) id);
-	if (it != s_UIElements.end())
+	if (PersistentUIElement* el = ObjectManager::Get().GetUIElement((ObjectId) id))
 	{
-		it->second.TextContent = text;
+		el->TextContent = text;
 	}
 }
 
 SLIME_EXPORT void __cdecl UI_SetPosition(EntityId id, float x, float y)
 {
-	if (id == 0)
+	if (!ObjectManager::IsCreated() || id == 0)
 		return;
-	auto it = s_UIElements.find((int) id);
-	if (it != s_UIElements.end())
+	if (PersistentUIElement* el = ObjectManager::Get().GetUIElement((ObjectId) id))
 	{
-		it->second.Position = { x, y };
+		el->Position = { x, y };
+	}
+}
+
+SLIME_EXPORT void __cdecl UI_GetPosition(EntityId id, float* outX, float* outY)
+{
+	if (!ObjectManager::IsCreated() || id == 0 || (!outX && !outY))
+		return;
+	if (PersistentUIElement* el = ObjectManager::Get().GetUIElement((ObjectId) id))
+	{
+		if (outX)
+			*outX = el->Position.x;
+		if (outY)
+			*outY = el->Position.y;
+	}
+	else
+	{
+		if (outX)
+			*outX = 0.0f;
+		if (outY)
+			*outY = 0.0f;
 	}
 }
 
 SLIME_EXPORT void __cdecl UI_SetColor(EntityId id, float r, float g, float b)
 {
-	if (id == 0)
+	if (!ObjectManager::IsCreated() || id == 0)
 		return;
-	auto it = s_UIElements.find((int) id);
-	if (it != s_UIElements.end())
+	if (PersistentUIElement* el = ObjectManager::Get().GetUIElement((ObjectId) id))
 	{
-		it->second.Color = { r, g, b, 1.0f };
+		el->Color = { r, g, b, 1.0f };
 	}
 }
 
 SLIME_EXPORT void __cdecl UI_SetVisible(EntityId id, bool visible)
 {
-	if (id == 0)
+	if (!ObjectManager::IsCreated() || id == 0)
 		return;
-	auto it = s_UIElements.find((int) id);
-	if (it != s_UIElements.end())
+	if (PersistentUIElement* el = ObjectManager::Get().GetUIElement((ObjectId) id))
 	{
-		it->second.IsVisible = visible;
+		el->IsVisible = visible;
 	}
 }
 
 SLIME_EXPORT void __cdecl UI_SetLayer(EntityId id, int layer)
 {
-	if (id == 0)
+	if (!ObjectManager::IsCreated() || id == 0)
 		return;
-	auto it = s_UIElements.find((int) id);
-	if (it != s_UIElements.end())
+	if (PersistentUIElement* el = ObjectManager::Get().GetUIElement((ObjectId) id))
 	{
-		it->second.Layer = layer;
+		el->Layer = layer;
 	}
 }
 
 SLIME_EXPORT void __cdecl UI_SetAnchor(EntityId id, float ax, float ay)
 {
-	if (id == 0)
+	if (!ObjectManager::IsCreated() || id == 0)
 		return;
-	auto it = s_UIElements.find((int) id);
-	if (it != s_UIElements.end())
+	if (PersistentUIElement* el = ObjectManager::Get().GetUIElement((ObjectId) id))
 	{
-		it->second.Anchor = { ax, ay };
+		el->Anchor = { ax, ay };
 	}
+}
+
+SLIME_EXPORT void __cdecl UI_SetUseScreenSpace(EntityId id, bool useScreenSpace)
+{
+	if (!ObjectManager::IsCreated() || id == 0)
+		return;
+	if (PersistentUIElement* el = ObjectManager::Get().GetUIElement((ObjectId) id))
+	{
+		el->UseScreenSpace = useScreenSpace;
+	}
+}
+
+SLIME_EXPORT void __cdecl UI_GetTextSize(EntityId id, float* outWidth, float* outHeight)
+{
+	if (!ObjectManager::IsCreated() || id == 0 || (!outWidth && !outHeight))
+		return;
+	if (PersistentUIElement* el = ObjectManager::Get().GetUIElement((ObjectId) id))
+	{
+		if (el->IsText && el->Font)
+		{
+			glm::vec2 size = el->Font->CalculateSize(el->TextContent, el->Scale.x);
+			if (outWidth)
+				*outWidth = size.x;
+			if (outHeight)
+				*outHeight = size.y;
+		}
+		else
+		{
+			if (outWidth)
+				*outWidth = 0.0f;
+			if (outHeight)
+				*outHeight = 0.0f;
+		}
+	}
+}
+
+SLIME_EXPORT float __cdecl UI_GetTextWidth(EntityId id)
+{
+	if (!ObjectManager::IsCreated() || id == 0)
+		return 0.0f;
+	if (PersistentUIElement* el = ObjectManager::Get().GetUIElement((ObjectId) id))
+	{
+		if (el->IsText && el->Font)
+		{
+			glm::vec2 size = el->Font->CalculateSize(el->TextContent, el->Scale.x);
+			return size.x;
+		}
+	}
+	return 0.0f;
+}
+
+SLIME_EXPORT float __cdecl UI_GetTextHeight(EntityId id)
+{
+	if (!ObjectManager::IsCreated() || id == 0)
+		return 0.0f;
+	if (PersistentUIElement* el = ObjectManager::Get().GetUIElement((ObjectId) id))
+	{
+		if (el->IsText && el->Font)
+		{
+			glm::vec2 size = el->Font->CalculateSize(el->TextContent, el->Scale.x);
+			return size.y;
+		}
+	}
+	return 0.0f;
 }
 
 // -------------------------------------------------------------------------

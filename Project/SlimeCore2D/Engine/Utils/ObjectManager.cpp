@@ -3,10 +3,31 @@
 #include <algorithm>
 #include <iostream>
 
+#include "Core/Input.h"
 #include "Entities/Quad.h" // Assuming Quad is a subclass of GameObject
 #include "Rendering/Renderer2D.h"
 
 ObjectManager* ObjectManager::s_instance = nullptr;
+
+// Helper function to convert screen-space coordinates (pixels, top-left origin) to UI space (world units, center origin)
+static glm::vec2 ScreenSpaceToUISpace(float screenX, float screenY)
+{
+	auto viewport = Input::GetInstance()->GetViewportRect();
+	float vpW = viewport.z > 0 ? (float) viewport.z : 1920.0f;
+	float vpH = viewport.w > 0 ? (float) viewport.w : 1080.0f;
+	float aspect = (vpH > 0.0f) ? (vpW / vpH) : (16.0f / 9.0f);
+
+	const float uiHeight = 18.0f; // match Camera ortho size used in Game2D
+	const float uiWidth = uiHeight * aspect;
+
+	// Convert from screen space (0,0 = top-left) to UI space (0,0 = center, Y-up)
+	// Screen: (0,0) = top-left, (vpW, vpH) = bottom-right
+	// UI: (-uiWidth/2, uiHeight/2) = top-left, (uiWidth/2, -uiHeight/2) = bottom-right
+	float uiX = (screenX / vpW) * uiWidth - (uiWidth * 0.5f);
+	float uiY = (uiHeight * 0.5f) - (screenY / vpH) * uiHeight;
+
+	return glm::vec2(uiX, uiY);
+}
 
 void ObjectManager::Create()
 {
@@ -43,6 +64,7 @@ ObjectManager::~ObjectManager()
 	}
 	m_objects.clear();
 	m_objectsById.clear();
+	m_uiElements.clear();
 }
 
 ObjectId ObjectManager::CreateGameObject(glm::vec3 pos, glm::vec2 size, glm::vec3 color)
@@ -86,25 +108,53 @@ ObjectId ObjectManager::CreateQuad(glm::vec3 pos, glm::vec2 size, Texture* tex)
 	return id;
 }
 
+ObjectId ObjectManager::CreateUIElement(bool isText)
+{
+	ObjectId id = m_nextId++;
+	PersistentUIElement el;
+	el.IsText = isText;
+	m_uiElements[id] = el;
+	return id;
+}
+
+PersistentUIElement* ObjectManager::GetUIElement(ObjectId id)
+{
+	auto it = m_uiElements.find(id);
+	if (it != m_uiElements.end())
+		return &it->second;
+	return nullptr;
+}
+
 void ObjectManager::DestroyObject(ObjectId id)
 {
 	auto it = m_objectsById.find(id);
-	if (it == m_objectsById.end())
+	if (it != m_objectsById.end())
+	{
+		GameObject* obj = it->second;
+
+		m_objects.erase(std::remove(m_objects.begin(), m_objects.end(), obj), m_objects.end());
+
+		// Remove from map
+		m_objectsById.erase(it);
+
+		delete obj;
 		return;
+	}
 
-	GameObject* obj = it->second;
-
-	m_objects.erase(std::remove(m_objects.begin(), m_objects.end(), obj), m_objects.end());
-
-	// Remove from map
-	m_objectsById.erase(it);
-
-	delete obj;
+	auto itUI = m_uiElements.find(id);
+	if (itUI != m_uiElements.end())
+	{
+		m_uiElements.erase(itUI);
+	}
 }
 
 bool ObjectManager::IsAlive(ObjectId id) const
 {
-	return m_objectsById.find(id) != m_objectsById.end();
+	if (m_objectsById.find(id) != m_objectsById.end())
+		return true;
+	if (m_uiElements.find(id) != m_uiElements.end())
+		return true;
+	return false;
 }
 
 GameObject* ObjectManager::Get(ObjectId id)
@@ -214,10 +264,94 @@ void ObjectManager::RenderAll()
 	}
 }
 
+void ObjectManager::RenderUI()
+{
+	// Iterate over all persistent UI elements and submit them to the immediate renderer
+	for (auto& [id, element]: m_uiElements)
+	{
+		if (!element.IsVisible)
+			continue;
+
+		// Convert position based on coordinate space
+		glm::vec2 position = element.Position;
+		if (element.UseScreenSpace)
+		{
+			// Convert from screen pixels to UI world space
+			position = ScreenSpaceToUISpace(element.Position.x, element.Position.y);
+		}
+
+		// Calculate Draw Position based on Anchor
+		// Renderer2D draws at center/position. We need to offset based on anchor.
+		glm::vec3 drawPos = glm::vec3(position.x, position.y, 0.9f + (element.Layer * 0.001f));
+
+		if (element.IsText && element.Font)
+		{
+			// Anchor-aware positioning for text: measure and offset
+			// DrawString draws from baseline/left, so we need to offset based on anchor
+			glm::vec3 textInfo = element.Font->CalculateSizeWithBaseline(element.TextContent, element.Scale.x);
+			float textWidth = textInfo.x;
+			float textHeight = textInfo.y;
+			float maxY = textInfo.z;        // How far above baseline text extends
+			float minY = textHeight - maxY; // How far below baseline text extends
+
+			glm::vec3 finalPos = drawPos;
+
+			// Horizontal anchor: 0.0 = left, 0.5 = center, 1.0 = right
+			finalPos.x += (0.0f - element.Anchor.x) * textWidth;
+
+			// Vertical anchor: 0.0 = bottom, 0.5 = center, 1.0 = top
+			float baselineForBottom = drawPos.y + minY;
+			float baselineForCenter = drawPos.y - (maxY - minY) * 0.5f;
+			float baselineForTop = drawPos.y - maxY;
+
+			// Linear interpolation between the three points
+			if (element.Anchor.y <= 0.5f)
+			{
+				// Interpolate between bottom (0.0) and center (0.5)
+				float t = element.Anchor.y * 2.0f; // Maps 0.0->0.0, 0.5->1.0
+				finalPos.y = baselineForBottom * (1.0f - t) + baselineForCenter * t;
+			}
+			else
+			{
+				// Interpolate between center (0.5) and top (1.0)
+				float t = (element.Anchor.y - 0.5f) * 2.0f; // Maps 0.5->0.0, 1.0->1.0
+				finalPos.y = baselineForCenter * (1.0f - t) + baselineForTop * t;
+			}
+
+			// SDF Text Render
+			Renderer2D::DrawString(element.TextContent,
+			                       element.Font,
+			                       glm::vec2(finalPos.x, finalPos.y),
+			                       element.Scale.x, // Scale 1.0 = 48px
+			                       element.Color);
+		}
+		else if (!element.IsText)
+		{
+			// UI Quad Render
+			float offX = (0.5f - element.Anchor.x) * element.Scale.x;
+			float offY = (0.5f - element.Anchor.y) * element.Scale.y;
+
+			glm::vec3 finalPos = drawPos;
+			finalPos.x += offX;
+			finalPos.y += offY;
+
+			if (element.Image)
+			{
+				Renderer2D::DrawQuad(finalPos, element.Scale, element.Image, 1.0f, element.Color);
+			}
+			else
+			{
+				Renderer2D::DrawQuad(finalPos, element.Scale, element.Color);
+			}
+		}
+	}
+}
+
 int ObjectManager::Size() const
 {
 	return (int) m_objects.size();
 }
+
 
 ObjectId ObjectManager::GetIdAtIndex(int index) const
 {

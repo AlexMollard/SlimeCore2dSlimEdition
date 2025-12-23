@@ -15,6 +15,9 @@ internal static partial class Native
 	internal static extern void UI_SetPosition(ulong id, float x, float y);
 
 	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern void UI_GetPosition(ulong id, out float x, out float y);
+
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
 	internal static extern void UI_SetAnchor(ulong id, float ax, float ay);
 
 	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
@@ -25,4 +28,16 @@ internal static partial class Native
 
 	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
 	internal static extern void UI_SetLayer(ulong id, int layer);
+
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern void UI_SetUseScreenSpace(ulong id, bool useScreenSpace);
+
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern void UI_GetTextSize(ulong id, out float width, out float height);
+
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern float UI_GetTextWidth(ulong id);
+
+	[DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+	internal static extern float UI_GetTextHeight(ulong id);
 }

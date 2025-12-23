@@ -111,7 +111,9 @@ public class DudeGame : IGameMode
 
 		// UI
 		ScoreText = UIText.Create("0", 1, -13.5f, 7.5f);
+		ScoreText.SetAnchor(0.0f, 1.0f); // Top-left anchor
 		LevelText = UIText.Create("LVL 1", 1, -13.0f, -6.25f);
+		LevelText.SetAnchor(0.0f, 0.0f); // Bottom-left anchor
 
 		// 4. Start Gameplay
 		ChangeState(new StatePlaying());

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace EngineManaged.UI;
 
@@ -22,7 +22,8 @@ public static class UISystem
 
 	public static void Update()
 	{
-		var (mx, my) = Input.GetMousePos();
+		var (mxWorld, myWorld) = Input.GetMousePos();
+		var (mxScreen, myScreen) = Input.GetMouseScreenPos();
 		var down = Input.GetMouseDown(Input.MouseButton.Left);
 
 		int hoverIndex = -1;
@@ -35,6 +36,10 @@ public static class UISystem
 			b.IsHovered = false; // Reset frame
 
 			if (!b.Enabled) continue;
+
+			// Use appropriate coordinate system based on button's screen-space setting
+			float mx = b.UseScreenSpace ? mxScreen : mxWorld;
+			float my = b.UseScreenSpace ? myScreen : myWorld;
 
 			if (b.ContainsPoint(mx, my))
 			{
@@ -64,6 +69,9 @@ public static class UISystem
 				var b = _buttons[i];
 				if (b.IsPressed)
 				{
+					// Use appropriate coordinate system
+					float mx = b.UseScreenSpace ? mxScreen : mxWorld;
+					float my = b.UseScreenSpace ? myScreen : myWorld;
 					if (b.Enabled && b.ContainsPoint(mx, my)) b.InvokeClick();
 					b.IsPressed = false;
 				}

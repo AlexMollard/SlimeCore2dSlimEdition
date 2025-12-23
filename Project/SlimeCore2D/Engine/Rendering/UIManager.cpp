@@ -6,6 +6,8 @@
 #include "Renderer2D.h"
 #include "Core/Input.h"
 
+#include "Utils/ObjectManager.h"
+
 static UIManager* s_Instance = nullptr;
 
 UIManager& UIManager::Get()
@@ -41,7 +43,7 @@ void UIManager::Draw()
 	Renderer2D::BeginScene(m_OrthoMatrix);
 
 	// 2. Render all submitted UI elements
-	EngineExports_RenderUI();
+	ObjectManager::Get().RenderUI();
 
 	// Draw a quad where the pointer is predicted to be
 	glm::vec2 mouseWorldPos = Input::GetInstance()->GetMousePositionWorld();

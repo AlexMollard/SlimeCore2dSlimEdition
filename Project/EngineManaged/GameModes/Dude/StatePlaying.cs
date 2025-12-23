@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using EngineManaged;
 using EngineManaged.Scene;
 using EngineManaged.UI;
@@ -20,8 +20,9 @@ public class StatePlaying : IDudeState
 		game.XPBarBg.IsVisible = true;
 		game.XPBarFill.IsVisible = true;
 
-		_controlsText = UIText.Create("WASD Move | SPACE Dash", 1, -6, -8.5f);
-		_controlsText.SetAnchor(0.5f, 0.5f);
+		_controlsText = UIText.Create("WASD Move | SPACE Dash", 1, 0, -8.0f);
+		_controlsText.SetAnchor(0.5f, 0.5f); // Center anchor
+		_controlsText.SetLayer(100);
 	}
 
 	public void Exit(DudeGame game)

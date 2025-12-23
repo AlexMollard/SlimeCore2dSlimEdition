@@ -48,6 +48,11 @@ public:
 
 	// Utility: Calculate the width/height of a string without rendering it
 	glm::vec2 CalculateSize(const std::string& text, float scale);
+	
+	// Calculate text bounds with baseline offset info
+	// Returns: (width, height, baselineOffset)
+	// baselineOffset: how far above the baseline the text extends (maxY)
+	glm::vec3 CalculateSizeWithBaseline(const std::string& text, float scale);
 
 private:
 	Texture* m_AtlasTexture = nullptr;

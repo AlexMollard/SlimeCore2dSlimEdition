@@ -54,18 +54,18 @@ public class StateGameOver : IDudeState
 		_panelBg = SceneFactory.CreateQuad(0, -15, panelBGWidth, 10.0f, 0.1f, 0.1f, 0.1f, layer: 92);
 		_panelBg.SetAnchor(0.5f, 0.5f);
 
-		// Stats Text
-		_scoreLabel = UIText.Create($"SCORE: {(int)game.Score}", 1, panelBGWidth / 2, -15);
+		// Stats Text - Positioned relative to panel center (0, -15)
+		_scoreLabel = UIText.Create($"SCORE: {(int)game.Score}", 1, 0, -15 + 3.0f);
 		_scoreLabel.SetAnchor(0.5f, 0.5f);
 		_scoreLabel.SetColor(1, 1, 1);
 		_scoreLabel.SetLayer(95);
 
-		_levelLabel = UIText.Create($"LEVEL REACHED: {game.Level}", 1, panelBGWidth / 2, -15);
+		_levelLabel = UIText.Create($"LEVEL REACHED: {game.Level}", 1, 0, -15 + 1.0f);
 		_levelLabel.SetAnchor(0.5f, 0.5f);
 		_levelLabel.SetColor(0.2f, 1.0f, 1.0f);
 		_levelLabel.SetLayer(95);
 
-		_timeLabel = UIText.Create($"TIME ALIVE: {game.TimeAlive:F1}s", 1, panelBGWidth / 2, -15);
+		_timeLabel = UIText.Create($"TIME ALIVE: {game.TimeAlive:F1}s", 1, 0, -15 - 0.5f);
 		_timeLabel.SetAnchor(0.5f, 0.5f);
 		_timeLabel.SetColor(0.7f, 0.7f, 0.7f);
 		_timeLabel.SetLayer(95);

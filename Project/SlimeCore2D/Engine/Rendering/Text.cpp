@@ -178,7 +178,13 @@ void Text::GenerateAtlas(FT_Face face)
 
 glm::vec2 Text::CalculateSize(const std::string& text, float scale)
 {
-	glm::vec2 size(0.0f);
+	glm::vec3 result = CalculateSizeWithBaseline(text, scale);
+	return glm::vec2(result.x, result.y);
+}
+
+glm::vec3 Text::CalculateSizeWithBaseline(const std::string& text, float scale)
+{
+	glm::vec3 result(0.0f);
 	float x = 0.0f;
 	float maxY = 0.0f;
 	float minY = 0.0f;
@@ -200,8 +206,9 @@ glm::vec2 Text::CalculateSize(const std::string& text, float scale)
 		x += (ch.Advance >> 6) * scale;
 	}
 
-	size.x = x;
-	size.y = maxY + minY; // Approximate height spanning top bearing to bottom descender
+	result.x = x; // width
+	result.y = maxY + minY; // total height
+	result.z = maxY; // baseline offset (how far above baseline)
 
-	return size;
+	return result;
 }

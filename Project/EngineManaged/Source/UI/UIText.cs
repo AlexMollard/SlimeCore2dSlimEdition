@@ -1,4 +1,4 @@
-﻿namespace EngineManaged.UI;
+namespace EngineManaged.UI;
 
 public readonly struct UIText
 {
@@ -21,8 +21,33 @@ public readonly struct UIText
 	}
 
 	public void SetPosition(float x, float y) => Native.UI_SetPosition(Id, x, y);
+	public (float x, float y) GetPosition()
+	{
+		Native.UI_GetPosition(Id, out float x, out float y);
+		return (x, y);
+	}
 	public void SetAnchor(float ax, float ay) => Native.UI_SetAnchor(Id, ax, ay);
 	public void SetColor(float r, float g, float b) => Native.UI_SetColor(Id, r, g, b);
 	public void SetVisible(bool v) => Native.UI_SetVisible(Id, v);
 	public void SetLayer(int layer) => Native.UI_SetLayer(Id, layer);
+	public void SetUseScreenSpace(bool useScreenSpace) => Native.UI_SetUseScreenSpace(Id, useScreenSpace);
+
+	/// <summary>
+	/// Gets the width and height of the text in world units.
+	/// </summary>
+	public (float width, float height) GetSize()
+	{
+		Native.UI_GetTextSize(Id, out float width, out float height);
+		return (width, height);
+	}
+
+	/// <summary>
+	/// Gets the width of the text in world units.
+	/// </summary>
+	public float Width => Native.UI_GetTextWidth(Id);
+
+	/// <summary>
+	/// Gets the height of the text in world units.
+	/// </summary>
+	public float Height => Native.UI_GetTextHeight(Id);
 }
