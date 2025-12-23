@@ -1,6 +1,7 @@
 using EngineManaged.Numeric;
 using EngineManaged.Scene;
 using EngineManaged.UI;
+using EngineManaged.Rendering;
 using SlimeCore.Core.Grid;
 using SlimeCore.Core.World;
 using SlimeCore.Interfaces;
@@ -48,6 +49,7 @@ namespace SlimeCore.GameModes.Snake
 		// Camera & Smoothing
 		private Vec2 _cam;
         private PlayerSnake _snake { get; set; } = new();
+		private ParticleSystem _particleSys;
 
 		// UI
 		private static UIText _score;
@@ -82,6 +84,7 @@ namespace SlimeCore.GameModes.Snake
 		public void Init()
 		{
 			_world = new GridSystem<Terrain>(WORLD_W, WORLD_H, Terrain.Grass);
+			_particleSys = new ParticleSystem(5000);
 
 			ResetGameLogic();
 
@@ -111,6 +114,7 @@ namespace SlimeCore.GameModes.Snake
 			_score.Destroy();
 			_testBtn.Destroy();
 			_snake.Destroy();
+			_particleSys.Dispose();
 
 			for (int x = 0; x < VIEW_W; x++)
 				for (int y = 0; y < VIEW_H; y++)
@@ -154,6 +158,7 @@ namespace SlimeCore.GameModes.Snake
 
 		public void Update(float dt)
 		{
+			_particleSys.OnUpdate(dt);
 			_time += dt;
 			_shake = Math.Max(0, _shake - dt * 2.0f);
 
@@ -277,6 +282,7 @@ namespace SlimeCore.GameModes.Snake
 			{
 				_snake.IsDead = true;
 				_shake = 0.4f;
+				SpawnExplosion(next, 50, new Vec3(1.0f, 0.2f, 0.2f));
 				return;
 			}
 
@@ -289,13 +295,15 @@ namespace SlimeCore.GameModes.Snake
 				_foodMap[next.X, next.Y] = FoodType.None;
 				_foodCount--;
 
+				Vec3 pCol = COL_FOOD_APPLE;
 				switch (type)
 				{
-					case FoodType.Gold: _snake.Grow += 5; _currentScore += 5; _shake = 0.3f; break;
-					case FoodType.Plum: _snake.Grow -= 2; _currentScore += 2; _shake = 0.15f; break;
-					case FoodType.Chili: _snake.Grow += 3; _currentScore += 1; _speedBoostTimer += 3.0f; _shake = 0.2f; break;
-					case FoodType.Apple: default: _snake.Grow += 3; _currentScore += 1; _shake = 0.15f; break;
+					case FoodType.Gold: _snake.Grow += 5; _currentScore += 5; _shake = 0.3f; pCol = COL_FOOD_GOLD; break;
+					case FoodType.Plum: _snake.Grow -= 2; _currentScore += 2; _shake = 0.15f; pCol = COL_FOOD_PLUM; break;
+					case FoodType.Chili: _snake.Grow += 3; _currentScore += 1; _speedBoostTimer += 3.0f; _shake = 0.2f; pCol = COL_FOOD_CHILI; break;
+					case FoodType.Apple: default: _snake.Grow += 3; _currentScore += 1; _shake = 0.15f; pCol = COL_FOOD_APPLE; break;
 				}
+				SpawnExplosion(next, 15, pCol);
 				SpawnFood();
 			}
 
@@ -356,6 +364,42 @@ namespace SlimeCore.GameModes.Snake
 					}
 				}
 				if (!spawned) break;
+			}
+		}
+
+		private void SpawnExplosion(Vec2i worldPos, int count, Vec3 color)
+		{
+			// Calculate relative position to camera
+			float dx = worldPos.X - _cam.X;
+			float dy = worldPos.Y - _cam.Y;
+
+			// Handle wrapping
+			if (dx > WORLD_W / 2f) dx -= WORLD_W;
+			else if (dx < -WORLD_W / 2f) dx += WORLD_W;
+
+			if (dy > WORLD_H / 2f) dy -= WORLD_H;
+			else if (dy < -WORLD_H / 2f) dy += WORLD_H;
+
+			float px = dx * _cellSpacing;
+			float py = dy * _cellSpacing;
+
+			ParticleProps props = new ParticleProps();
+			props.Position = new Vec2(px, py);
+			props.VelocityVariation = new Vec2(2.0f, 2.0f);
+			props.ColorBegin = new Color(color.X, color.Y, color.Z, 1.0f);
+			props.ColorEnd = new Color(color.X, color.Y, color.Z, 0.0f);
+			props.SizeBegin = 0.3f;
+			props.SizeEnd = 0.0f;
+			props.SizeVariation = 0.1f;
+			props.LifeTime = 0.8f;
+
+			for (int i = 0; i < count; i++)
+			{
+				float angle = (float)_rng.NextDouble() * 6.28f;
+				float speed = (float)_rng.NextDouble() * 2.0f + 0.5f;
+				props.Velocity = new Vec2((float)Math.Cos(angle), (float)Math.Sin(angle)) * speed;
+				
+				_particleSys.Emit(props);
 			}
 		}
 
