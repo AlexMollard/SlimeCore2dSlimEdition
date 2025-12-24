@@ -34,6 +34,12 @@ public class GridSystem<TEnum>
         set => Grid[new Vec2i(x, y)] = value;
     }
 
+    public Tile<TEnum> this[Vec2i position]
+    {
+        get => Grid[position];
+        set => Grid[position] = value;
+    }
+
     public void SetAll(Action<TileOptions<TEnum>> configure)
     {
         Grid.AsParallel().ForAll(kv =>
@@ -42,15 +48,16 @@ public class GridSystem<TEnum>
         });
     }
 
-    public void Set(int x, int y, Action<TileOptions<TEnum>> config)
+    public void Set(int x, int y, Action<TileOptions<TEnum>> config) => Set(new Vec2i(x, y), config);
+    public void Set(Vec2i position, Action<TileOptions<TEnum>> config)
     {
-        if (Grid.TryGetValue(new Vec2i(x, y), out var tile))
+        if (Grid.TryGetValue(position, out var tile))
         {
             tile.ApplyOptions(config);
         }
         else
         {
-            Logger.Warn($"Position {x}, {y} was not found");
+            Logger.Warn($"Position {position.X}, {position.Y} was not found");
         }
     }
 

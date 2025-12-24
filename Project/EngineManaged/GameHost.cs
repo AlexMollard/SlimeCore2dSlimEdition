@@ -14,7 +14,7 @@ public static class GameHost
 
     // The C++ Engine calls this every frame
     [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
-	public static void Update(float dt)
+	public static void Update(float dt) 
 	{
 		// Update Input/UI before game logic
 		EngineManaged.UI.UISystem.Update();

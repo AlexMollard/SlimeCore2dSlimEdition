@@ -74,6 +74,11 @@ public record PlayerSnake
         compassSprite.IsVisible = true;
     }
 
+    public void Kill()
+    {
+
+    }
+
     public void Destroy()
     {
         Head.Destroy();

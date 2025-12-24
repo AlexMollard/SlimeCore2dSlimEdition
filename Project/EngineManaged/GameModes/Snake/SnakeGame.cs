@@ -277,8 +277,23 @@ namespace SlimeCore.GameModes.Snake
 			Vec2i head = _snake[0];
 			Vec2i nextRaw = head + _snake.Direction;
 			Vec2i next = new Vec2i(Wrap(nextRaw.X, WORLD_W), Wrap(nextRaw.Y, WORLD_H));
-
-			if (_world[next.X, next.Y].Blocked || IsSnakeAt(next.X, next.Y))
+			
+			if (_world[next].Blocked && _snake.IsSprinting)
+			{
+                //Drill Baby Drill
+                if (_snake.IsSprinting)
+                {
+                    _world.Set(next, e =>
+                    {
+                        e.Blocked = false;
+                        e.Type = Terrain.Grass;
+                        e.Food = false;
+                    });
+                    SpawnExplosion(next, 50, COL_ROCK);
+                }
+            }
+            //Next tile blocked or snake collision = death
+            if (_world[next].Blocked || IsSnakeAt(next.X, next.Y))
 			{
 				_snake.IsDead = true;
 				_shake = 0.4f;

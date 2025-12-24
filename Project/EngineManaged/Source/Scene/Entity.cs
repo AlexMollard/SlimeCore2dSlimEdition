@@ -2,7 +2,7 @@
 
 namespace EngineManaged.Scene;
 
-public readonly record struct Entity(ulong Id)
+public record Entity(ulong Id)
 {
 	// Valid check
 	public bool IsAlive => Id != 0 && Native.Entity_IsAlive(Id);
