@@ -7,7 +7,7 @@ public interface IComponent
     ulong EntityId { get; set; }
 }
 
-public record struct TransformComponent : IComponent
+public record TransformComponent : IComponent
 {
     public ulong EntityId { get; set; }
 
@@ -42,7 +42,7 @@ public record struct TransformComponent : IComponent
     }
 }
 
-public record struct SpriteComponent : IComponent
+public record SpriteComponent : IComponent
 {
     public ulong EntityId { get; set; }
 
@@ -72,7 +72,7 @@ public record struct SpriteComponent : IComponent
     }
 }
 
-public record struct AnimationComponent : IComponent
+public record AnimationComponent : IComponent
 {
     public ulong EntityId { get; set; }
     
@@ -100,7 +100,7 @@ public record struct AnimationComponent : IComponent
     }
 }
 
-public record struct RigidBodyComponent : IComponent
+public record RigidBodyComponent : IComponent
 {
     public ulong EntityId { get; set; }
     
@@ -129,7 +129,7 @@ public record struct RigidBodyComponent : IComponent
     }
 }
 
-public record struct BoxColliderComponent : IComponent
+public record BoxColliderComponent : IComponent
 {
     public ulong EntityId { get; set; }
     
@@ -152,7 +152,7 @@ public record struct BoxColliderComponent : IComponent
     }
 }
 
-public record struct CameraComponent : IComponent
+public record CameraComponent : IComponent
 {
     public ulong EntityId { get; set; }
     
@@ -175,22 +175,22 @@ public record struct CameraComponent : IComponent
     }
 }
 
-public record struct AudioSourceComponent : IComponent
+public record AudioSourceComponent : IComponent
 {
     public ulong EntityId { get; set; }
 }
 
-public record struct TagComponent : IComponent
+public record TagComponent : IComponent
 {
     public ulong EntityId { get; set; }
 }
 
-public record struct RelationshipComponent : IComponent
+public record RelationshipComponent : IComponent
 {
     public ulong EntityId { get; set; }
 }
 
-public record struct CircleColliderComponent : IComponent
+public record CircleColliderComponent : IComponent
 {
     public ulong EntityId { get; set; }
 }

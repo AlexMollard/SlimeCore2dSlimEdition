@@ -36,7 +36,7 @@ public class DudeGame : IGameMode
 	internal DudeStats Stats = new DudeStats();
 
 	// --- EVENT SYSTEM ---
-	internal GameEvents Events = new GameEvents();
+	internal GameEvents Events { get; set; } = new GameEvents();
 
 	// Core Values
 	internal int Level;

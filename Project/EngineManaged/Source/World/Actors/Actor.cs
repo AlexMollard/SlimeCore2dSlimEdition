@@ -15,8 +15,11 @@ public record Actor<TEnum>
 {
     public Guid Id { get; init; } = Guid.NewGuid();
 
+    /// <summary>
+    /// Grid Unbound Position
+    /// </summary>
     [NotMapped]
-    public Vec2i Position { get; set; }
+    public Vec2 Position { get; set; }
 
     public Guid? MapReference { get; set; }
 

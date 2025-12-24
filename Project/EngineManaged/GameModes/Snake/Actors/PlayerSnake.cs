@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace SlimeCore.GameModes.Snake.Actors;
 
@@ -89,7 +90,10 @@ public record PlayerSnake : Actor<Terrain>, IControllable
         if (IgnoreInput) return;
 
         IsSprinting = Input.GetKeyDown(Keycode.LEFT_SHIFT);
-
+        if (IsSprinting)
+        {
+            return;
+        }
         if ((Input.GetKeyDown(Keycode.W) || Input.GetKeyDown(Keycode.UP)) && Direction.Y == 0) NextDirection = new Vec2i(0, 1);
         if ((Input.GetKeyDown(Keycode.S) || Input.GetKeyDown(Keycode.DOWN)) && Direction.Y == 0) NextDirection = new Vec2i(0, -1);
         if ((Input.GetKeyDown(Keycode.A) || Input.GetKeyDown(Keycode.LEFT)) && Direction.X == 0) NextDirection = new Vec2i(-1, 0);
@@ -103,7 +107,14 @@ public record PlayerSnake : Actor<Terrain>, IControllable
     }
     public void Add(Vec2i position) => Body.Add(position);
     public void Insert(int index, Vec2i position) => Body.Insert(index, position);
-    public void RemoveAt(int index) => Body.RemoveAt(index);
+    public void RemoveAt(int index)
+    {
+        if(index < 0 || index >= Body.Count)
+        {
+            return;
+        }
+        Body.RemoveAt(index);
+    }
     public void Clear() => Body.Clear();
 
     public int GetBodyIndexFromWorldPosition(int x, int y)
@@ -116,6 +127,15 @@ public record PlayerSnake : Actor<Terrain>, IControllable
             }
         }
         return -1;
+    }
+
+    public void Kill(SnakeGame game)
+    {
+        Vec2i nextRaw = Body[0] + Direction;
+        Vec2i next = new Vec2i(SnakeGame.Wrap(nextRaw.X, SnakeGame.WORLD_W), SnakeGame.Wrap(nextRaw.Y, SnakeGame.WORLD_H));
+        IsDead = true;
+        game._shake = 0.4f;
+        game.SpawnExplosion(next, 50, new Vec3(1.0f, 0.2f, 0.2f));
     }
 
     public void RenderSnake()

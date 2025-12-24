@@ -35,7 +35,7 @@ public record Entity
 	// Component Management
 	// ---------------------------------------------------------------------
 
-	public T GetComponent<T>() where T : struct, IComponent
+	public T GetComponent<T>() where T : IComponent, new()
 	{
 		if (!HasComponent<T>()) throw new ArgumentException($"Entity {Id} does not have component {typeof(T).Name}");
 		T component = new T();
@@ -43,7 +43,7 @@ public record Entity
 		return component;
 	}
 
-	public void AddComponent<T>() where T : struct, IComponent
+	public void AddComponent<T>() where T : IComponent
 	{
 		var type = typeof(T);
 		if (type == typeof(TransformComponent)) Native.Entity_AddComponent_Transform(Id);
@@ -59,7 +59,7 @@ public record Entity
 		else throw new ArgumentException($"Component type {type.Name} is not supported.");
 	}
 
-	public bool HasComponent<T>() where T : struct, IComponent
+	public bool HasComponent<T>() where T : IComponent
 	{
 		var type = typeof(T);
 		if (type == typeof(TransformComponent)) return Native.Entity_HasComponent_Transform(Id);
@@ -75,7 +75,7 @@ public record Entity
 		else throw new ArgumentException($"Component type {type.Name} is not supported.");
 	}
 
-	public void RemoveComponent<T>() where T : struct, IComponent
+	public void RemoveComponent<T>() where T : IComponent
 	{
 		var type = typeof(T);
 		if (type == typeof(TransformComponent)) Native.Entity_RemoveComponent_Transform(Id);
