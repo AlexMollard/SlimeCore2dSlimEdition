@@ -1,4 +1,4 @@
-using SlimeCore.Core.Grid;
+using SlimeCore.Source.World.Grid;
 using System;
 using System.Collections.Generic;
 

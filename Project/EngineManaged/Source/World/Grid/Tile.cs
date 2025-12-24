@@ -1,17 +1,27 @@
-﻿using System;
+﻿using EngineManaged.Numeric;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 
-namespace SlimeCore.Core.Grid;
+namespace SlimeCore.Source.World.Grid;
 
+[Table("map_tile")]
 public record Tile<TEnum>
     where TEnum : Enum
 {
+    public Guid Id { get; init; } = Guid.NewGuid();
+    public int PositionX { get; set; }
+    public int PositionY { get; set; }
+
     public TEnum Type { get; set; }
 
     public bool Blocked { get; set; }
 
     public bool Food { get; set; }
+    [NotMapped]
+    public Vec2i Position => new Vec2i(PositionX, PositionY);
 
     public Tile(Action<TileOptions<TEnum>> configure)
     {

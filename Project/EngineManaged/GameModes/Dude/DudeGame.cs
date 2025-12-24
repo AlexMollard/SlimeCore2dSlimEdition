@@ -58,7 +58,7 @@ public class DudeGame : IGameMode
 	internal float TrailTimer;
 
 	// Lists
-	internal List<Hater> Haters = new();
+	internal List<Hater> Haters { get; set; } = new();
 	internal List<Collectable> Collectables = new();
 	internal List<XPGem> Gems = new();
 	internal List<GhostTrail> Trails = new();
@@ -67,7 +67,7 @@ public class DudeGame : IGameMode
 
 	// Resources
 	internal IntPtr TexPlayer;
-	internal IntPtr TexEnemy;
+	internal IntPtr TexEnemy { get; set; }
 	internal IntPtr TexBg;
 	internal IntPtr TexParticle;
 
@@ -77,7 +77,7 @@ public class DudeGame : IGameMode
 	internal UIImage XPBarFill;
 	internal UIImage XPBarBg;
 
-	internal Random Rng = new Random();
+	public Random Rng { get; init; } = new Random();
 
 	// Helper to create entities using the new ECS system
 	internal Entity CreateSpriteEntity(float x, float y, float w, float h, float r, float g, float b, int layer, IntPtr texture = default)

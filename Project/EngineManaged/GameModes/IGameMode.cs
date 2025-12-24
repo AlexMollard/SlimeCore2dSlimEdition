@@ -1,4 +1,6 @@
-﻿namespace SlimeCore.Interfaces
+﻿using System;
+
+namespace SlimeCore.Interfaces
 {
 	/// <summary>
 	/// Represents a distinct game state or mode (e.g. Main Menu, Snake Level, Platformer Level).
@@ -23,5 +25,7 @@
 		/// Use this to destroy entities, clear UI, and unsubscribe from events.
 		/// </summary>
 		void Shutdown();
-	}
+
+		public Random Rng { get; init; }
+    }
 }

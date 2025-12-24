@@ -2,15 +2,21 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 
-namespace SlimeCore.Core.Grid;
+namespace SlimeCore.Source.World.Grid;
 
+[Table("map_reference")]
 public class GridSystem<TEnum>
     where TEnum : Enum
 {
+    public Guid Id { get; init; } = Guid.NewGuid();
+    
+    public string Name { get; set; } = "Default";
 
+    [NotMapped]
     public ConcurrentDictionary<Vec2i, Tile<TEnum>> Grid { get; set; }
     /// <summary>
     /// 

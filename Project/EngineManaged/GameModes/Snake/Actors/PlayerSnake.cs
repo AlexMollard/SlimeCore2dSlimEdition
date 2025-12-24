@@ -1,14 +1,16 @@
 ﻿using EngineManaged.Numeric;
 using EngineManaged.Scene;
-using SlimeCore.Core.Grid;
+using SlimeCore.Core.World;
+using SlimeCore.Source.Input;
+using SlimeCore.Source.World.Actors;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 
-namespace SlimeCore.GameModes.Snake;
+namespace SlimeCore.GameModes.Snake.Actors;
 
-public record PlayerSnake
+public record PlayerSnake : Actor<Terrain>, IControllable
 {
     public static readonly Vec3 COL_SNAKE = new(0.00f, 1.00f, 0.50f);
     public static readonly Vec3 COL_SNAKE_SPRINT = new(0.30f, 0.80f, 1.00f);
@@ -74,17 +76,24 @@ public record PlayerSnake
         compassSprite.IsVisible = true;
     }
 
-    public void Kill()
-    {
-
-    }
-
     public void Destroy()
     {
         Head.Destroy();
         Compass.Destroy();
         Eyes[0].Destroy();
         Eyes[1].Destroy();
+    }
+
+    public void RecieveInput(bool IgnoreInput)
+    {
+        if (IgnoreInput) return;
+
+        IsSprinting = Input.GetKeyDown(Keycode.LEFT_SHIFT);
+
+        if ((Input.GetKeyDown(Keycode.W) || Input.GetKeyDown(Keycode.UP)) && Direction.Y == 0) NextDirection = new Vec2i(0, 1);
+        if ((Input.GetKeyDown(Keycode.S) || Input.GetKeyDown(Keycode.DOWN)) && Direction.Y == 0) NextDirection = new Vec2i(0, -1);
+        if ((Input.GetKeyDown(Keycode.A) || Input.GetKeyDown(Keycode.LEFT)) && Direction.X == 0) NextDirection = new Vec2i(-1, 0);
+        if ((Input.GetKeyDown(Keycode.D) || Input.GetKeyDown(Keycode.RIGHT)) && Direction.X == 0) NextDirection = new Vec2i(1, 0);
     }
 
     public Vec2i this[int x]

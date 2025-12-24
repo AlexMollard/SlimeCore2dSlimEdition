@@ -2,10 +2,17 @@
 
 namespace EngineManaged.Scene;
 
-public record Entity(ulong Id)
+public record Entity
 {
-	// Valid check
-	public bool IsAlive => Id != 0 && Native.Entity_IsAlive(Id);
+    public ulong Id { get; init; }
+
+	public Entity(ulong id)
+	{
+		Id = id;
+    }
+
+    // Valid check
+    public bool IsAlive => Id != 0 && Native.Entity_IsAlive(Id);
 
 	// ---------------------------------------------------------------------
 	// Lifecycle

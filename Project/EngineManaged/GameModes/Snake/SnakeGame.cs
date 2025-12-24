@@ -2,23 +2,27 @@ using EngineManaged.Numeric;
 using EngineManaged.Scene;
 using EngineManaged.UI;
 using EngineManaged.Rendering;
-using SlimeCore.Core.Grid;
 using SlimeCore.Core.World;
 using SlimeCore.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using SlimeCore.Source.World.Grid;
+using SlimeCore.GameModes.Snake.Actors;
 
 namespace SlimeCore.GameModes.Snake
 {
 	public class SnakeGame : IGameMode
 	{
-        private const int VIEW_W = 100;
+
+		public Random Rng { get; init; } = new Random();
+
+		private const int VIEW_W = 100;
 		private const int VIEW_H = 75;
 
 		private const int WORLD_W = 240;
 		private const int WORLD_H = 240;
-        private GridSystem<Terrain> _world { get; set; }
+		private GridSystem<Terrain> _world { get; set; }
 
 		private static float _cellSize = 0.4f;
 		private static float _cellSpacing = 0.4f;
@@ -35,11 +39,11 @@ namespace SlimeCore.GameModes.Snake
 
 		private static float _speedBoostTimer = 0f;
 
-        // Visual Handles
-        private Entity[,] _view = new Entity[VIEW_W, VIEW_H];
+		// Visual Handles
+		private Entity[,] _view = new Entity[VIEW_W, VIEW_H];
 
-        // Food
-        private static int _foodCount = 0;
+		// Food
+		private static int _foodCount = 0;
 		private const int MAX_FOOD = 25;
 		private const int START_FORWARD_CLEAR = 3;
 
@@ -48,7 +52,7 @@ namespace SlimeCore.GameModes.Snake
 
 		// Camera & Smoothing
 		private Vec2 _cam;
-        private PlayerSnake _snake { get; set; } = new();
+		private PlayerSnake _snake { get; set; } = new();
 		private ParticleSystem _particleSys;
 
 		// UI
@@ -58,9 +62,12 @@ namespace SlimeCore.GameModes.Snake
 		private const int SCORE_FONT_SIZE = 1;
 		private static int _currentScore = 0;
 
-		
+
 		private static Random _rng = new Random();
 		private static int _seed = 0;
+
+		//Snake Hunters
+		public List<NPC_SnakeHunter> Hunters { get; set; } = new();
 
 		// --- Palette ---
 		private static readonly Vec3 COL_GRASS_1 = new(0.05f, 0.05f, 0.12f);
@@ -81,7 +88,9 @@ namespace SlimeCore.GameModes.Snake
 		private static readonly Vec3 COL_FOOD_PLUM = new(0.60f, 0.20f, 0.90f);
 		private static readonly Vec3 COL_FOOD_CHILI = new(1.00f, 0.20f, 0.00f);
 
-		public void Init()
+        public IntPtr TexEnemy;
+
+        public void Init()
 		{
 			_world = new GridSystem<Terrain>(WORLD_W, WORLD_H, Terrain.Grass);
 			_particleSys = new ParticleSystem(5000);
@@ -100,7 +109,9 @@ namespace SlimeCore.GameModes.Snake
 			IntPtr textureId = Native.Resources_LoadTexture("Debug", "textures/debug.png");
 			_snake.Initialize(_cellSize);
 
-			_score = UIText.Create("SCORE: 0", SCORE_FONT_SIZE, -15.0f, 7.5f);
+            TexEnemy = Native.Resources_LoadTexture("Enemy", "Game/Resources/Textures/debug.png");
+
+            _score = UIText.Create("SCORE: 0", SCORE_FONT_SIZE, -15.0f, 7.5f);
 			_score.IsVisible = true;
 			_scoreCached = -1;
 
@@ -277,23 +288,23 @@ namespace SlimeCore.GameModes.Snake
 			Vec2i head = _snake[0];
 			Vec2i nextRaw = head + _snake.Direction;
 			Vec2i next = new Vec2i(Wrap(nextRaw.X, WORLD_W), Wrap(nextRaw.Y, WORLD_H));
-			
+
 			if (_world[next].Blocked && _snake.IsSprinting)
 			{
-                //Drill Baby Drill
-                if (_snake.IsSprinting)
-                {
-                    _world.Set(next, e =>
-                    {
-                        e.Blocked = false;
-                        e.Type = Terrain.Grass;
-                        e.Food = false;
-                    });
-                    SpawnExplosion(next, 50, COL_ROCK);
-                }
-            }
-            //Next tile blocked or snake collision = death
-            if (_world[next].Blocked || IsSnakeAt(next.X, next.Y))
+				//Drill Baby Drill
+				if (_snake.IsSprinting)
+				{
+					_world.Set(next, e =>
+					{
+						e.Blocked = false;
+						e.Type = Terrain.Grass;
+						e.Food = false;
+					});
+					SpawnExplosion(next, 50, COL_ROCK);
+				}
+			}
+			//Next tile blocked or snake collision = death
+			if (_world[next].Blocked || IsSnakeAt(next.X, next.Y))
 			{
 				_snake.IsDead = true;
 				_shake = 0.4f;
@@ -363,8 +374,8 @@ namespace SlimeCore.GameModes.Snake
 					int x = Wrap(pos.X, WORLD_W);
 					int y = Wrap(pos.Y, WORLD_H);
 
-					if (!_world[x, y].Blocked && 
-						!_world[x, y].Food && 
+					if (!_world[x, y].Blocked &&
+						!_world[x, y].Food &&
 						_snake.GetBodyIndexFromWorldPosition(x, y) == -1)
 					{
 						_world[x, y].Food = true;
@@ -413,7 +424,7 @@ namespace SlimeCore.GameModes.Snake
 				float angle = (float)_rng.NextDouble() * 6.28f;
 				float speed = (float)_rng.NextDouble() * 2.0f + 0.5f;
 				props.Velocity = new Vec2((float)Math.Cos(angle), (float)Math.Sin(angle)) * speed;
-				
+
 				_particleSys.Emit(props);
 			}
 		}
@@ -452,7 +463,7 @@ namespace SlimeCore.GameModes.Snake
 					float px = (vx - VIEW_W / 2f - camFrac.X + shakeVec.X) * (_cellSpacing);
 					float py = (vy - VIEW_H / 2f - camFrac.Y + shakeVec.Y) * (_cellSpacing);
 
-                    var ent = _view[vx, vy];
+					var ent = _view[vx, vy];
 					var transform = ent.GetComponent<TransformComponent>();
 					transform.Position = (px, py);
 
@@ -591,12 +602,8 @@ namespace SlimeCore.GameModes.Snake
 		private void HandleInput()
 		{
 			var headPos = _snake[0];
-			if (_world[headPos.X, headPos.Y].Type == Terrain.Ice) return;
-			_snake.IsSprinting = Input.GetKeyDown(Keycode.LEFT_SHIFT);
-			if ((Input.GetKeyDown(Keycode.W) || Input.GetKeyDown(Keycode.UP)) && _snake.Direction.Y == 0) _snake.NextDirection = new Vec2i(0, 1);
-			if ((Input.GetKeyDown(Keycode.S) || Input.GetKeyDown(Keycode.DOWN)) && _snake.Direction.Y == 0) _snake.NextDirection = new Vec2i(0, -1);
-			if ((Input.GetKeyDown(Keycode.A) || Input.GetKeyDown(Keycode.LEFT)) && _snake.Direction.X == 0) _snake.NextDirection = new Vec2i(-1, 0);
-			if ((Input.GetKeyDown(Keycode.D) || Input.GetKeyDown(Keycode.RIGHT)) && _snake.Direction.X == 0) _snake.NextDirection = new Vec2i(1, 0);
+			var ignore = _world[headPos.X, headPos.Y].Type == Terrain.Ice;
+			_snake.RecieveInput(ignore);
 		}
 
 		private Vec2i GetNearestFoodPos()
@@ -636,5 +643,28 @@ namespace SlimeCore.GameModes.Snake
 
 		private bool IsSnakeAt(int x, int y) => _snake.GetBodyIndexFromWorldPosition(x, y) != -1;
 		private int Wrap(int v, int m) => (v % m + m) % m;
+
+		public Entity CreateSpriteEntity(float x, float y, float w, float h, float r, float g, float b, int layer, IntPtr texture = default)
+		{
+			var e = Entity.Create();
+			e.AddComponent<TransformComponent>();
+			e.AddComponent<SpriteComponent>();
+			e.AddComponent<AnimationComponent>();
+
+			var transform = e.GetComponent<TransformComponent>();
+			transform.Position = (x, y);
+			transform.Scale = (w, h);
+			transform.Layer = layer;
+
+			var sprite = e.GetComponent<SpriteComponent>();
+			sprite.Color = (r, g, b);
+			if (texture != IntPtr.Zero)
+			{
+				sprite.TexturePtr = texture;
+			}
+
+			return e;
+
+		}
 	}
 }
