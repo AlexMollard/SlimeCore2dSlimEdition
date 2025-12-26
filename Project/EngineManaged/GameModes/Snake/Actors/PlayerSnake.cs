@@ -18,10 +18,13 @@ public record PlayerSnake : Actor<SnakeActors, SnakeGame>, IControllable
 {
     public static readonly Vec3 COL_SNAKE = new(0.00f, 1.00f, 0.50f);
     public static readonly Vec3 COL_SNAKE_SPRINT = new(0.30f, 0.80f, 1.00f);
+    private const int START_FORWARD_CLEAR = 3;
 
     public override SnakeActors Kind => SnakeActors.Snake;
 
     public required float HeadSize { get; set; }
+    
+    public float SpeedBoostTimer { get; set; }
 
     /// <summary>
     /// Contains all body segment positions, head is at index 0
@@ -157,5 +160,62 @@ public record PlayerSnake : Actor<SnakeActors, SnakeGame>, IControllable
     {
         //Snake is not implemented as an Actor in this context... yet, could be useful for less reactive behaviors.
         throw new NotImplementedException();
+    }
+
+    public void Reset(SnakeGame game)
+    {
+        game._snake.IsSprinting = false;
+        SpeedBoostTimer = 0f;
+
+        var center = new Vec2i(game._world.Width() / 2, game._world.Height() / 2);
+        var (start, dir) = FindSafeStart(game, center, 60, START_FORWARD_CLEAR);
+
+        Clear();
+        Add(start);
+        Add(new Vec2i(SnakeGame.Wrap(start.X - dir.X, game._world.Width()), SnakeGame.Wrap(start.Y - dir.Y, game._world.Height())));
+        Direction = dir;
+        NextDirection = Direction;
+        Grow = 4;
+        IsDead = false;
+        game._cam = start.ToVec2();
+    }
+
+    private (Vec2i head, Vec2i dir) FindSafeStart(SnakeGame game, Vec2i center, int maxRadius = 60, int requiredForwardClear = 3)
+    {
+        var dirs = new[] { new Vec2i(1, 0), new Vec2i(0, 1), new Vec2i(-1, 0), new Vec2i(0, -1) };
+        for (var r = 0; r <= maxRadius; r++)
+        {
+            for (var dx = -r; dx <= r; dx++)
+            {
+                for (var dy = -r; dy <= r; dy++)
+                {
+                    if (Math.Abs(dx) != r && Math.Abs(dy) != r) continue;
+
+                    var x = SnakeGame.Wrap(center.X + dx, game._world.Width());
+                    var y = SnakeGame.Wrap(center.Y + dy, game._world.Height());
+
+                    if (game._world[x, y].Blocked) continue;
+
+                    foreach (var d in dirs)
+                    {
+                        var tx = SnakeGame.Wrap(x - d.X, game._world.Width());
+                        var ty = SnakeGame.Wrap(y - d.Y, game._world.Height());
+                        if (game._world[tx, ty].Blocked) continue;
+
+                        var ok = true;
+                        for (var i = 1; i <= requiredForwardClear; i++)
+                        {
+                            var checkPos = new Vec2i(x, y) + (d * i);
+                            if (game._world[SnakeGame.Wrap(checkPos.X, game._world.Width()), SnakeGame.Wrap(checkPos.Y, game._world.Height())].Blocked)
+                            {
+                                ok = false; break;
+                            }
+                        }
+                        if (ok) return (new Vec2i(x, y), d);
+                    }
+                }
+            }
+        }
+        return (center, new Vec2i(1, 0));
     }
 }

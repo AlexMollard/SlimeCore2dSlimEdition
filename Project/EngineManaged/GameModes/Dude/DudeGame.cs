@@ -40,12 +40,9 @@ internal class XPGem
 }
 
 // --- GAME CONTEXT ---
-public class DudeGame : IGameMode, IDisposable
+public class DudeGame : GameMode<DudeGame>, IGameMode, IDisposable
 {
     private bool _isDisposed;
-
-    // State Machine
-    private IGameState<DudeGame>? _currentState;
 
     // Shared Data
     internal Entity? Dude;
@@ -101,7 +98,7 @@ public class DudeGame : IGameMode, IDisposable
     internal UIImage XPBarFill;
     internal UIImage XPBarBg;
 
-    public Random Rng { get; set; } = new();
+    public override Random? Rng { get; set; } = new();
 
     // Helper to create entities using the new ECS system
     internal Entity CreateSpriteEntity(float x, float y, float w, float h, float r, float g, float b, int layer, IntPtr texture = default)
@@ -126,7 +123,7 @@ public class DudeGame : IGameMode, IDisposable
         return e;
     }
 
-    public void Init()
+    public override void Init()
     {
         // 1. Initialize Content Registry
         ContentRegistry.Init();
@@ -260,20 +257,13 @@ public class DudeGame : IGameMode, IDisposable
         Boundaries.Add(wall);
     }
 
-    public void ChangeState(IGameState<DudeGame> newState)
-    {
-        if (_currentState != null) _currentState.Exit(this);
-        _currentState = newState;
-        if (_currentState != null) _currentState.Enter(this);
-    }
-
-    public void Update(float dt)
+    public override void Update(float dt)
     {
         if (ParticleSys != null) ParticleSys.OnUpdate(dt);
         if (_currentState != null) _currentState.Update(this, dt);
     }
 
-    public void Shutdown()
+    public override void Shutdown()
     {
         if (_currentState != null) _currentState.Exit(this);
 

@@ -6,7 +6,7 @@ namespace SlimeCore.Source.Core
     /// Represents a distinct game state or mode (e.g. Main Menu, Snake Level, Platformer Level).
     /// The GameHost uses this interface to drive the logic without knowing the specific class.
     /// </summary>
-    public interface IGameMode : IDisposable
+    public interface IGameMode
     {
         /// <summary>
         /// Called once when the game mode is first loaded.

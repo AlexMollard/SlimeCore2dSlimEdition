@@ -1,3 +1,5 @@
+using System;
+
 namespace SlimeCore.Source.Core;
 
 public static class GameManager
@@ -29,7 +31,10 @@ public static class GameManager
         if (_currentMode != null)
         {
             _currentMode.Shutdown();
-            _currentMode.Dispose();
+            if (_currentMode is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
             _currentMode = null;
         }
     }

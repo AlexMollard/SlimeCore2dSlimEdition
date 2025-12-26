@@ -15,7 +15,7 @@ namespace SlimeCore.GameModes.Snake.Actors;
 public record NpcSnakeHunter : Actor<SnakeActors, SnakeGame>
 {
 
-    const int SpawnRadius = 30;
+    const int SpawnRadius = 50;
 
     public const int MaxHunters = 50;
 
@@ -196,7 +196,7 @@ public record NpcSnakeHunter : Actor<SnakeActors, SnakeGame>
 
         // Distance check with Vector method
         // Increased kill distance slightly to account for physics collision radius preventing overlap
-        var killDist = (Type == HunterType.Chonker ? 1.5f : 0.7f) * mode._snake.HeadSize;
+        var killDist = (Type == HunterType.Chonker ? 2.4f : 1.0f) * mode._snake.HeadSize;
 
         if (Vec2.Distance(mode._snake.Body[0], Position) < killDist)
         {
