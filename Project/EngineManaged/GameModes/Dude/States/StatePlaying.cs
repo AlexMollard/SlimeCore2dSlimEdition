@@ -5,10 +5,12 @@ using EngineManaged.UI;
 using EngineManaged.Numeric;
 using EngineManaged.Rendering;
 using SlimeCore.Source.Input;
+using GameModes.Dude;
+using SlimeCore.Source.Core;
 
-namespace GameModes.Dude;
+namespace SlimeCore.GameModes.Dude.States;
 
-public class StatePlaying : IDudeState
+public class StatePlaying : IGameState<DudeGame>
 {
     private UIText _controlsText;
 

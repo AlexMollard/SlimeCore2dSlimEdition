@@ -1,5 +1,3 @@
-using SlimeCore.Interfaces;
-
 namespace SlimeCore.Source.Core;
 
 public static class GameManager
@@ -8,9 +6,7 @@ public static class GameManager
 
     public static void LoadMode(IGameMode newMode)
     {
-        if (_currentMode != null)
-            _currentMode.Shutdown();
-
+        CloseMode();
         _currentMode = newMode;
         _currentMode.Init();
     }
@@ -18,6 +14,23 @@ public static class GameManager
     public static void UpdateCurrentMode(float dt)
     {
         if (_currentMode != null)
+        {
             _currentMode.Update(dt);
+        }
+    }
+
+    /// <summary>
+    /// Closes the currently active mode, releasing any associated resources.
+    /// </summary>
+    /// <remarks>If no mode is currently active, this method performs no action. After calling this method,
+    /// the current mode is set to null and cannot be used unless reinitialized.</remarks>
+    public static void CloseMode()
+    {
+        if (_currentMode != null)
+        {
+            _currentMode.Shutdown();
+            _currentMode.Dispose();
+            _currentMode = null;
+        }
     }
 }

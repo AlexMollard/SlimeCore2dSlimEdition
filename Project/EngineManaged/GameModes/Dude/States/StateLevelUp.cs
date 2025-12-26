@@ -2,12 +2,14 @@ using EngineManaged;
 using EngineManaged.Numeric;
 using EngineManaged.Scene;
 using EngineManaged.UI;
+using GameModes.Dude;
+using SlimeCore.Source.Core;
 using System;
 using System.Collections.Generic;
 
-namespace GameModes.Dude;
+namespace SlimeCore.GameModes.Dude.States;
 
-public class StateLevelUp : IDudeState
+public class StateLevelUp : IGameState<DudeGame>
 {
     private UIText _upgradeTitle;
     private UIText _subTitle;

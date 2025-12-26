@@ -24,7 +24,4 @@ public record Actor<TEnum>
     public Guid? MapReference { get; set; }
 
     public Guid? TileReference { get; set; }
-
-    public virtual GridSystem<TEnum>? Map { get; set; }
-    public virtual Tile<TEnum>? Tile { get; set; }
 }

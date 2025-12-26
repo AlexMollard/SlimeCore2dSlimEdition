@@ -3,10 +3,12 @@ using EngineManaged.Scene;
 using EngineManaged.UI;
 using EngineManaged;
 using EngineManaged.Numeric;
+using GameModes.Dude;
+using SlimeCore.Source.Core;
 
-namespace GameModes.Dude;
+namespace SlimeCore.GameModes.Dude.States;
 
-public class StateGameOver : IDudeState
+public class StateGameOver : IGameState<DudeGame>
 {
     private UIText _gameOverText;
 

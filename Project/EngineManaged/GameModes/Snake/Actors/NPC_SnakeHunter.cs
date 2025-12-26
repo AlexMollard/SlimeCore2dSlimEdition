@@ -1,8 +1,7 @@
-﻿using EngineManaged.Numeric;
+using EngineManaged.Numeric;
 using EngineManaged.Scene;
 using GameModes.Dude;
-using SlimeCore.Core.World;
-using SlimeCore.Interfaces;
+using SlimeCore.GameModes.Snake.World;
 using SlimeCore.Source.World.Actors;
 using SlimeCore.Source.World.Grid;
 using System;
@@ -11,7 +10,7 @@ using System.Text;
 
 namespace SlimeCore.GameModes.Snake.Actors;
 
-public record NPC_SnakeHunter : Actor<Terrain>
+public record NPC_SnakeHunter : Actor<SnakeTerrain>
 {
 
     const int spawnRadius = 30;

@@ -1,6 +1,6 @@
 ﻿using EngineManaged.Numeric;
 using EngineManaged.Scene;
-using SlimeCore.Core.World;
+using SlimeCore.GameModes.Snake.World;
 using SlimeCore.Source.Input;
 using SlimeCore.Source.World.Actors;
 using System;
@@ -11,7 +11,7 @@ using static System.Net.Mime.MediaTypeNames;
 
 namespace SlimeCore.GameModes.Snake.Actors;
 
-public record PlayerSnake : Actor<Terrain>, IControllable
+public record PlayerSnake : Actor<SnakeTerrain>, IControllable
 {
     public static readonly Vec3 COL_SNAKE = new(0.00f, 1.00f, 0.50f);
     public static readonly Vec3 COL_SNAKE_SPRINT = new(0.30f, 0.80f, 1.00f);

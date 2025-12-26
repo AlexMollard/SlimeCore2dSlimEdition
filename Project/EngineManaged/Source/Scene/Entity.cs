@@ -38,7 +38,7 @@ public record Entity
     public T GetComponent<T>() where T : IComponent, new()
     {
         if (!HasComponent<T>()) throw new ArgumentException($"Entity {Id} does not have component {typeof(T).Name}");
-        T component = new T();
+        var component = new T();
         component.EntityId = Id;
         return component;
     }

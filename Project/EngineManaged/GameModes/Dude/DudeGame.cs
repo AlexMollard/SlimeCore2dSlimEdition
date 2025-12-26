@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
-using SlimeCore.Interfaces;
 using EngineManaged.Scene;
 using EngineManaged.UI;
 using EngineManaged.Numeric;
 using EngineManaged.Rendering;
+using SlimeCore.GameModes.Dude.States;
+using SlimeCore.Source.Core;
 
 namespace GameModes.Dude;
 
@@ -44,7 +45,7 @@ public class DudeGame : IGameMode, IDisposable
     private bool _isDisposed;
 
     // State Machine
-    private IDudeState? _currentState;
+    private IGameState<DudeGame>? _currentState;
 
     // Shared Data
     internal Entity? Dude;
@@ -259,7 +260,7 @@ public class DudeGame : IGameMode, IDisposable
         Boundaries.Add(wall);
     }
 
-    public void ChangeState(IDudeState newState)
+    public void ChangeState(IGameState<DudeGame> newState)
     {
         if (_currentState != null) _currentState.Exit(this);
         _currentState = newState;
@@ -355,11 +356,4 @@ public class DudeGame : IGameMode, IDisposable
     internal float StatChillDuration { get => Stats.ChillDuration; set => Stats.ChillDuration = value; }
     internal float StatLuck { get => Stats.Luck; set => Stats.Luck = value; }
     internal float StatSize { get => Stats.PlayerSize; set => Stats.PlayerSize = value; }
-}
-
-public interface IDudeState
-{
-    void Enter(DudeGame game);
-    void Update(DudeGame game, float dt);
-    void Exit(DudeGame game);
 }

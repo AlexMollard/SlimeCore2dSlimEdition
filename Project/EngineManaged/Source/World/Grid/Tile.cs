@@ -7,53 +7,39 @@ using System.Text;
 
 namespace SlimeCore.Source.World.Grid;
 
-[Table("map_tile")]
-public record Tile<TEnum>
+public abstract record Tile<TEnum, TOptions>
     where TEnum : Enum
+    where TOptions : TileOptions<TEnum>, new()
 {
     public Guid Id { get; init; } = Guid.NewGuid();
     public int PositionX { get; set; }
     public int PositionY { get; set; }
 
-    public TEnum Type { get; set; }
+    public TEnum Type { get; set; } = default!;
 
-    public bool Blocked { get; set; }
-
-    public bool Food { get; set; }
     [NotMapped]
     public Vec2i Position => new(PositionX, PositionY);
 
-    public Tile(Action<TileOptions<TEnum>> configure)
+    public virtual void ApplyOptions(Action<TOptions> configure)
     {
-        var opts = new TileOptions<TEnum>();
-        configure(opts);
-
-        Type = opts.Type;
-        Blocked = opts.Blocked;
-        Food = opts.Food;
-    }
-
-    public void ApplyOptions(Action<TileOptions<TEnum>> configure)
-    {
-        var opts = new TileOptions<TEnum>
+        var opts = new TOptions
         {
             Type = Type,
-            Blocked = Blocked,
-            Food = Food
         };
-
         configure(opts);
-
         Type = opts.Type;
-        Blocked = opts.Blocked;
-        Food = opts.Food;
     }
+    /// <summary>
+    /// Converts the terrain type to a color palette.
+    /// </summary>
+    /// <param name="terrain">The enum to parse</param>
+    /// <param name="extraArgs">Additional args like Delta Time etc</param>
+    /// <returns></returns>
+    public abstract Vec3 GetPalette(params object[] extraArgs);
 }
 
-public sealed class TileOptions<TEnum>
+public class TileOptions<TEnum>
     where TEnum : Enum
 {
     public TEnum Type { get; set; } = default!;
-    public bool Blocked { get; set; }
-    public bool Food { get; set; }
 }

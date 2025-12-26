@@ -3,9 +3,9 @@ using EngineManaged.Rendering;
 using EngineManaged.Scene;
 using EngineManaged.UI;
 using GameModes.Dude;
-using SlimeCore.Core.World;
 using SlimeCore.GameModes.Snake.Actors;
-using SlimeCore.Interfaces;
+using SlimeCore.GameModes.Snake.World;
+using SlimeCore.Source.Core;
 using SlimeCore.Source.Input;
 using SlimeCore.Source.World.Grid;
 using System;
@@ -14,7 +14,7 @@ using System.Threading;
 
 namespace SlimeCore.GameModes.Snake;
 
-public class SnakeGame : IGameMode, IDisposable
+public class SnakeGame : IGameMode
 {
     private bool _isDisposed;
     public Random Rng { get; init; } = new Random();
@@ -24,7 +24,7 @@ public class SnakeGame : IGameMode, IDisposable
 
     public const int WORLD_W = 240;
     public const int WORLD_H = 240;
-    private GridSystem<Terrain>? _world { get; set; }
+    private SnakeGrid? _world { get; set; }
 
     public static float _cellSize = 0.4f;
     private static float _cellSpacing = 0.4f;
@@ -74,30 +74,13 @@ public class SnakeGame : IGameMode, IDisposable
     //Snake Hunters
     public List<NPC_SnakeHunter> Hunters { get; set; } = new();
 
-    // --- Palette ---
-    private static readonly Vec3 COL_GRASS_1 = new(0.05f, 0.05f, 0.12f);
-    private static readonly Vec3 COL_GRASS_2 = new(0.03f, 0.03f, 0.10f);
-    private static readonly Vec3 COL_ROCK = new(0.20f, 0.20f, 0.35f);
-    private static readonly Vec3 COL_WATER = new(0.10f, 0.60f, 0.80f);
-    private static readonly Vec3 COL_LAVA = new(1.00f, 0.20f, 0.00f);
-    private static readonly Vec3 COL_MUD_1 = new(0.12f, 0.06f, 0.06f);
-    private static readonly Vec3 COL_MUD_2 = new(0.08f, 0.04f, 0.04f);
-    private static readonly Vec3 COL_ICE_1 = new(0.60f, 0.90f, 1.00f);
-    private static readonly Vec3 COL_ICE_2 = new(0.45f, 0.75f, 0.95f);
-    private static readonly Vec3 COL_SPEED_1 = new(0.80f, 0.80f, 0.40f);
-    private static readonly Vec3 COL_SPEED_2 = new(0.60f, 0.60f, 0.30f);
-    private static readonly Vec3 COL_TINT_ICE = new(0.80f, 1.00f, 1.00f);
-    private static readonly Vec3 COL_TINT_MUD = new(0.30f, 0.20f, 0.15f);
-    private static readonly Vec3 COL_FOOD_APPLE = new(1.00f, 0.00f, 0.90f);
-    private static readonly Vec3 COL_FOOD_GOLD = new(1.00f, 0.85f, 0.00f);
-    private static readonly Vec3 COL_FOOD_PLUM = new(0.60f, 0.20f, 0.90f);
-    private static readonly Vec3 COL_FOOD_CHILI = new(1.00f, 0.20f, 0.00f);
+    
 
     public IntPtr TexEnemy;
 
     public void Init()
     {
-        _world = new GridSystem<Terrain>(WORLD_W, WORLD_H, Terrain.Grass);
+        _world = new SnakeGrid(WORLD_W, WORLD_H, SnakeTerrain.Grass);
         _particleSys = new ParticleSystem(5000);
 
         ResetGameLogic();
@@ -159,7 +142,7 @@ public class SnakeGame : IGameMode, IDisposable
         _rng = new Random(_seed);
         Logger.Info($"Seed: {_seed}");
 
-        var gen = new SlimeCore.Core.World.WorldGenerator(_seed);
+        var gen = new WorldGenerator(_seed);
         gen.Generate(_world);
 
         _foodMap = new FoodType[WORLD_W, WORLD_H];
@@ -205,8 +188,8 @@ public class SnakeGame : IGameMode, IDisposable
             var headTile = _world[_snake[0].X, _snake[0].Y].Type;
             var speedMultiplier = 1.0f;
 
-            if (headTile == Terrain.Mud) speedMultiplier = 1.8f;
-            if (headTile == Terrain.Speed) speedMultiplier = 0.5f;
+            if (headTile == SnakeTerrain.Mud) speedMultiplier = 1.8f;
+            if (headTile == SnakeTerrain.Speed) speedMultiplier = 0.5f;
 
             var effectivelySprinting = _snake.IsSprinting || _speedBoostTimer > 0;
             var baseTick = effectivelySprinting ? TICK_SPRINT : TICK_NORMAL;
@@ -320,10 +303,10 @@ public class SnakeGame : IGameMode, IDisposable
                 _world.Set(next, e =>
                 {
                     e.Blocked = false;
-                    e.Type = Terrain.Grass;
+                    e.Type = SnakeTerrain.Grass;
                     e.Food = false;
                 });
-                SpawnExplosion(next, 50, COL_ROCK);
+                SpawnExplosion(next, 50, SnakeTile.Palette.COL_ROCK);
             }
         }
         //Next tile blocked or snake collision = death
@@ -342,13 +325,35 @@ public class SnakeGame : IGameMode, IDisposable
             _foodMap[next.X, next.Y] = FoodType.None;
             _foodCount--;
 
-            var pCol = COL_FOOD_APPLE;
+            var pCol = SnakeTile.Palette.COL_FOOD_APPLE;
             switch (type)
             {
-                case FoodType.Gold: _snake.Grow += 5; _currentScore += 5; _shake = 0.3f; pCol = COL_FOOD_GOLD; break;
-                case FoodType.Plum: _snake.Grow -= 2; _currentScore += 2; _shake = 0.15f; pCol = COL_FOOD_PLUM; break;
-                case FoodType.Chili: _snake.Grow += 3; _currentScore += 1; _speedBoostTimer += 3.0f; _shake = 0.2f; pCol = COL_FOOD_CHILI; break;
-                case FoodType.Apple: default: _snake.Grow += 3; _currentScore += 1; _shake = 0.15f; pCol = COL_FOOD_APPLE; break;
+                case FoodType.Gold: 
+                    _snake.Grow += 5; 
+                    _currentScore += 5; 
+                    _shake = 0.3f; 
+                    pCol = SnakeTile.Palette.COL_FOOD_GOLD; 
+                    break;
+                case FoodType.Plum: 
+                    _snake.Grow -= 2; 
+                    _currentScore += 2; 
+                    _shake = 0.15f; 
+                    pCol = SnakeTile.Palette.COL_FOOD_PLUM; 
+                    break;
+                case FoodType.Chili: 
+                    _snake.Grow += 3; 
+                    _currentScore += 1; 
+                    _speedBoostTimer += 3.0f; 
+                    _shake = 0.2f; 
+                    pCol = SnakeTile.Palette.COL_FOOD_CHILI; 
+                    break;
+                case FoodType.Apple: 
+                default: 
+                    _snake.Grow += 3; 
+                    _currentScore += 1; 
+                    _shake = 0.15f; 
+                    pCol = SnakeTile.Palette.COL_FOOD_APPLE; 
+                    break;
             }
             SpawnExplosion(next, 15, pCol);
             SpawnFood();
@@ -465,13 +470,13 @@ public class SnakeGame : IGameMode, IDisposable
         var snakeBase = (_snake.IsSprinting || _speedBoostTimer > 0) ? PlayerSnake.COL_SNAKE_SPRINT : PlayerSnake.COL_SNAKE;
         var activeSnakeColor = snakeBase;
 
-        if (headTerrain == Terrain.Ice)
+        if (headTerrain == SnakeTerrain.Ice)
         {
-            activeSnakeColor = Vec3.Lerp(snakeBase, COL_TINT_ICE, 0.6f);
+            activeSnakeColor = Vec3.Lerp(snakeBase, SnakeTile.Palette.COL_TINT_ICE, 0.6f);
         }
-        else if (headTerrain == Terrain.Mud)
+        else if (headTerrain == SnakeTerrain.Mud)
         {
-            activeSnakeColor = Vec3.Lerp(snakeBase, COL_TINT_MUD, 0.5f) * 0.7f;
+            activeSnakeColor = Vec3.Lerp(snakeBase, SnakeTile.Palette.COL_TINT_MUD, 0.5f) * 0.7f;
         }
 
         for (var vx = 0; vx < VIEW_W; vx++)
@@ -488,16 +493,24 @@ public class SnakeGame : IGameMode, IDisposable
                 var transform = ent.GetComponent<TransformComponent>();
                 transform.Position = (px, py);
 
-                var tileCol = GetTileColor(wx, wy);
+                var tileCol = _world[wx,wy].GetPalette(_time);
 
                 if (_world[wx, wy].Food)
                 {
                     var f = _foodMap[wx, wy];
-                    var fCol = COL_FOOD_APPLE;
-                    if (f == FoodType.Gold) fCol = COL_FOOD_GOLD;
-                    else if (f == FoodType.Plum) fCol = COL_FOOD_PLUM;
-                    else if (f == FoodType.Chili) fCol = COL_FOOD_CHILI;
-
+                    var fCol = SnakeTile.Palette.COL_FOOD_APPLE;
+                    if (f == FoodType.Gold)
+                    {
+                        fCol = SnakeTile.Palette.COL_FOOD_GOLD;
+                    }
+                    else if (f == FoodType.Plum)
+                    {
+                        fCol = SnakeTile.Palette.COL_FOOD_PLUM;
+                    }
+                    else if (f == FoodType.Chili)
+                    {
+                        fCol = SnakeTile.Palette.COL_FOOD_CHILI;
+                    }
                     tileCol = fCol * (0.8f + 0.2f * (float)Math.Sin(_time * 12f));
                 }
 
@@ -602,28 +615,10 @@ public class SnakeGame : IGameMode, IDisposable
         eye1Transform.Position = (p1.X, p1.Y);
     }
 
-    // --- Helpers ---
-    private Vec3 GetTileColor(int x, int y)
-    {
-        var tile = _world[x, y];
-        var t = tile.Type;
-        var isAlt = (x + y) % 2 == 0;
-        return t switch
-        {
-            Terrain.Rock => COL_ROCK,
-            Terrain.Water => COL_WATER,
-            Terrain.Lava => COL_LAVA,
-            Terrain.Ice => isAlt ? COL_ICE_1 : COL_ICE_2,
-            Terrain.Mud => isAlt ? COL_MUD_1 : COL_MUD_2,
-            Terrain.Speed => (isAlt ? COL_SPEED_1 : COL_SPEED_2) * (0.8f + 0.2f * (float)Math.Sin(_time * 15f)),
-            _ => isAlt ? COL_GRASS_1 : COL_GRASS_2
-        };
-    }
-
     private void HandleInput()
     {
         var headPos = _snake[0];
-        var ignore = _world[headPos.X, headPos.Y].Type == Terrain.Ice;
+        var ignore = _world[headPos.X, headPos.Y].Type == SnakeTerrain.Ice;
         _snake.RecieveInput(ignore);
     }
 
