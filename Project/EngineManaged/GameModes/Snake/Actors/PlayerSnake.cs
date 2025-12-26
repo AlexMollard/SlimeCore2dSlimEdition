@@ -43,12 +43,12 @@ public record PlayerSnake : Actor<Terrain>, IControllable
     /// <summary>
     /// How many segments to grow this update
     /// </summary>
-    public int Grow { get; set; } = 0;
+    public int Grow { get; set; }
 
-    
+
     public Entity[] Eyes { get; set; } = new Entity[2];
-    public Entity Compass { get; set; }
-    public Entity Head { get; set; }
+    public Entity? Compass { get; set; }
+    public Entity? Head { get; set; }
 
     public void Initialize(float cell_size)
     {
@@ -109,7 +109,7 @@ public record PlayerSnake : Actor<Terrain>, IControllable
     public void Insert(int index, Vec2i position) => Body.Insert(index, position);
     public void RemoveAt(int index)
     {
-        if(index < 0 || index >= Body.Count)
+        if (index < 0 || index >= Body.Count)
         {
             return;
         }
@@ -119,7 +119,7 @@ public record PlayerSnake : Actor<Terrain>, IControllable
 
     public int GetBodyIndexFromWorldPosition(int x, int y)
     {
-        for (int i = 0; i < Body.Count; i++)
+        for (var i = 0; i < Body.Count; i++)
         {
             if (Body[i].X == x && Body[i].Y == y)
             {
@@ -131,8 +131,8 @@ public record PlayerSnake : Actor<Terrain>, IControllable
 
     public void Kill(SnakeGame game)
     {
-        Vec2i nextRaw = Body[0] + Direction;
-        Vec2i next = new Vec2i(SnakeGame.Wrap(nextRaw.X, SnakeGame.WORLD_W), SnakeGame.Wrap(nextRaw.Y, SnakeGame.WORLD_H));
+        var nextRaw = Body[0] + Direction;
+        var next = new Vec2i(SnakeGame.Wrap(nextRaw.X, SnakeGame.WORLD_W), SnakeGame.Wrap(nextRaw.Y, SnakeGame.WORLD_H));
         IsDead = true;
         game._shake = 0.4f;
         game.SpawnExplosion(next, 50, new Vec3(1.0f, 0.2f, 0.2f));
@@ -140,7 +140,7 @@ public record PlayerSnake : Actor<Terrain>, IControllable
 
     public void RenderSnake()
     {
-        
+
     }
 
 }

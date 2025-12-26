@@ -1,7 +1,10 @@
-﻿using GameModes.Dude;
+using GameModes.Dude;
 using SlimeCore.GameModes.Snake;
+using SlimeCore.Source.Core;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+
+namespace SlimeCore;
 
 public static class GameHost
 {
@@ -14,12 +17,12 @@ public static class GameHost
 
     // The C++ Engine calls this every frame
     [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
-	public static void Update(float dt) 
-	{
-		// Update Input/UI before game logic
-		EngineManaged.UI.UISystem.Update();
+    public static void Update(float dt)
+    {
+        // Update Input/UI before game logic
+        EngineManaged.UI.UISystem.Update();
 
-		// Update Game
-		GameManager.UpdateCurrentMode(dt);
-	}
+        // Update Game
+        GameManager.UpdateCurrentMode(dt);
+    }
 }

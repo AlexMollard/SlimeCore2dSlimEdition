@@ -13,7 +13,7 @@ internal class WorldGenerator
     private const int BLOCK_MAX = 15;
     private const int STREET_WIDTH = 3;
     private const int HIGHWAY_WIDTH = 4;
-    
+
     private readonly float[] _highwayPercent = new float[] { 0.25f, 0.75f };
 
     public WorldGenerator(int seed)
@@ -28,7 +28,8 @@ internal class WorldGenerator
         int h = world.Height();
 
         // 1. INITIALIZE CANVAS
-        world.SetAll(o => {
+        world.SetAll(o =>
+        {
             o.Blocked = false;
             o.Type = Terrain.Grass;
         });
@@ -36,7 +37,7 @@ internal class WorldGenerator
         // 2. DEFINE HIGHWAYS
         List<int> highwayX = new List<int>();
         List<int> highwayY = new List<int>();
-        foreach(float p in _highwayPercent)
+        foreach (float p in _highwayPercent)
         {
             highwayX.Add((int)(w * p));
             highwayY.Add((int)(h * p));
@@ -47,7 +48,7 @@ internal class WorldGenerator
         int cx = STREET_WIDTH;
         while (cx < w - STREET_WIDTH)
         {
-            if (IsOverlappingHighway(cx, highwayX)) 
+            if (IsOverlappingHighway(cx, highwayX))
             {
                 cx += HIGHWAY_WIDTH;
                 continue;
@@ -84,9 +85,9 @@ internal class WorldGenerator
         // 5. CLEANUP
         ClearCenter(world);
         RemoveSingleTileWalls(world);
-        
+
         // Check connectivity with wrapping logic
-        PruneUnreachableAreas(world); 
+        PruneUnreachableAreas(world);
 
         // REMOVED: ApplyEdgeWalls(world); 
         // The map is now infinite!
@@ -94,7 +95,7 @@ internal class WorldGenerator
 
     private bool IsOverlappingHighway(int pos, List<int> highways)
     {
-        foreach(int h in highways)
+        foreach (int h in highways)
             if (pos >= h - 2 && pos <= h + HIGHWAY_WIDTH + 2) return true;
         return false;
     }
@@ -199,7 +200,7 @@ internal class WorldGenerator
                     if (world[x, (y + 1) % h].Blocked) neighbors++;
                     if (world[x, (y - 1 + h) % h].Blocked) neighbors++;
 
-                    if (neighbors < 1) 
+                    if (neighbors < 1)
                     {
                         world[x, y].Blocked = false;
                         world[x, y].Type = Terrain.Grass;
@@ -240,10 +241,10 @@ internal class WorldGenerator
         int h = world.Height();
         bool[,] reachable = new bool[w, h];
         Queue<(int x, int y)> queue = new Queue<(int x, int y)>();
-        
+
         int startX = w / 2;
         int startY = h / 2;
-        
+
         queue.Enqueue((startX, startY));
         reachable[startX, startY] = true;
 

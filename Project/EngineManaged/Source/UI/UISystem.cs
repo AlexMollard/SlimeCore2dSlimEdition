@@ -4,83 +4,83 @@ namespace EngineManaged.UI;
 
 public static class UISystem
 {
-	private static readonly List<UIButton> _buttons = new();
-	private static bool _prevMouseDown = false;
+    private static readonly List<UIButton> _buttons = new();
+    private static bool _prevMouseDown;
 
-	public static void Register(UIButton btn) => _buttons.Add(btn);
-	public static void Unregister(UIButton btn) => _buttons.Remove(btn);
+    public static void Register(UIButton btn) => _buttons.Add(btn);
+    public static void Unregister(UIButton btn) => _buttons.Remove(btn);
 
-	/// <summary>
-	/// Clears all buttons. Call this when switching Game Modes!
-	/// </summary>
-	public static void Clear()
-	{
-		// Optional: Destroy the native entities too if you want strict cleanup
-		// for(int i=0; i<_buttons.Count; i++) _buttons[i].Destroy();
-		_buttons.Clear();
-	}
+    /// <summary>
+    /// Clears all buttons. Call this when switching Game Modes!
+    /// </summary>
+    public static void Clear()
+    {
+        // Optional: Destroy the native entities too if you want strict cleanup
+        // for(int i=0; i<_buttons.Count; i++) _buttons[i].Destroy();
+        _buttons.Clear();
+    }
 
-	public static void Update()
-	{
-		var (mxWorld, myWorld) = Input.GetMousePos();
-		var (mxScreen, myScreen) = Input.GetMouseScreenPos();
-		var down = Input.GetMouseDown(Input.MouseButton.Left);
+    public static void Update()
+    {
+        var (mxWorld, myWorld) = Input.GetMousePos();
+        var (mxScreen, myScreen) = Input.GetMouseScreenPos();
+        var down = Input.GetMouseDown(Input.MouseButton.Left);
 
-		int hoverIndex = -1;
-		int highestLayer = int.MinValue;
+        var hoverIndex = -1;
+        var highestLayer = int.MinValue;
 
-		// 1. Detect Hover (considering Layers)
-		for (int i = 0; i < _buttons.Count; i++)
-		{
-			var b = _buttons[i];
-			b.IsHovered = false; // Reset frame
+        // 1. Detect Hover (considering Layers)
+        for (var i = 0; i < _buttons.Count; i++)
+        {
+            var b = _buttons[i];
+            b.IsHovered = false; // Reset frame
 
-			if (!b.Enabled) continue;
+            if (!b.Enabled) continue;
 
-			// Use appropriate coordinate system based on button's screen-space setting
-			float mx = b.UseScreenSpace ? mxScreen : mxWorld;
-			float my = b.UseScreenSpace ? myScreen : myWorld;
+            // Use appropriate coordinate system based on button's screen-space setting
+            var mx = b.UseScreenSpace ? mxScreen : mxWorld;
+            var my = b.UseScreenSpace ? myScreen : myWorld;
 
-			if (b.ContainsPoint(mx, my))
-			{
-				if (b.Layer >= highestLayer)
-				{
-					highestLayer = b.Layer;
-					hoverIndex = i;
-				}
-			}
-		}
+            if (b.ContainsPoint(mx, my))
+            {
+                if (b.Layer >= highestLayer)
+                {
+                    highestLayer = b.Layer;
+                    hoverIndex = i;
+                }
+            }
+        }
 
-		if (hoverIndex != -1) _buttons[hoverIndex].IsHovered = true;
+        if (hoverIndex != -1) _buttons[hoverIndex].IsHovered = true;
 
-		// 2. Handle Click States
-		if (down && !_prevMouseDown) // Mouse Down
-		{
-			if (hoverIndex != -1) _buttons[hoverIndex].IsPressed = true;
+        // 2. Handle Click States
+        if (down && !_prevMouseDown) // Mouse Down
+        {
+            if (hoverIndex != -1) _buttons[hoverIndex].IsPressed = true;
 
-			// Unpress others
-			for (int i = 0; i < _buttons.Count; i++)
-				if (i != hoverIndex) _buttons[i].IsPressed = false;
-		}
-		else if (!down && _prevMouseDown) // Mouse Up
-		{
-			for (int i = 0; i < _buttons.Count; i++)
-			{
-				var b = _buttons[i];
-				if (b.IsPressed)
-				{
-					// Use appropriate coordinate system
-					float mx = b.UseScreenSpace ? mxScreen : mxWorld;
-					float my = b.UseScreenSpace ? myScreen : myWorld;
-					if (b.Enabled && b.ContainsPoint(mx, my)) b.InvokeClick();
-					b.IsPressed = false;
-				}
-			}
-		}
+            // Unpress others
+            for (var i = 0; i < _buttons.Count; i++)
+                if (i != hoverIndex) _buttons[i].IsPressed = false;
+        }
+        else if (!down && _prevMouseDown) // Mouse Up
+        {
+            for (var i = 0; i < _buttons.Count; i++)
+            {
+                var b = _buttons[i];
+                if (b.IsPressed)
+                {
+                    // Use appropriate coordinate system
+                    var mx = b.UseScreenSpace ? mxScreen : mxWorld;
+                    var my = b.UseScreenSpace ? myScreen : myWorld;
+                    if (b.Enabled && b.ContainsPoint(mx, my)) b.InvokeClick();
+                    b.IsPressed = false;
+                }
+            }
+        }
 
-		// 3. Update Visuals
-		for (int i = 0; i < _buttons.Count; i++) _buttons[i].UpdateColor();
+        // 3. Update Visuals
+        for (var i = 0; i < _buttons.Count; i++) _buttons[i].UpdateColor();
 
-		_prevMouseDown = down;
-	}
+        _prevMouseDown = down;
+    }
 }

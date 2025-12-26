@@ -29,63 +29,92 @@ namespace EngineManaged.Rendering
 
     public class ParticleSystem : IDisposable
     {
+        private bool _isDisposed;
+
         private IntPtr m_NativeInstance;
 
-        [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr ParticleSystem_Create(uint maxParticles);
+        private static class NativeMethods
+        {
+            [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+            internal static extern IntPtr ParticleSystem_Create(uint maxParticles);
 
-        [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
-        private static extern void ParticleSystem_Destroy(IntPtr system);
+            [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+            internal static extern void ParticleSystem_Destroy(IntPtr system);
 
-        [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
-        private static extern void ParticleSystem_OnUpdate(IntPtr system, float ts);
+            [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+            internal static extern void ParticleSystem_OnUpdate(IntPtr system, float ts);
 
-        [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
-        private static extern void ParticleSystem_OnRender(IntPtr system);
+            [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+            internal static extern void ParticleSystem_OnRender(IntPtr system);
 
-        [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
-        private static extern void ParticleSystem_Emit(IntPtr system, ref ParticleProps_Interop props);
+            [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+            internal static extern void ParticleSystem_Emit(IntPtr system, ref ParticleProps_Interop props);
 
-        [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
-        private static extern void Scene_RegisterParticleSystem(IntPtr system);
+            [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+            internal static extern void Scene_RegisterParticleSystem(IntPtr system);
 
-        [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
-        private static extern void Scene_UnregisterParticleSystem(IntPtr system);
+            [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+            internal static extern void Scene_UnregisterParticleSystem(IntPtr system);
+        }
 
         public ParticleSystem(uint maxParticles = 10000)
         {
-            m_NativeInstance = ParticleSystem_Create(maxParticles);
+            m_NativeInstance = NativeMethods.ParticleSystem_Create(maxParticles);
             if (m_NativeInstance != IntPtr.Zero)
-                Scene_RegisterParticleSystem(m_NativeInstance);
+            {
+                NativeMethods.Scene_RegisterParticleSystem(m_NativeInstance);
+            }
         }
 
         public void Dispose()
         {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_isDisposed)
+            {
+                return;
+            }
+
+            if (disposing)
+            {
+                //Free managed resources if any
+            }
+            // Free native resources
             if (m_NativeInstance != IntPtr.Zero)
             {
-                Scene_UnregisterParticleSystem(m_NativeInstance);
-                ParticleSystem_Destroy(m_NativeInstance);
+                NativeMethods.Scene_UnregisterParticleSystem(m_NativeInstance);
+                NativeMethods.ParticleSystem_Destroy(m_NativeInstance);
                 m_NativeInstance = IntPtr.Zero;
             }
+
+            _isDisposed = true;
         }
 
         public void OnUpdate(float ts)
         {
             if (m_NativeInstance != IntPtr.Zero)
-                ParticleSystem_OnUpdate(m_NativeInstance, ts);
+            {
+                NativeMethods.ParticleSystem_OnUpdate(m_NativeInstance, ts);
+            }
         }
 
         public void OnRender()
         {
             if (m_NativeInstance != IntPtr.Zero)
-                ParticleSystem_OnRender(m_NativeInstance);
+            {
+                NativeMethods.ParticleSystem_OnRender(m_NativeInstance);
+            }
         }
 
         public void Emit(ParticleProps props)
         {
             if (m_NativeInstance == IntPtr.Zero) return;
 
-            ParticleProps_Interop interop = new ParticleProps_Interop
+            var interop = new ParticleProps_Interop
             {
                 PosX = props.Position.X,
                 PosY = props.Position.Y,
@@ -107,7 +136,7 @@ namespace EngineManaged.Rendering
                 LifeTime = props.LifeTime
             };
 
-            ParticleSystem_Emit(m_NativeInstance, ref interop);
+            NativeMethods.ParticleSystem_Emit(m_NativeInstance, ref interop);
         }
     }
 }

@@ -2,53 +2,38 @@ namespace EngineManaged.UI;
 
 public readonly struct UIImage
 {
-	public readonly ulong Id;
-	public UIImage(ulong id) => Id = id;
+    public readonly ulong Id;
+    public UIImage(ulong id) => Id = id;
 
-	public bool IsValid => Id != 0;
+    public bool IsValid => Id != 0;
 
-	public static UIImage Create(float x, float y, float w, float h)
-	{
-		var id = Native.UI_CreateImage(x, y, w, h);
-		return new UIImage(id);
-	}
+    public static UIImage Create(float x, float y, float w, float h)
+    {
+        var id = NativeMethods.UI_CreateImage(x, y, w, h);
+        return new UIImage(id);
+    }
 
-	public void Destroy() { if (Id != 0) Native.UI_Destroy(Id); }
+    public void Destroy() { if (Id != 0) NativeMethods.UI_Destroy(Id); }
 
-	public (float x, float y) Position
-	{
-		get { Native.UI_GetPosition(Id, out float x, out float y); return (x, y); }
-		set => Native.UI_SetPosition(Id, value.x, value.y);
-	}
+    public (float x, float y) Position
+    {
+        get { NativeMethods.UI_GetPosition(Id, out var x, out var y); return (x, y); }
+        set => NativeMethods.UI_SetPosition(Id, value.x, value.y);
+    }
 
     public (float w, float h) Size
     {
-        get { Native.UI_GetSize(Id, out float w, out float h); return (w, h); }
-        set => Native.UI_SetSize(Id, value.w, value.h);
+        get { NativeMethods.UI_GetSize(Id, out var w, out var h); return (w, h); }
+        set => NativeMethods.UI_SetSize(Id, value.w, value.h);
     }
 
-	public (float x, float y) Anchor
-	{
-		set => Native.UI_SetAnchor(Id, value.x, value.y);
-	}
+    public void Anchor(float x, float y) => NativeMethods.UI_SetAnchor(Id, x, y);
 
-	public (float r, float g, float b) Color
-	{
-		set => Native.UI_SetColor(Id, value.r, value.g, value.b);
-	}
+    public void Color(float r, float g, float b) => NativeMethods.UI_SetColor(Id, r, g, b);
 
-	public bool IsVisible
-	{
-		set => Native.UI_SetVisible(Id, value);
-	}
+    public void IsVisible(bool val) => NativeMethods.UI_SetVisible(Id, val);
 
-	public int Layer
-	{
-		set => Native.UI_SetLayer(Id, value);
-	}
+    public void Layer(int val) => NativeMethods.UI_SetLayer(Id, val);
 
-	public bool UseScreenSpace
-	{
-		set => Native.UI_SetUseScreenSpace(Id, value);
-	}
+    public void UseScreenSpace(bool val) => NativeMethods.UI_SetUseScreenSpace(Id, val);
 }

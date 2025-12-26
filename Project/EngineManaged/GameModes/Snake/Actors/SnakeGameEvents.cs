@@ -10,7 +10,7 @@ public class SnakeGameEvents
 {
 
     // Called when an enemy dies. Passes the position of death.
-    public Action<SnakeGame, Vec2> OnEnemyKilled;
+    public Action<SnakeGame, Vec2>? OnEnemyKilled;
 
     public void Clear()
     {

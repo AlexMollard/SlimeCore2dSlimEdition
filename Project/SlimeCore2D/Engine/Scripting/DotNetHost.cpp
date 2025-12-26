@@ -155,7 +155,7 @@ bool DotNetHost::Init()
 	}
 
 	// Get ScriptRuntime_Init
-	rc = load_assembly_and_get_function_pointer(managedDllPath.c_str(), L"GameHost, EngineManaged", L"Init", UNMANAGEDCALLERSONLY_METHOD, nullptr, (void**) &m_init);
+	rc = load_assembly_and_get_function_pointer(managedDllPath.c_str(), L"SlimeCore.GameHost, EngineManaged", L"Init", UNMANAGEDCALLERSONLY_METHOD, nullptr, (void**) &m_init);
 
 	if (rc != 0 || !m_init)
 	{
@@ -164,7 +164,7 @@ bool DotNetHost::Init()
 	}
 
 	// Get ScriptRuntime_Update
-	rc = load_assembly_and_get_function_pointer(managedDllPath.c_str(), L"GameHost, EngineManaged", L"Update", UNMANAGEDCALLERSONLY_METHOD, nullptr, (void**) &m_update);
+	rc = load_assembly_and_get_function_pointer(managedDllPath.c_str(), L"SlimeCore.GameHost, EngineManaged", L"Update", UNMANAGEDCALLERSONLY_METHOD, nullptr, (void**) &m_update);
 
 	if (rc != 0 || !m_update)
 	{

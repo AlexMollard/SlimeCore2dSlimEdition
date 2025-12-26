@@ -21,7 +21,7 @@ public record Tile<TEnum>
 
     public bool Food { get; set; }
     [NotMapped]
-    public Vec2i Position => new Vec2i(PositionX, PositionY);
+    public Vec2i Position => new(PositionX, PositionY);
 
     public Tile(Action<TileOptions<TEnum>> configure)
     {
