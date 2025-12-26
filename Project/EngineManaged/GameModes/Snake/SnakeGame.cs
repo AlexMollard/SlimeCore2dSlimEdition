@@ -24,10 +24,10 @@ public class SnakeGame : IGameMode
 
     public const int WORLD_W = 240;
     public const int WORLD_H = 240;
-    private SnakeGrid? _world { get; set; }
+    public SnakeGrid? _world { get; set; }
 
     public static float _cellSize = 0.4f;
-    private static float _cellSpacing = 0.4f;
+    public static float _cellSpacing = 0.4f;
 
     // Logic constants
     private const float TICK_NORMAL = 0.12f;
@@ -53,8 +53,8 @@ public class SnakeGame : IGameMode
     private static FoodType[,] _foodMap = new FoodType[WORLD_W, WORLD_H];
 
     // Camera & Smoothing
-    private Vec2 _cam;
-    public PlayerSnake _snake { get; set; } = new();
+    public Vec2 _cam;
+    public PlayerSnake _snake { get; set; } = new(_cellSize * 1.25f);
     private ParticleSystem? _particleSys;
 
     // UI
@@ -80,6 +80,9 @@ public class SnakeGame : IGameMode
 
     public void Init()
     {
+        // Set Gravity to Zero for Top-Down Game
+        Native.Scene_SetGravity(0, 0);
+
         _world = new SnakeGrid(WORLD_W, WORLD_H, SnakeTerrain.Grass);
         _particleSys = new ParticleSystem(5000);
 
@@ -96,7 +99,7 @@ public class SnakeGame : IGameMode
             }
         }
         var textureId = NativeMethods.Resources_LoadTexture("Debug", "textures/debug.png");
-        _snake.Initialize(_cellSize);
+        _snake.Initialize();
 
         TexEnemy = NativeMethods.Resources_LoadTexture("Enemy", "Game/Resources/Textures/debug.png");
 
@@ -123,7 +126,7 @@ public class SnakeGame : IGameMode
 
         foreach (var h in Hunters)
         {
-            h.HunterEntity.Destroy();
+            h.Entity.Destroy();
             Hunters.Clear();
         }
     }
@@ -135,7 +138,7 @@ public class SnakeGame : IGameMode
 
         foreach (var h in Hunters)
         {
-            h.HunterEntity.Destroy();
+            h.Entity.Destroy();
         }
         Hunters.Clear();
 
@@ -184,6 +187,7 @@ public class SnakeGame : IGameMode
         if (!_snake.IsDead)
         {
             HandleInput();
+            NPC_SnakeHunter.HandleUpdateBehaviour(this, dt);
 
             var headTile = _world[_snake[0].X, _snake[0].Y].Type;
             var speedMultiplier = 1.0f;
@@ -203,7 +207,6 @@ public class SnakeGame : IGameMode
                 _snake.Direction = _snake.NextDirection;
                 Step();
             }
-            NPC_SnakeHunter.HandleUpdateBehaviour(this, dt);
         }
         else
         {
@@ -659,29 +662,6 @@ public class SnakeGame : IGameMode
 
     private bool IsSnakeAt(int x, int y) => _snake.GetBodyIndexFromWorldPosition(x, y) != -1;
     public static int Wrap(int v, int m) => (v % m + m) % m;
-
-    public Entity CreateSpriteEntity(float x, float y, float w, float h, float r, float g, float b, int layer, IntPtr texture = default)
-    {
-        var e = Entity.Create();
-        e.AddComponent<TransformComponent>();
-        e.AddComponent<SpriteComponent>();
-        e.AddComponent<AnimationComponent>();
-
-        var transform = e.GetComponent<TransformComponent>();
-        transform.Position = (x, y);
-        transform.Scale = (w, h);
-        transform.Layer = layer;
-
-        var sprite = e.GetComponent<SpriteComponent>();
-        sprite.Color = (r, g, b);
-        if (texture != IntPtr.Zero)
-        {
-            sprite.TexturePtr = texture;
-        }
-
-        return e;
-
-    }
 
     public void Dispose()
     {

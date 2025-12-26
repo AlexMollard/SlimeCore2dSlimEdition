@@ -13,18 +13,20 @@ namespace SlimeCore.GameModes.Snake.Actors;
 public record NPC_SnakeHunter : Actor<SnakeTerrain>
 {
 
-    const int spawnRadius = 30;
+    const int SpawnRadius = 30;
+
+    public const int MaxHunters = 50;
 
     public enum HunterType
     {
         Normal,
         Chonker
     }
-    public Entity? HunterEntity { get; set; }
+    public required Entity Entity { get; set; }
 
     public HunterType Type { get; set; }
 
-    public static Vec2i SpawnHunter(SnakeGame game)
+    public static Vec2i SpawnHunter(SnakeGame game, int spawnRadius = SpawnRadius)
     {
         var type = game.Rng.NextDouble() < 0.10 ? HunterType.Chonker : HunterType.Normal;
         var snakePos = game._snake.Body[0];
@@ -40,32 +42,36 @@ public record NPC_SnakeHunter : Actor<SnakeTerrain>
         var size = type == HunterType.Chonker ? 2.2f : 0.8f;
         var r = type == HunterType.Chonker ? 0.6f : 1.0f;
         var b = type == HunterType.Chonker ? 0.8f : 0.2f;
-        var ent = game.CreateSpriteEntity(pos.X, pos.Y, size, size, r, 0f, b, 5, game.TexEnemy);
+        var hunter = SceneFactory.CreateQuad(0, 0, size, size, r, 0f, b, layer: 4);
 
         // Add Physics (Kinematic so we can control position manually but still collide with player)
-        ent.AddComponent<RigidBodyComponent>();
-        ent.AddComponent<BoxColliderComponent>();
-        var rb = ent.GetComponent<RigidBodyComponent>();
+        hunter.AddComponent<RigidBodyComponent>();
+        hunter.AddComponent<BoxColliderComponent>();
+        var rb = hunter.GetComponent<RigidBodyComponent>();
         rb.IsKinematic = true;
-        var bc = ent.GetComponent<BoxColliderComponent>();
+        var bc = hunter.GetComponent<BoxColliderComponent>();
         bc.Size = (size * 0.8f, size * 0.8f); // Slightly smaller hitbox
 
-        var hunterTransform = ent.GetComponent<TransformComponent>();
+        var hunterTransform = hunter.GetComponent<TransformComponent>();
         hunterTransform.Anchor = (0.5f, 0.5f);
-        hunterTransform.Layer = 1;
-        game.Hunters.Add(new NPC_SnakeHunter { HunterEntity = ent, Position = pos, Type = type });
+        hunterTransform.Position = (pos.X, pos.Y);
+        var hunterSprite = hunter.GetComponent<SpriteComponent>();
+        hunterSprite.IsVisible = true;
+
+        game.Hunters.Add(new NPC_SnakeHunter { Entity = hunter, Position = pos, Type = type });
         game.SpawnExplosion(pos, 50, new Vec3(1.0f, 0.2f, 0.2f));
+        SafeNativeMethods.Engine_Log($"Spawning Hunter with Id: {hunter.Id}");
         return pos;
     }
 
     public static void HandleUpdateBehaviour(SnakeGame game, float dt)
     {
         game.SpawnTimer -= dt;
-        if (game.SpawnTimer <= 0)
+        if (game.SpawnTimer <= 0 && game.Hunters.Count < MaxHunters)
         {
             var hunterPos = SpawnHunter(game);
             var snakeDistance = Vec2i.Distance(hunterPos, game._snake.Body[0]);
-            SafeNativeMethods.Engine_Log($"Spawning Hunter {snakeDistance} from snake, there are {game.Hunters.Count} hunters");
+            SafeNativeMethods.Engine_Log($"Spawning Hunter with Id: {hunterPos}, {snakeDistance} from snake, there are {game.Hunters.Count} hunters");
             var ramp = MathF.Min(1.5f, game._currentScore * 0.02f);
             game.SpawnTimer = (1.2f - ramp) / (game.ChillTimer > 0 ? 0.5f : 1.0f);
             if (game.SpawnTimer < 0.2f) game.SpawnTimer = 0.2f;
@@ -78,7 +84,7 @@ public record NPC_SnakeHunter : Actor<SnakeTerrain>
             var me = game.Hunters[i];
 
             // Vectorized Direction
-            var toPlayer = (game._snake.Body[0] - me.Position).Normalized();
+            var toPlayer = me.PathFindToPlayer(game);
 
             var separation = Vec2.Zero;
             var neighbors = 0;
@@ -105,24 +111,40 @@ public record NPC_SnakeHunter : Actor<SnakeTerrain>
             var speed = (me.Type == HunterType.Chonker ? 2.0f : 4.5f) * timeScale;
             me.Position += force.Normalized() * speed * dt;
 
-            var haterTransform = me.HunterEntity.GetComponent<TransformComponent>();
-            haterTransform.Position = (me.Position.X, me.Position.Y);
+            var hunterSprite = me.Entity.GetComponent<SpriteComponent>();
+            hunterSprite.IsVisible = true;
+
+            var hunterTransform = me.Entity.GetComponent<TransformComponent>();
+
+            var dx = me.Position.X - game._cam.X;
+            var dy = me.Position.Y - game._cam.Y;
+
+            if (dx > SnakeGame.WORLD_W / 2f) dx -= SnakeGame.WORLD_W;
+            else if (dx < -SnakeGame.WORLD_W / 2f) dx += SnakeGame.WORLD_W;
+
+            if (dy > SnakeGame.WORLD_H / 2f) dy -= SnakeGame.WORLD_H;
+            else if (dy < -SnakeGame.WORLD_H / 2f) dy += SnakeGame.WORLD_H;
+
+            hunterTransform.Position = (
+                dx * SnakeGame._cellSpacing,
+                dy * SnakeGame._cellSpacing
+            );
 
             var pulseSpeed = me.Type == HunterType.Chonker ? 5.0f : 15.0f;
             var baseSize = me.Type == HunterType.Chonker ? 2.2f : 0.8f;
             var pulse = baseSize + 0.1f * MathF.Sin(game._currentScore * pulseSpeed + i);
-            haterTransform.Scale = (pulse, pulse);
+            hunterTransform.Scale = (pulse, pulse);
 
             // Distance check with Vector method
             // Increased kill distance slightly to account for physics collision radius preventing overlap
-            var killDist = (me.Type == HunterType.Chonker ? 1.5f : 0.7f) * SnakeGame._cellSize * 1.3f;
+            var killDist = (me.Type == HunterType.Chonker ? 1.5f : 0.7f) * game._snake.HeadSize;
 
             if (Vec2.Distance(game._snake.Body[0], me.Position) < killDist)
             {
                 if (game._snake.IsSprinting)
                 {
                     game.Events.OnEnemyKilled?.Invoke(game, me.Position);
-                    me.HunterEntity.Destroy();
+                    me.Entity.Destroy();
                     game.Hunters.RemoveAt(i);
                     game._currentScore += 100;
                     game._shake += 0.3f;
@@ -134,5 +156,40 @@ public record NPC_SnakeHunter : Actor<SnakeTerrain>
                 }
             }
         }
+    }
+    
+    public Vec2 PathFindToPlayer(SnakeGame game)
+    {
+        var bestDir = Vec2i.Zero;
+        var bestScore = float.MaxValue;
+
+        var dirs = new[]
+        {
+            new Vec2i(1,0),
+            new Vec2i(-1,0),
+            new Vec2i(0,1),
+            new Vec2i(0,-1)
+        };
+
+        foreach (var d in dirs)
+        {
+            var next = (Vec2i)Position + d;
+
+            var wx = SnakeGame.Wrap(next.X, SnakeGame.WORLD_W);
+            var wy = SnakeGame.Wrap(next.Y, SnakeGame.WORLD_H);
+
+            if (game._world[wx, wy].Blocked)
+                continue;
+
+            var dist = Vec2i.Distance(next, game._snake.Body[0]);
+
+            if (dist < bestScore)
+            {
+                bestScore = dist;
+                bestDir = d;
+            }
+        }
+
+        return bestDir.ToVec2().Normalized();
     }
 }

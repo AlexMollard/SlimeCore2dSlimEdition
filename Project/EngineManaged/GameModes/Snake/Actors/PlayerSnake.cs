@@ -5,6 +5,7 @@ using SlimeCore.Source.Input;
 using SlimeCore.Source.World.Actors;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Threading;
 using static System.Net.Mime.MediaTypeNames;
@@ -15,6 +16,8 @@ public record PlayerSnake : Actor<SnakeTerrain>, IControllable
 {
     public static readonly Vec3 COL_SNAKE = new(0.00f, 1.00f, 0.50f);
     public static readonly Vec3 COL_SNAKE_SPRINT = new(0.30f, 0.80f, 1.00f);
+
+    public required float HeadSize { get; set; }
 
     /// <summary>
     /// Contains all body segment positions, head is at index 0
@@ -50,9 +53,15 @@ public record PlayerSnake : Actor<SnakeTerrain>, IControllable
     public Entity? Compass { get; set; }
     public Entity? Head { get; set; }
 
-    public void Initialize(float cell_size)
+    [SetsRequiredMembers]
+    public PlayerSnake(float headSize)
     {
-        Head = SceneFactory.CreateQuad(0, 0, cell_size * 1.15f, cell_size * 1.15f, COL_SNAKE.X, COL_SNAKE.Y, COL_SNAKE.Z, layer: 5);
+       HeadSize = headSize;
+    }
+
+    public void Initialize()
+    {
+        Head = SceneFactory.CreateQuad(0, 0, HeadSize, HeadSize, COL_SNAKE.X, COL_SNAKE.Y, COL_SNAKE.Z, layer: 5);
         var headTransform = Head.GetComponent<TransformComponent>();
         headTransform.Anchor = (0.5f, 0.5f);
         var headSprite = Head.GetComponent<SpriteComponent>();
