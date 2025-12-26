@@ -1,6 +1,7 @@
 ﻿using EngineManaged.Numeric;
 using EngineManaged.Scene;
 using SlimeCore.GameModes.Snake.World;
+using SlimeCore.Source.Core;
 using SlimeCore.Source.Input;
 using SlimeCore.Source.World.Actors;
 using System;
@@ -8,14 +9,17 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using static System.Net.Mime.MediaTypeNames;
 
 namespace SlimeCore.GameModes.Snake.Actors;
 
-public record PlayerSnake : Actor<SnakeTerrain>, IControllable
+public record PlayerSnake : Actor<SnakeActors, SnakeGame>, IControllable
 {
     public static readonly Vec3 COL_SNAKE = new(0.00f, 1.00f, 0.50f);
     public static readonly Vec3 COL_SNAKE_SPRINT = new(0.30f, 0.80f, 1.00f);
+
+    public override SnakeActors Kind => SnakeActors.Snake;
 
     public required float HeadSize { get; set; }
 
@@ -86,13 +90,15 @@ public record PlayerSnake : Actor<SnakeTerrain>, IControllable
         compassSprite.IsVisible = true;
     }
 
-    public void Destroy()
+    public override void Destroy()
     {
         Head.Destroy();
         Compass.Destroy();
         Eyes[0].Destroy();
         Eyes[1].Destroy();
     }
+
+    protected override float ActionInterval { get; }
 
     public void RecieveInput(bool IgnoreInput)
     {
@@ -147,9 +153,9 @@ public record PlayerSnake : Actor<SnakeTerrain>, IControllable
         game.SpawnExplosion(next, 50, new Vec3(1.0f, 0.2f, 0.2f));
     }
 
-    public void RenderSnake()
+    public override bool TakeAction(SnakeGame mode, float deltaTime)
     {
-
+        //Snake is not implemented as an Actor in this context... yet, could be useful for less reactive behaviors.
+        throw new NotImplementedException();
     }
-
 }

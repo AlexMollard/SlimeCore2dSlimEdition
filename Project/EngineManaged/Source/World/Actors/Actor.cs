@@ -1,19 +1,26 @@
 ﻿using EngineManaged.Numeric;
+using SlimeCore.Source.Core;
 using SlimeCore.Source.World.Grid;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace SlimeCore.Source.World.Actors;
 /// <summary>
 /// Saveable base class for all actors in the world
 /// </summary>
 [Table("actors")]
-public record Actor<TEnum>
+public abstract record Actor<TEnum, TGameMode>
     where TEnum : Enum
+    where TGameMode : IGameMode
 {
     public Guid Id { get; init; } = Guid.NewGuid();
+
+    public abstract TEnum Kind { get; }
+
+    protected float ActionCooldown;
 
     /// <summary>
     /// Grid Unbound Position
@@ -24,4 +31,21 @@ public record Actor<TEnum>
     public Guid? MapReference { get; set; }
 
     public Guid? TileReference { get; set; }
+    /// <summary>
+    /// A background processor of the actor that takes actions based on the game mode;
+    /// Avoid using delta time for long lived low priority actors 
+    /// </summary>
+    /// <param name="mode"></param>
+    /// <param name="deltaTime"></param>
+    /// <returns>Whether another action should be taken by this entity</returns>
+    public abstract bool TakeAction(TGameMode mode, float deltaTime);
+
+    public abstract void Destroy();
+    
+    protected static int ToPriority(TEnum value)
+        => Convert.ToInt32(value);
+
+    protected abstract float ActionInterval { get; }
+
+    public int Priority => ToPriority(Kind);
 }

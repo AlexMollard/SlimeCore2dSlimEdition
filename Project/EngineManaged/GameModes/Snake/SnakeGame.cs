@@ -10,6 +10,7 @@ using SlimeCore.Source.Input;
 using SlimeCore.Source.World.Grid;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 
 namespace SlimeCore.GameModes.Snake;
@@ -19,12 +20,11 @@ public class SnakeGame : IGameMode
     private bool _isDisposed;
     public Random? Rng { get; set; }
 
-    private const int VIEW_W = 100;
-    private const int VIEW_H = 75;
+    public const int VIEW_W = 100;
+    public const int VIEW_H = 75;
 
     public SnakeGrid? _world { get; set; }
 
-    public static float _cellSize = 0.4f;
     public static float _cellSpacing = 0.4f;
 
     // Logic constants
@@ -40,7 +40,7 @@ public class SnakeGame : IGameMode
     private static float _speedBoostTimer;
 
     // Visual Handles
-    private Entity[,] _view = new Entity[VIEW_W, VIEW_H];
+    
 
     // Food
     private static int _foodCount;
@@ -49,11 +49,11 @@ public class SnakeGame : IGameMode
 
     private enum FoodType { None, Apple, Gold, Plum, Chili }
 
-    private FoodType[,]? _foodMap { get; set; }
+    private FoodType[][]? _foodMap { get; set; }
 
     // Camera & Smoothing
     public Vec2 _cam;
-    public PlayerSnake _snake { get; set; } = new(_cellSize * 1.25f);
+    public required PlayerSnake _snake { get; set; }
     private ParticleSystem? _particleSys;
 
     // UI
@@ -69,9 +69,17 @@ public class SnakeGame : IGameMode
     public float ChillTimer;
     private static int _seed;
     public SnakeGameEvents Events = new();
+    public SnakeActorManager ActorManager { get; set; }
 
-    //Snake Hunters
-    public List<NPC_SnakeHunter> Hunters { get; set; } = new();
+    [SetsRequiredMembers]
+    public SnakeGame(SnakeSettings settings)
+    {
+        _snake = new(settings.InitialZoom * 1.25f);
+        _world = new(settings.WorldWidth, settings.WorldHeight, settings.BaseTerrain, settings.InitialZoom);
+        _particleSys = new(5000);
+        ActorManager = new SnakeActorManager(settings.ActorSingleFrameBudget, 
+            NpcSnakeHunter.HandleUpdateBehaviour);
+    }
 
     
 
@@ -79,23 +87,10 @@ public class SnakeGame : IGameMode
 
     public void Init()
     {
-        _world = new SnakeGrid(240, 240, SnakeTerrain.Grass);
-        _particleSys = new ParticleSystem(5000);
-
         ResetGameLogic();
-
-        for (var x = 0; x < VIEW_W; x++)
-        {
-            for (var y = 0; y < VIEW_H; y++)
-            {
-                _view[x, y] = SceneFactory.CreateQuad(0, 0, _cellSize, _cellSize, 1f, 1f, 1f, layer: 0);
-                var transform = _view[x, y].GetComponent<TransformComponent>();
-                transform.Anchor = (0.5f, 0.5f);
-                transform.Layer = 0;
-            }
-        }
         var textureId = NativeMethods.Resources_LoadTexture("Debug", "textures/debug.png");
         _snake.Initialize();
+        _world.Initialize(VIEW_W, VIEW_H);
 
         TexEnemy = NativeMethods.Resources_LoadTexture("Enemy", "Game/Resources/Textures/debug.png");
 
@@ -115,16 +110,8 @@ public class SnakeGame : IGameMode
         _snake.Destroy();
         _particleSys.Dispose();
         Events.Clear();
-
-        for (var x = 0; x < VIEW_W; x++)
-            for (var y = 0; y < VIEW_H; y++)
-                _view[x, y].Destroy();
-
-        foreach (var h in Hunters)
-        {
-            h.Entity.Destroy();
-            Hunters.Clear();
-        }
+        _world.Destroy();
+        ActorManager.Destroy();
     }
 
     private void ResetGameLogic(int? seed = null)
@@ -133,11 +120,7 @@ public class SnakeGame : IGameMode
         else _seed = new Random().Next();
         Rng = new Random(_seed);
 
-        foreach (var h in Hunters)
-        {
-            h.Entity.Destroy();
-        }
-        Hunters.Clear();
+        ActorManager.Destroy();
 
         _rng = new Random(_seed);
         Logger.Info($"Seed: {_seed}");
@@ -147,7 +130,12 @@ public class SnakeGame : IGameMode
         var worldW = _world.Width();
         var worldH = _world.Height();
 
-        _foodMap = new FoodType[worldW, worldH];
+        _foodMap = new FoodType[worldW][];
+        for (var x = 0; x < worldW; x++)
+        {
+            _foodMap[x] = new FoodType[worldH];
+        }
+
         _foodCount = 0;
         _currentScore = 0;
 
@@ -185,8 +173,10 @@ public class SnakeGame : IGameMode
 
         if (!_snake.IsDead)
         {
+            ActorManager.Tick(this, dt);
             HandleInput();
-            NPC_SnakeHunter.HandleUpdateBehaviour(this, dt);
+            
+            NpcSnakeHunter.HandleUpdateBehaviour(this, dt);
 
             var headTile = _world[_snake[0].X, _snake[0].Y].Type;
             var speedMultiplier = 1.0f;
@@ -323,8 +313,8 @@ public class SnakeGame : IGameMode
         if (_world[next.X, next.Y].Food)
         {
             _world[next.X, next.Y].Food = false;
-            var type = _foodMap[next.X, next.Y];
-            _foodMap[next.X, next.Y] = FoodType.None;
+            var type = _foodMap[next.X][next.Y];
+            _foodMap[next.X][next.Y] = FoodType.None;
             _foodCount--;
 
             var pCol = SnakeTile.Palette.COL_FOOD_APPLE;
@@ -410,10 +400,10 @@ public class SnakeGame : IGameMode
                     _foodCount++;
                     spawned = true;
                     var roll = _rng.NextDouble();
-                    if (roll < 0.10) _foodMap[x, y] = FoodType.Gold;
-                    else if (roll < 0.20) _foodMap[x, y] = FoodType.Chili;
-                    else if (roll < 0.35) _foodMap[x, y] = FoodType.Plum;
-                    else _foodMap[x, y] = FoodType.Apple;
+                    if (roll < 0.10) _foodMap[x][y] = FoodType.Gold;
+                    else if (roll < 0.20) _foodMap[x][y] = FoodType.Chili;
+                    else if (roll < 0.35) _foodMap[x][y] = FoodType.Plum;
+                    else _foodMap[x][y] = FoodType.Apple;
                     break;
                 }
             }
@@ -491,7 +481,7 @@ public class SnakeGame : IGameMode
                 var px = (vx - VIEW_W / 2f - camFrac.X + shakeVec.X) * (_cellSpacing);
                 var py = (vy - VIEW_H / 2f - camFrac.Y + shakeVec.Y) * (_cellSpacing);
 
-                var ent = _view[vx, vy];
+                var ent = _world.GridRenders[vx][vy];
                 var transform = ent.GetComponent<TransformComponent>();
                 transform.Position = (px, py);
 
@@ -499,7 +489,7 @@ public class SnakeGame : IGameMode
 
                 if (_world[wx, wy].Food)
                 {
-                    var f = _foodMap[wx, wy];
+                    var f = _foodMap[wx][wy];
                     var fCol = SnakeTile.Palette.COL_FOOD_APPLE;
                     if (f == FoodType.Gold)
                     {
@@ -526,12 +516,12 @@ public class SnakeGame : IGameMode
                     if (sIdx == 0)
                     {
                         var headTransform = _snake.Head.GetComponent<TransformComponent>();
-                        headTransform.Scale = (_cellSize * 1.15f, _cellSize * 1.15f);
+                        headTransform.Scale = (_snake.HeadSize, _snake.HeadSize);
                         headTransform.Position = (px, py);
 
                         var headSprite = _snake.Head.GetComponent<SpriteComponent>();
                         headSprite.Color = (finalSnakeCol.X, finalSnakeCol.Y, finalSnakeCol.Z);
-                        UpdateEyes(px, py, _cellSize * 1.15f);
+                        UpdateEyes(px, py, _snake.HeadSize);
                     }
                     var sprite = ent.GetComponent<SpriteComponent>();
                     sprite.Color = (finalSnakeCol.X, finalSnakeCol.Y, finalSnakeCol.Z);
@@ -542,7 +532,7 @@ public class SnakeGame : IGameMode
                     sprite.Color = (tileCol.X, tileCol.Y, tileCol.Z);
                 }
                 var finalTransform = ent.GetComponent<TransformComponent>();
-                finalTransform.Scale = (_cellSize, _cellSize);
+                finalTransform.Scale = (_world.Zoom, _world.Zoom);
             }
         }
 
@@ -583,7 +573,7 @@ public class SnakeGame : IGameMode
             var pulse = 0.5f + 0.5f * (float)Math.Abs(Math.Sin(_time * 10f));
 
             var cCol = new Vec3(pulse, pulse, 0);
-            var ft = _foodMap[nearest.X, nearest.Y];
+            var ft = _foodMap[nearest.X][nearest.Y];
             if (ft == FoodType.Plum) cCol = new Vec3(pulse, 0, pulse);
             if (ft == FoodType.Chili) cCol = new Vec3(pulse, 0, 0);
         }
@@ -645,7 +635,7 @@ public class SnakeGame : IGameMode
                     var dist = distVec.Length();
 
                     var priorityBonus = 0f;
-                    switch (_foodMap[x, y])
+                    switch (_foodMap[x][y])
                     {
                         case FoodType.Gold: priorityBonus = 25.0f; break;
                         case FoodType.Chili: priorityBonus = 15.0f; break;
