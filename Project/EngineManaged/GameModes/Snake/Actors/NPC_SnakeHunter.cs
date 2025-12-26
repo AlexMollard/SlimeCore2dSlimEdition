@@ -119,11 +119,11 @@ public record NPC_SnakeHunter : Actor<SnakeTerrain>
             var dx = me.Position.X - game._cam.X;
             var dy = me.Position.Y - game._cam.Y;
 
-            if (dx > SnakeGame.WORLD_W / 2f) dx -= SnakeGame.WORLD_W;
-            else if (dx < -SnakeGame.WORLD_W / 2f) dx += SnakeGame.WORLD_W;
+            if (dx > game._world.Width()/ 2f) dx -= game._world.Width();
+            else if (dx < -game._world.Width()/ 2f) dx += game._world.Width();
 
-            if (dy > SnakeGame.WORLD_H / 2f) dy -= SnakeGame.WORLD_H;
-            else if (dy < -SnakeGame.WORLD_H / 2f) dy += SnakeGame.WORLD_H;
+            if (dy > game._world.Height()/ 2f) dy -= game._world.Height();
+            else if (dy < -game._world.Height()/ 2f) dy += game._world.Height();
 
             hunterTransform.Position = (
                 dx * SnakeGame._cellSpacing,
@@ -175,8 +175,8 @@ public record NPC_SnakeHunter : Actor<SnakeTerrain>
         {
             var next = (Vec2i)Position + d;
 
-            var wx = SnakeGame.Wrap(next.X, SnakeGame.WORLD_W);
-            var wy = SnakeGame.Wrap(next.Y, SnakeGame.WORLD_H);
+            var wx = SnakeGame.Wrap(next.X, game._world.Width());
+            var wy = SnakeGame.Wrap(next.Y, game._world.Height());
 
             if (game._world[wx, wy].Blocked)
                 continue;

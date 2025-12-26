@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
+using System.Threading;
 
 namespace SlimeCore.Source.World.Grid;
 
@@ -17,9 +18,16 @@ public class GridSystem<TEnum, TileOptions, Tile>
     public Guid Id { get; init; } = Guid.NewGuid();
 
     public string Name { get; set; } = "Default";
+    [NotMapped]
+    private int? _width;
+    [NotMapped]
+    private int? _height;
+    [NotMapped]
+    private object _gridLock = new();
 
     [NotMapped]
     public ConcurrentDictionary<Vec2i, Tile> Grid { get; set; }
+    
     /// <summary>
     /// 
     /// </summary>
@@ -81,14 +89,64 @@ public class GridSystem<TEnum, TileOptions, Tile>
         }
         return tile;
     }
+    /// <summary>
+    /// Removes tiles from the grid.
+    /// </summary>
+    /// <param name="count"></param>
+    /// <param name="axis">x (width) if true, y (height) if false</param>
+    public void RemoveTiles(int count, bool axis)
+    {
+        //Really want this to be thread safe.
+        lock (_gridLock)
+        {
+            if (axis)
+            {
+                var toRemoveWidth = Grid.Keys.Where(k => k.X >= Width() - count).ToArray();
+                foreach (var Xtile in toRemoveWidth)
+                {
+                    Grid.Remove(Xtile, out _);
+                }
+                _width = null;
+                _height = null;
+            }
+            else
+            {
+                var toRemoveHeight= Grid.Keys.Where(k => k.Y >= Width() - count).ToArray();
+                foreach (var Ytile in toRemoveHeight)
+                {
+                    Grid.Remove(Ytile, out _);
+                }
+            }
+        }
+    }
 
     /// <summary>
-    /// Fresh Calculation of the width of the grid.
+    /// the width of the grid (X axis).
     /// </summary>
-    public int Width() => Grid.Keys.Max(k => k.X) + 1;
+    public int Width()
+    {
+        if (_width is null)
+        {
+            lock (_gridLock)
+            {
+                _width ??= Grid.Keys.Max(k => k.X) + 1;
+            }
+        }
+        return _width.Value;
+    }
     /// <summary>
-    /// Fresh Calculation of the height of the grid.
+    /// the height of the grid (Y axis).
     /// </summary>
-    public int Height() => Grid.Keys.Max(k => k.Y) + 1;
+    public int Height()
+    {
+        if (_height is null)
+        {
+            lock (_gridLock)
+            {
+                _height ??= Grid.Keys.Max(k => k.Y) + 1;
+            }
+        }
+        return _height.Value;
+    }
 
 }

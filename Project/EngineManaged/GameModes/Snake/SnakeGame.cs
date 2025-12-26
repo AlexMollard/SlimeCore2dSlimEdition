@@ -17,13 +17,11 @@ namespace SlimeCore.GameModes.Snake;
 public class SnakeGame : IGameMode
 {
     private bool _isDisposed;
-    public Random Rng { get; init; } = new Random();
+    public Random? Rng { get; set; }
 
     private const int VIEW_W = 100;
     private const int VIEW_H = 75;
 
-    public const int WORLD_W = 240;
-    public const int WORLD_H = 240;
     public SnakeGrid? _world { get; set; }
 
     public static float _cellSize = 0.4f;
@@ -50,7 +48,8 @@ public class SnakeGame : IGameMode
     private const int START_FORWARD_CLEAR = 3;
 
     private enum FoodType { None, Apple, Gold, Plum, Chili }
-    private static FoodType[,] _foodMap = new FoodType[WORLD_W, WORLD_H];
+
+    private FoodType[,]? _foodMap { get; set; }
 
     // Camera & Smoothing
     public Vec2 _cam;
@@ -80,10 +79,7 @@ public class SnakeGame : IGameMode
 
     public void Init()
     {
-        // Set Gravity to Zero for Top-Down Game
-        Native.Scene_SetGravity(0, 0);
-
-        _world = new SnakeGrid(WORLD_W, WORLD_H, SnakeTerrain.Grass);
+        _world = new SnakeGrid(240, 240, SnakeTerrain.Grass);
         _particleSys = new ParticleSystem(5000);
 
         ResetGameLogic();
@@ -135,6 +131,7 @@ public class SnakeGame : IGameMode
     {
         if (seed.HasValue) _seed = seed.Value;
         else _seed = new Random().Next();
+        Rng = new Random(_seed);
 
         foreach (var h in Hunters)
         {
@@ -147,8 +144,10 @@ public class SnakeGame : IGameMode
 
         var gen = new WorldGenerator(_seed);
         gen.Generate(_world);
+        var worldW = _world.Width();
+        var worldH = _world.Height();
 
-        _foodMap = new FoodType[WORLD_W, WORLD_H];
+        _foodMap = new FoodType[worldW, worldH];
         _foodCount = 0;
         _currentScore = 0;
 
@@ -158,12 +157,12 @@ public class SnakeGame : IGameMode
         _snake.IsSprinting = false;
         _speedBoostTimer = 0f;
 
-        var center = new Vec2i(WORLD_W / 2, WORLD_H / 2);
+        var center = new Vec2i(worldW / 2, worldH / 2);
         var (start, dir) = FindSafeStart(center, 60, START_FORWARD_CLEAR);
 
         _snake.Clear();
         _snake.Add(start);
-        _snake.Add(new Vec2i(Wrap(start.X - dir.X, WORLD_W), Wrap(start.Y - dir.Y, WORLD_H)));
+        _snake.Add(new Vec2i(Wrap(start.X - dir.X, worldW), Wrap(start.Y - dir.Y, worldH)));
         _snake.Direction = dir;
         _snake.NextDirection = _snake.Direction;
         _snake.Grow = 4;
@@ -236,19 +235,19 @@ public class SnakeGame : IGameMode
         var d = target - _cam;
 
         // Handle toroidal wrapping for smoothing
-        if (d.X > WORLD_W * 0.5f) d.X -= WORLD_W;
-        else if (d.X < -WORLD_W * 0.5f) d.X += WORLD_W;
+        if (d.X > _world.Width() * 0.5f) d.X -= _world.Width();
+        else if (d.X < -_world.Width() * 0.5f) d.X += _world.Width();
 
-        if (d.Y > WORLD_H * 0.5f) d.Y -= WORLD_H;
-        else if (d.Y < -WORLD_H * 0.5f) d.Y += WORLD_H;
+        if (d.Y > _world.Height() * 0.5f) d.Y -= _world.Height();
+        else if (d.Y < -_world.Height() * 0.5f) d.Y += _world.Height();
 
         var smoothSpeed = Math.Clamp(dt * 10.0f, 0f, 1f);
 
         _cam += d * smoothSpeed;
 
         // Wrap camera position cleanly
-        _cam.X = (_cam.X % WORLD_W + WORLD_W) % WORLD_W;
-        _cam.Y = (_cam.Y % WORLD_H + WORLD_H) % WORLD_H;
+        _cam.X = (_cam.X % _world.Width() + _world.Width()) % _world.Width();
+        _cam.Y = (_cam.Y % _world.Height() + _world.Height()) % _world.Height();
 
         Render(interp);
     }
@@ -264,22 +263,22 @@ public class SnakeGame : IGameMode
                 {
                     if (Math.Abs(dx) != r && Math.Abs(dy) != r) continue;
 
-                    var x = Wrap(center.X + dx, WORLD_W);
-                    var y = Wrap(center.Y + dy, WORLD_H);
+                    var x = Wrap(center.X + dx, _world.Width());
+                    var y = Wrap(center.Y + dy, _world.Height());
 
                     if (_world[x, y].Blocked) continue;
 
                     foreach (var d in dirs)
                     {
-                        var tx = Wrap(x - d.X, WORLD_W);
-                        var ty = Wrap(y - d.Y, WORLD_H);
+                        var tx = Wrap(x - d.X, _world.Width());
+                        var ty = Wrap(y - d.Y, _world.Height());
                         if (_world[tx, ty].Blocked) continue;
 
                         var ok = true;
                         for (var i = 1; i <= requiredForwardClear; i++)
                         {
                             var checkPos = new Vec2i(x, y) + (d * i);
-                            if (_world[Wrap(checkPos.X, WORLD_W), Wrap(checkPos.Y, WORLD_H)].Blocked)
+                            if (_world[Wrap(checkPos.X, _world.Width()), Wrap(checkPos.Y, _world.Height())].Blocked)
                             {
                                 ok = false; break;
                             }
@@ -296,7 +295,7 @@ public class SnakeGame : IGameMode
     {
         var head = _snake[0];
         var nextRaw = head + _snake.Direction;
-        var next = new Vec2i(Wrap(nextRaw.X, WORLD_W), Wrap(nextRaw.Y, WORLD_H));
+        var next = new Vec2i(Wrap(nextRaw.X, _world.Width()), Wrap(nextRaw.Y, _world.Height()));
 
         if (_world[next].Blocked && _snake.IsSprinting)
         {
@@ -400,8 +399,8 @@ public class SnakeGame : IGameMode
                 var rndOffset = new Vec2i(_rng.Next(-range, range), _rng.Next(-range, range));
                 var pos = _snake[0] + rndOffset;
 
-                var x = Wrap(pos.X, WORLD_W);
-                var y = Wrap(pos.Y, WORLD_H);
+                var x = Wrap(pos.X, _world.Width());
+                var y = Wrap(pos.Y, _world.Height());
 
                 if (!_world[x, y].Blocked &&
                     !_world[x, y].Food &&
@@ -429,11 +428,11 @@ public class SnakeGame : IGameMode
         var dy = worldPos.Y - _cam.Y;
 
         // Handle wrapping
-        if (dx > WORLD_W / 2f) dx -= WORLD_W;
-        else if (dx < -WORLD_W / 2f) dx += WORLD_W;
+        if (dx > _world.Width() / 2f) dx -= _world.Width();
+        else if (dx < -_world.Width() / 2f) dx += _world.Width();
 
-        if (dy > WORLD_H / 2f) dy -= WORLD_H;
-        else if (dy < -WORLD_H / 2f) dy += WORLD_H;
+        if (dy > _world.Height() / 2f) dy -= _world.Height();
+        else if (dy < -_world.Height() / 2f) dy += _world.Height();
 
         var px = dx * _cellSpacing;
         var py = dy * _cellSpacing;
@@ -486,8 +485,8 @@ public class SnakeGame : IGameMode
         {
             for (var vy = 0; vy < VIEW_H; vy++)
             {
-                var wx = Wrap((int)camFloor.X - VIEW_W / 2 + vx, WORLD_W);
-                var wy = Wrap((int)camFloor.Y - VIEW_H / 2 + vy, WORLD_H);
+                var wx = Wrap((int)camFloor.X - VIEW_W / 2 + vx, _world.Width());
+                var wy = Wrap((int)camFloor.Y - VIEW_H / 2 + vy, _world.Height());
 
                 var px = (vx - VIEW_W / 2f - camFrac.X + shakeVec.X) * (_cellSpacing);
                 var py = (vy - VIEW_H / 2f - camFrac.Y + shakeVec.Y) * (_cellSpacing);
@@ -564,10 +563,10 @@ public class SnakeGame : IGameMode
             var head = _snake[0];
 
             float dx = nearest.X - head.X;
-            if (Math.Abs(dx) > WORLD_W / 2) dx = -Math.Sign(dx) * (WORLD_W - Math.Abs(dx));
+            if (Math.Abs(dx) > _world.Width() / 2) dx = -Math.Sign(dx) * (_world.Width() - Math.Abs(dx));
 
             float dy = nearest.Y - head.Y;
-            if (Math.Abs(dy) > WORLD_H / 2) dy = -Math.Sign(dy) * (WORLD_H - Math.Abs(dy));
+            if (Math.Abs(dy) > _world.Height() / 2) dy = -Math.Sign(dy) * (_world.Height() - Math.Abs(dy));
 
             var dirVec = new Vec2(dx, dy);
             var normalizedDir = dirVec.Normalized();
@@ -630,17 +629,17 @@ public class SnakeGame : IGameMode
         var head = _snake[0];
         var bestFood = new Vec2i(-1, -1);
         var minWeightedDist = float.MaxValue;
-        for (var x = 0; x < WORLD_W; x++)
+        for (var x = 0; x < _world.Width(); x++)
         {
-            for (var y = 0; y < WORLD_H; y++)
+            for (var y = 0; y < _world.Height(); y++)
             {
                 if (_world[x, y].Food)
                 {
                     float dx = x - head.X;
-                    if (Math.Abs(dx) > WORLD_W / 2) dx = Math.Sign(dx) * (WORLD_W - Math.Abs(dx));
+                    if (Math.Abs(dx) > _world.Width() / 2) dx = Math.Sign(dx) * (_world.Width() - Math.Abs(dx));
 
                     float dy = y - head.Y;
-                    if (Math.Abs(dy) > WORLD_H / 2) dy = Math.Sign(dy) * (WORLD_H - Math.Abs(dy));
+                    if (Math.Abs(dy) > _world.Height() / 2) dy = Math.Sign(dy) * (_world.Height() - Math.Abs(dy));
 
                     var distVec = new Vec2(dx, dy);
                     var dist = distVec.Length();

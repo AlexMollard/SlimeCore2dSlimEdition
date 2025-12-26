@@ -60,7 +60,7 @@ public class DudeGame : IGameMode, IDisposable
     internal DudeStats Stats = new();
 
     // --- EVENT SYSTEM ---
-    internal GameEvents Events { get; set; } = new GameEvents();
+    internal GameEvents Events { get; set; } = new();
 
     // Core Values
     internal int Level;
@@ -101,7 +101,7 @@ public class DudeGame : IGameMode, IDisposable
     internal UIImage XPBarFill;
     internal UIImage XPBarBg;
 
-    public Random Rng { get; init; } = new Random();
+    public Random Rng { get; set; } = new();
 
     // Helper to create entities using the new ECS system
     internal Entity CreateSpriteEntity(float x, float y, float w, float h, float r, float g, float b, int layer, IntPtr texture = default)

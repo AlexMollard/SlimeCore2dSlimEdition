@@ -141,7 +141,7 @@ public record PlayerSnake : Actor<SnakeTerrain>, IControllable
     public void Kill(SnakeGame game)
     {
         var nextRaw = Body[0] + Direction;
-        var next = new Vec2i(SnakeGame.Wrap(nextRaw.X, SnakeGame.WORLD_W), SnakeGame.Wrap(nextRaw.Y, SnakeGame.WORLD_H));
+        var next = new Vec2i(SnakeGame.Wrap(nextRaw.X, game._world.Width()), SnakeGame.Wrap(nextRaw.Y, game._world.Height()));
         IsDead = true;
         game._shake = 0.4f;
         game.SpawnExplosion(next, 50, new Vec3(1.0f, 0.2f, 0.2f));

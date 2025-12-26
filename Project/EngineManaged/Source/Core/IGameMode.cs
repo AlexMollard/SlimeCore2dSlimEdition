@@ -26,6 +26,6 @@ namespace SlimeCore.Source.Core
         /// </summary>
         void Shutdown();
 
-        public Random Rng { get; init; }
+        public Random Rng { get; set; }
     }
 }
