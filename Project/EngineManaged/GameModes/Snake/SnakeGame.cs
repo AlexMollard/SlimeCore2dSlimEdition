@@ -65,7 +65,7 @@ public sealed class SnakeGame : GameMode<SnakeGame>, IGameMode, IDisposable
 
     public override void Init()
     {
-        ChangeState(new StateSnakeOverworld());
+        ChangeState(new StateSnakeMenu());
     }
 
     public override void Shutdown()

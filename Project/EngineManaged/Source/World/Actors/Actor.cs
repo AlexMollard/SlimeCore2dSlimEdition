@@ -12,7 +12,7 @@ namespace SlimeCore.Source.World.Actors;
 /// Saveable base class for all actors in the world
 /// </summary>
 [Table("actors")]
-public abstract record Actor<TEnum, TGameMode>
+public abstract class Actor<TEnum, TGameMode>
     where TEnum : Enum
     where TGameMode : IGameMode
 {

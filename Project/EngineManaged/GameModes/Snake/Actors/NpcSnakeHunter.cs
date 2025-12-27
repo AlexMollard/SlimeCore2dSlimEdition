@@ -12,12 +12,12 @@ using System.Threading.Tasks;
 
 namespace SlimeCore.GameModes.Snake.Actors;
 
-public record NpcSnakeHunter : Actor<SnakeActors, SnakeGame>
+public class NpcSnakeHunter : Actor<SnakeActors, SnakeGame>
 {
 
     const int SpawnRadius = 50;
 
-    public const int MaxHunters = 50;
+    public const int MaxHunters = 500;
 
     public enum HunterType
     {
@@ -90,6 +90,7 @@ public record NpcSnakeHunter : Actor<SnakeActors, SnakeGame>
                 game.SpawnTimer = 0.2f;
             }
         }
+        SafeNativeMethods.Engine_Log($"there are {hunterCount} active hunters and {game.SpawnTimer} seconds left");
 
         PulseIterator = 0;
     }

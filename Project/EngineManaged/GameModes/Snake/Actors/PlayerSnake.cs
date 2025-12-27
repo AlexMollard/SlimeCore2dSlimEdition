@@ -14,7 +14,7 @@ using static System.Net.Mime.MediaTypeNames;
 
 namespace SlimeCore.GameModes.Snake.Actors;
 
-public record PlayerSnake : Actor<SnakeActors, SnakeGame>, IControllable
+public class PlayerSnake : Actor<SnakeActors, SnakeGame>, IControllable
 {
     public static readonly Vec3 COL_SNAKE = new(0.00f, 1.00f, 0.50f);
     public static readonly Vec3 COL_SNAKE_SPRINT = new(0.30f, 0.80f, 1.00f);

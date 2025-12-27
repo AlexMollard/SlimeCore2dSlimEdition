@@ -99,6 +99,7 @@ public class ActorManager<TEnum, TGameMode>
             Remove(actor);
         }
         _next.Clear();
+        _active.Clear();
     }
 
 }
