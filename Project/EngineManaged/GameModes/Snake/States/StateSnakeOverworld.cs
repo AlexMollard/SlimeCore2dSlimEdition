@@ -23,7 +23,6 @@ public class StateSnakeOverworld : IGameState<SnakeGame>
 
     // UI
     private static UIText _score;
-    private static UIButton? _testBtn;
     private static int _scoreCached = -1;
     private const int SCORE_FONT_SIZE = 1;
 
@@ -44,18 +43,14 @@ public class StateSnakeOverworld : IGameState<SnakeGame>
 
         game.TexEnemy = NativeMethods.Resources_LoadTexture("Enemy", "Game/Resources/Textures/debug.png");
 
-        _score = UIText.Create("SCORE: 0", SCORE_FONT_SIZE, -15.0f, 7.5f);
+        _score = UIText.Create("SCORE: 0", SCORE_FONT_SIZE, -13.0f, 7.5f);
         _score.IsVisible(true);
         _scoreCached = -1;
-
-        _testBtn = UIButton.Create("Click me", x: 0.0f, y: 6.0f, w: 3.75f, h: 1.5f, r: 0.2f, g: 0.6f, b: 0.9f, layer: 100, fontSize: 1);
-        _testBtn.Clicked += () => { Logger.Info("PRESSED!"); };
     }
 
     public void Exit(SnakeGame game)
     {
         _score.Destroy();
-        _testBtn.Destroy();
         game.ActorManager.Destroy();
     }
 
