@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef DELETE // Might not do this
+#undef DELETE
+#endif
+
 enum Keycode
 {
 	SPACE = 32,

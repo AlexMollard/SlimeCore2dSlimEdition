@@ -3,8 +3,7 @@
 
 #include <algorithm>
 #include <iostream>
-
-#include "glew.h"
+#include <d3d11.h>
 
 // Note: Ensure you are linking against FreeType 2.11+ for SDF support.
 // If your FreeType is older, remove 'FT_RENDER_MODE_SDF' and standard aliasing will apply,
@@ -56,16 +55,13 @@ void Text::GenerateAtlas(FT_Face face)
 	const int atlasWidth = 1024;
 	const int atlasHeight = 1024;
 
-	// Buffer to hold texture data (GL_RED component only)
+	// Buffer to hold texture data (R8 component only)
 	std::vector<unsigned char> atlasData(atlasWidth * atlasHeight, 0);
 
 	// Packing variables
 	int xOffset = 0;
 	int yOffset = 0;
 	int rowHeight = 0;
-
-	// Disable byte-alignment restriction
-	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
 	// 2. Load and Pack Characters (ASCII 32-126)
 	// We iterate through printable characters
@@ -130,9 +126,7 @@ void Text::GenerateAtlas(FT_Face face)
 		character.Advance = static_cast<unsigned int>(face->glyph->advance.x);
 
 		// Calculate Normalized UV coordinates (0.0 to 1.0)
-		// Note: FreeType renders top-down. OpenGL textures are usually bottom-up,
-		// but since we upload the buffer directly, the visual data is "flipped" relative to GL's 0,0 bottom-left.
-		// However, standard mapping usually assumes (0,0) is top-left of the image data in memory.
+		// Note: FreeType renders top-down.
 		// We map straightforwardly here, and the Renderer handles the quad vertex UV alignment.
 
 		float uMin = (float) xOffset / atlasWidth;
@@ -151,16 +145,12 @@ void Text::GenerateAtlas(FT_Face face)
 		xOffset += width + 1; // +1 padding
 	}
 
-	// 4. Create OpenGL Texture
-	// Note: We use the Texture class wrapper which handles ID generation and binding.
-	// The manual glGenTextures block was redundant and removed.
-
+	// 4. Create Texture
 	// Create and Upload Texture using the new Class
-	// GL_R8 is valid in GLES 3.0 for single channel
-	m_AtlasTexture = new Texture(atlasWidth, atlasHeight, GL_R8, Texture::Filter::Linear, Texture::Wrap::ClampToEdge);
+	m_AtlasTexture = new Texture(atlasWidth, atlasHeight, DXGI_FORMAT_R8_UNORM, Texture::Filter::Linear, Texture::Wrap::ClampToEdge);
 	
 	// Upload the raw bitmap data we generated into the texture
-	m_AtlasTexture->SetData(atlasData.data(), atlasData.size());
+	m_AtlasTexture->SetData(atlasData.data(), (uint32_t)atlasData.size());
 }
 
 glm::vec2 Text::CalculateSize(const std::string& text, float scale)

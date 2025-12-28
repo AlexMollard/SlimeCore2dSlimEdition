@@ -100,7 +100,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)Dependencies\glew;$(SolutionDir)Dependencies\glfw;$(SolutionDir)Dependencies\fType;C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Host.win-x64\10.0.1\runtimes\win-x64\native;C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\um\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glfw3.lib;glew32.lib;opengl32.lib;libnethost.lib;Shlwapi.lib;Pathcch.lib;Kernel32.lib;Ole32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;libnethost.lib;Shlwapi.lib;Pathcch.lib;Kernel32.lib;Ole32.lib;d3d11.lib;dxgi.lib;d3dcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -119,7 +119,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)Dependencies\glew;$(SolutionDir)Dependencies\glfw;$(SolutionDir)Dependencies\fType;C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Host.win-x64\10.0.1\runtimes\win-x64\native;C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\um\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glfw3.lib;glew32.lib;opengl32.lib;nethost.lib;Shlwapi.lib;Pathcch.lib;Kernel32.lib;Ole32.lib;freetype.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;nethost.lib;Shlwapi.lib;Pathcch.lib;Kernel32.lib;Ole32.lib;freetype.lib;d3d11.lib;dxgi.lib;d3dcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy /Y "C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Host.win-x64\10.0.1\runtimes\win-x64\native\nethost.dll" "$(TargetDir)" ;
@@ -145,7 +145,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)Dependencies\glew;$(SolutionDir)Dependencies\glfw;$(SolutionDir)Dependencies\fType;C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Host.win-x64\10.0.1\runtimes\win-x64\native;C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\um\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glfw3.lib;glew32.lib;opengl32.lib;libnethost.lib;Shlwapi.lib;Pathcch.lib;Kernel32.lib;Ole32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;libnethost.lib;Shlwapi.lib;Pathcch.lib;Kernel32.lib;Ole32.lib;d3d11.lib;dxgi.lib;d3dcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -168,7 +168,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)Dependencies\glew;$(SolutionDir)Dependencies\glfw;$(SolutionDir)Dependencies\fType;C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Host.win-x64\10.0.1\runtimes\win-x64\native;C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\um\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glfw3.lib;glew32.lib;opengl32.lib;nethost.lib;Shlwapi.lib;Pathcch.lib;Kernel32.lib;Ole32.lib;freetype.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;nethost.lib;Shlwapi.lib;Pathcch.lib;Kernel32.lib;Ole32.lib;freetype.lib;d3d11.lib;dxgi.lib;d3dcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy /Y "C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Host.win-x64\10.0.1\runtimes\win-x64\native\nethost.dll" "$(TargetDir)" ;
@@ -254,6 +254,8 @@
     <None Include="cpp.hint" />
     <None Include="Game\Resources\Shaders\BasicFragment.shader" />
     <None Include="Game\Resources\Shaders\BasicVertex.shader" />
+    <None Include="Game\Resources\Shaders\BasicPixel.hlsl" />
+    <None Include="Game\Resources\Shaders\BasicVertex.hlsl" />
     <None Include="Game\Resources\Shaders\UIFragment.shader" />
     <None Include="Game\Resources\Shaders\UIVertex.shader" />
     <None Include="Game\Resources\Shaders\textFrag.shader" />

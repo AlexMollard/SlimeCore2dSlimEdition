@@ -194,8 +194,8 @@ SLIME_EXPORT void __cdecl Entity_SetTexture(EntityId id, unsigned int texId, int
 	auto& reg = Scene::GetActiveScene()->GetRegistry();
 	if (auto* s = reg.TryGetComponent<SpriteComponent>((Entity)id))
 	{
-		Texture* t = new Texture(width, height, GL_RGBA8);
-		t->SetID(texId, width, height);
+		Texture* t = new Texture(width, height, DXGI_FORMAT_R8G8B8A8_UNORM);
+		// t->SetID(texId, width, height); // Legacy OpenGL ID not supported/needed
 		s->Texture = t;
 	}
 	if (width > 0)

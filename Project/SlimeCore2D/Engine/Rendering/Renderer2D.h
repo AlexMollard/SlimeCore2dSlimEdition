@@ -1,9 +1,12 @@
 #pragma once
 
+#define NOMINMAX
 #include <glm.hpp>
 #include <string>
 #include <vector>
 #include <array>
+#include <d3d11.h>
+#include <wrl/client.h>
 
 #include "Core/Camera.h"
 #include "Shader.h"
@@ -84,12 +87,14 @@ private:
 		const uint32_t MaxIndices = MaxQuads * 6;
 		static const uint32_t MaxTextureSlots = 32; // Check your GPU caps, 32 is standard for modern GL
 
-		unsigned int QuadVA = 0;
-		unsigned int QuadVB = 0;
-		unsigned int QuadIB = 0;
+		Microsoft::WRL::ComPtr<ID3D11Buffer> QuadVB;
+		Microsoft::WRL::ComPtr<ID3D11Buffer> QuadIB;
 
-		unsigned int WhiteTexture = 0;
-		uint32_t WhiteTextureSlot = 0;
+		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> WhiteTextureSRV;
+		Microsoft::WRL::ComPtr<ID3D11SamplerState> TextureSampler;
+		Microsoft::WRL::ComPtr<ID3D11BlendState> BlendState;
+		Microsoft::WRL::ComPtr<ID3D11RasterizerState> RasterizerState;
+		Microsoft::WRL::ComPtr<ID3D11DepthStencilState> DepthStencilState;
 
 		uint32_t IndexCount = 0;
 
@@ -107,7 +112,7 @@ private:
 		QuadVertex* QuadBuffer = nullptr;
 		QuadVertex* QuadBufferPtr = nullptr;
 
-		std::array<unsigned int, MaxTextureSlots> TextureSlots;
+		std::array<ID3D11ShaderResourceView*, MaxTextureSlots> TextureSlots;
 		uint32_t TextureSlotIndex = 1; // 0 is white texture
 
 		Shader* TextureShader = nullptr;

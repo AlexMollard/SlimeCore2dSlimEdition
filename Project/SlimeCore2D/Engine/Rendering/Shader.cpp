@@ -1,5 +1,6 @@
 #include "Shader.h"
 #include "Core/Logger.h"
+#include "Core/Window.h"
 
 #include <fstream>
 #include <iostream>
@@ -9,261 +10,170 @@
 Shader::Shader(const std::string& name, const char* vertexPath, const char* fragmentPath, const char* geometryPath)
       : m_name(name)
 {
-	// 1. retrieve the vertex/fragment source code from filePath
-	std::string vertexCode;
-	std::string fragmentCode;
-	std::string geometryCode;
+    // 1. Read files
+    std::string vertexCode;
+    std::string fragmentCode;
+    std::ifstream vShaderFile;
+    std::ifstream fShaderFile;
+    
+    vShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+    fShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+    
+    try
+    {
+        vShaderFile.open(vertexPath);
+        fShaderFile.open(fragmentPath);
+        std::stringstream vShaderStream, fShaderStream;
+        vShaderStream << vShaderFile.rdbuf();
+        fShaderStream << fShaderFile.rdbuf();
+        vShaderFile.close();
+        fShaderFile.close();
+        vertexCode = vShaderStream.str();
+        fragmentCode = fShaderStream.str();
+    }
+    catch (std::ifstream::failure& e)
+    {
+        Logger::Error("ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ: " + std::string(e.what()));
+    }
 
-	std::ifstream vShaderFile;
-	std::ifstream fShaderFile;
-	std::ifstream gShaderFile;
-
-	// ensure ifstream objects can throw exceptions:
-	vShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-	fShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-	gShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-
-	try
-	{
-		// open files
-		vShaderFile.open(vertexPath);
-		fShaderFile.open(fragmentPath);
-		std::stringstream vShaderStream, fShaderStream;
-
-		// read file's buffer contents into streams
-		vShaderStream << vShaderFile.rdbuf();
-		fShaderStream << fShaderFile.rdbuf();
-
-		// close file handlers
-		vShaderFile.close();
-		fShaderFile.close();
-
-		// convert stream into string
-		vertexCode = vShaderStream.str();
-		fragmentCode = fShaderStream.str();
-
-		// if geometry shader path is present, also load a geometry shader
-		if (geometryPath != nullptr)
-		{
-			gShaderFile.open(geometryPath);
-			std::stringstream gShaderStream;
-			gShaderStream << gShaderFile.rdbuf();
-			gShaderFile.close();
-			geometryCode = gShaderStream.str();
-		}
-	}
-	catch (std::ifstream::failure& e)
-	{
-		Logger::Error("ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ: " + std::string(e.what()));
-	}
-
-	const char* vShaderCode = vertexCode.c_str();
-	const char* fShaderCode = fragmentCode.c_str();
-
-	// 2. compile shaders
-	unsigned int vertex, fragment;
-
-	// vertex shader
-	vertex = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vertex, 1, &vShaderCode, NULL);
-	glCompileShader(vertex);
-	CheckCompileErrors(vertex, "VERTEX");
-
-	// fragment Shader
-	fragment = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragment, 1, &fShaderCode, NULL);
-	glCompileShader(fragment);
-	CheckCompileErrors(fragment, "FRAGMENT");
-
-	// if geometry shader is given, compile geometry shader
-	unsigned int geometry = 0;
-	/*
-	if (geometryPath != nullptr)
-	{
-		const char* gShaderCode = geometryCode.c_str();
-		geometry = glCreateShader(GL_GEOMETRY_SHADER);
-		glShaderSource(geometry, 1, &gShaderCode, NULL);
-		glCompileShader(geometry);
-		CheckCompileErrors(geometry, "GEOMETRY");
-	}
-	*/
-
-	// shader Program
-	m_shaderID = glCreateProgram();
-	glAttachShader(m_shaderID, vertex);
-	glAttachShader(m_shaderID, fragment);
-	/*
-	if (geometryPath != nullptr)
-		glAttachShader(m_shaderID, geometry);
-	*/
-
-	glLinkProgram(m_shaderID);
-	CheckCompileErrors(m_shaderID, "PROGRAM");
-
-	// delete the shaders as they're linked into our program now and no longer necessary
-	glDeleteShader(vertex);
-	glDeleteShader(fragment);
-	/*
-	if (geometryPath != nullptr)
-		glDeleteShader(geometry);
-	*/
-
-	// Label for Debugging
-	// glObjectLabel(GL_PROGRAM, m_shaderID, -1, name.c_str());
+    // 2. Compile Shaders
+    ComPtr<ID3DBlob> vsBlob;
+    ComPtr<ID3DBlob> psBlob;
+    
+    CompileShader(vertexCode, "vs_5_0", &vsBlob);
+    CompileShader(fragmentCode, "ps_5_0", &psBlob);
+    
+    auto device = Window::GetDevice();
+    
+    if (vsBlob)
+    {
+        device->CreateVertexShader(vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), nullptr, &m_VertexShader);
+        
+        // Create Input Layout
+        // Matching BasicVertex.hlsl VS_INPUT
+        D3D11_INPUT_ELEMENT_DESC ied[] =
+        {
+            {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+            {"COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0},
+            {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, 28, D3D11_INPUT_PER_VERTEX_DATA, 0},
+            {"TEXCOORD", 1, DXGI_FORMAT_R32_FLOAT,       0, 36, D3D11_INPUT_PER_VERTEX_DATA, 0},
+            {"TILING",   0, DXGI_FORMAT_R32_FLOAT,       0, 40, D3D11_INPUT_PER_VERTEX_DATA, 0},
+            {"ISTEXT",   0, DXGI_FORMAT_R32_FLOAT,       0, 44, D3D11_INPUT_PER_VERTEX_DATA, 0},
+        };
+        
+        device->CreateInputLayout(ied, 6, vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &m_InputLayout);
+    }
+    
+    if (psBlob)
+    {
+        device->CreatePixelShader(psBlob->GetBufferPointer(), psBlob->GetBufferSize(), nullptr, &m_PixelShader);
+    }
+    
+    CreateConstantBuffer();
 }
 
 Shader::~Shader()
 {
-	if (m_shaderID != 0)
-		glDeleteProgram(m_shaderID);
+    // ComPtr handles cleanup
 }
 
-// Move Constructor
 Shader::Shader(Shader&& other) noexcept
 {
-	m_shaderID = other.m_shaderID;
-	m_name = other.m_name;
-	m_UniformLocationCache = std::move(other.m_UniformLocationCache);
-
-	other.m_shaderID = 0; // Invalidate source
+    m_VertexShader = std::move(other.m_VertexShader);
+    m_PixelShader = std::move(other.m_PixelShader);
+    m_InputLayout = std::move(other.m_InputLayout);
+    m_ConstantBuffer = std::move(other.m_ConstantBuffer);
+    m_name = std::move(other.m_name);
 }
 
-// Move Assignment
 Shader& Shader::operator=(Shader&& other) noexcept
 {
-	if (this != &other)
-	{
-		if (m_shaderID != 0)
-			glDeleteProgram(m_shaderID);
+    if (this != &other)
+    {
+        m_VertexShader = std::move(other.m_VertexShader);
+        m_PixelShader = std::move(other.m_PixelShader);
+        m_InputLayout = std::move(other.m_InputLayout);
+        m_ConstantBuffer = std::move(other.m_ConstantBuffer);
+        m_name = std::move(other.m_name);
+    }
+    return *this;
+}
 
-		m_shaderID = other.m_shaderID;
-		m_name = other.m_name;
-		m_UniformLocationCache = std::move(other.m_UniformLocationCache);
+void Shader::CompileShader(const std::string& source, const std::string& profile, ID3DBlob** blob)
+{
+    ComPtr<ID3DBlob> errorBlob;
+    HRESULT hr = D3DCompile(
+        source.c_str(), source.length(),
+        nullptr, nullptr, nullptr,
+        "main", profile.c_str(),
+        D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG, 0,
+        blob, &errorBlob
+    );
+    
+    if (FAILED(hr))
+    {
+        if (errorBlob)
+        {
+            Logger::Error("Shader Compile Error (" + profile + "): " + (char*)errorBlob->GetBufferPointer());
+        }
+    }
+}
 
-		other.m_shaderID = 0;
-	}
-	return *this;
+void Shader::CreateConstantBuffer()
+{
+    D3D11_BUFFER_DESC bd;
+    ZeroMemory(&bd, sizeof(bd));
+    bd.Usage = D3D11_USAGE_DEFAULT;
+    bd.ByteWidth = sizeof(ConstantBuffer);
+    bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    bd.CPUAccessFlags = 0;
+    
+    Window::GetDevice()->CreateBuffer(&bd, nullptr, &m_ConstantBuffer);
+}
+
+void Shader::UpdateConstantBuffer() const
+{
+    Window::GetContext()->UpdateSubresource(m_ConstantBuffer.Get(), 0, nullptr, &m_CBufferData, 0, 0);
 }
 
 void Shader::Use() const
 {
-	glUseProgram(m_shaderID);
+    auto context = Window::GetContext();
+    context->VSSetShader(m_VertexShader.Get(), nullptr, 0);
+    context->PSSetShader(m_PixelShader.Get(), nullptr, 0);
+    context->IASetInputLayout(m_InputLayout.Get());
+    
+    // Bind Constant Buffer to VS slot 0
+    context->VSSetConstantBuffers(0, 1, m_ConstantBuffer.GetAddressOf());
 }
 
 void Shader::Unbind() const
 {
-	glUseProgram(0);
+    auto context = Window::GetContext();
+    context->VSSetShader(nullptr, nullptr, 0);
+    context->PSSetShader(nullptr, nullptr, 0);
 }
 
-void Shader::CheckCompileErrors(unsigned int shader, std::string type)
-{
-	GLint success;
-	GLchar infoLog[1024];
-	if (type != "PROGRAM")
-	{
-		glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-		if (!success)
-		{
-			glGetShaderInfoLog(shader, 1024, NULL, infoLog);
-			Logger::Error("ERROR::SHADER_COMPILATION_ERROR of type: " + type + "\n" + infoLog + "\n -- --------------------------------------------------- -- ");
-		}
-	}
-	else
-	{
-		glGetProgramiv(shader, GL_LINK_STATUS, &success);
-		if (!success)
-		{
-			glGetProgramInfoLog(shader, 1024, NULL, infoLog);
-			Logger::Error("ERROR::PROGRAM_LINKING_ERROR of type: " + type + "\n" + infoLog + "\n -- --------------------------------------------------- -- ");
-		}
-	}
-}
-
-// ------------------------------------------------------------------------
-// Uniform Caching System
-// ------------------------------------------------------------------------
-int Shader::GetUniformLocation(const std::string& name) const
-{
-	if (m_UniformLocationCache.find(name) != m_UniformLocationCache.end())
-		return m_UniformLocationCache[name];
-
-	int location = glGetUniformLocation(m_shaderID, name.c_str());
-	if (location == -1)
-	{
-		// Warning: useful for debugging, but spammy if you have unused uniforms in shader
-		// std::cout << "Warning: Uniform '" << name << "' doesn't exist or was optimized out in shader: " << m_name << std::endl;
-	}
-
-	m_UniformLocationCache[name] = location;
-	return location;
-}
-
-// ------------------------------------------------------------------------
 // Uniform Setters
-// ------------------------------------------------------------------------
-
-void Shader::setBool(const std::string& name, bool value) const
-{
-	glUniform1i(GetUniformLocation(name), (int) value);
-}
-
-void Shader::setInt(const std::string& name, int value) const
-{
-	glUniform1i(GetUniformLocation(name), value);
-}
-
-void Shader::setFloat(const std::string& name, float value) const
-{
-	glUniform1f(GetUniformLocation(name), value);
-}
-
-// THE NEW FUNCTION FOR BATCH RENDERING
-void Shader::setIntArray(const std::string& name, int* values, uint32_t count) const
-{
-	glUniform1iv(GetUniformLocation(name), count, values);
-}
-
-void Shader::setVec2(const std::string& name, const glm::vec2& value) const
-{
-	glUniform2fv(GetUniformLocation(name), 1, &value[0]);
-}
-
-void Shader::setVec2(const std::string& name, float x, float y) const
-{
-	glUniform2f(GetUniformLocation(name), x, y);
-}
-
-void Shader::setVec3(const std::string& name, const glm::vec3& value) const
-{
-	glUniform3fv(GetUniformLocation(name), 1, &value[0]);
-}
-
-void Shader::setVec3(const std::string& name, float x, float y, float z) const
-{
-	glUniform3f(GetUniformLocation(name), x, y, z);
-}
-
-void Shader::setVec4(const std::string& name, const glm::vec4& value) const
-{
-	glUniform4fv(GetUniformLocation(name), 1, &value[0]);
-}
-
-void Shader::setVec4(const std::string& name, float x, float y, float z, float w) const
-{
-	glUniform4f(GetUniformLocation(name), x, y, z, w);
-}
-
-void Shader::setMat2(const std::string& name, const glm::mat2& mat) const
-{
-	glUniformMatrix2fv(GetUniformLocation(name), 1, GL_FALSE, &mat[0][0]);
-}
-
-void Shader::setMat3(const std::string& name, const glm::mat3& mat) const
-{
-	glUniformMatrix3fv(GetUniformLocation(name), 1, GL_FALSE, &mat[0][0]);
-}
+void Shader::setBool(const std::string& name, bool value) const {}
+void Shader::setInt(const std::string& name, int value) const {}
+void Shader::setFloat(const std::string& name, float value) const {}
+void Shader::setIntArray(const std::string& name, int* values, uint32_t count) const {}
+void Shader::setVec2(const std::string& name, const glm::vec2& value) const {}
+void Shader::setVec2(const std::string& name, float x, float y) const {}
+void Shader::setVec3(const std::string& name, const glm::vec3& value) const {}
+void Shader::setVec3(const std::string& name, float x, float y, float z) const {}
+void Shader::setVec4(const std::string& name, const glm::vec4& value) const {}
+void Shader::setVec4(const std::string& name, float x, float y, float z, float w) const {}
+void Shader::setMat2(const std::string& name, const glm::mat2& mat) const {}
+void Shader::setMat3(const std::string& name, const glm::mat3& mat) const {}
 
 void Shader::setMat4(const std::string& name, const glm::mat4& mat) const
 {
-	glUniformMatrix4fv(GetUniformLocation(name), 1, GL_FALSE, &mat[0][0]);
+    if (name == "u_ViewProjection")
+    {
+        // Transpose matrix for HLSL (Column-Major vs Row-Major)
+        m_CBufferData.ViewProjection = glm::transpose(mat);
+        UpdateConstantBuffer();
+    }
 }

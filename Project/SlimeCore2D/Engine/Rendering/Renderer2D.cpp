@@ -1,13 +1,13 @@
 #include "Renderer2D.h"
 #include "Core/Logger.h"
+#include "Core/Window.h"
 
 #include <array>
 #include <gtc/matrix_transform.hpp>
 #include <iostream>
 
-#include "glew.h"
 #include "Resources/ResourceManager.h"
-#include "Text.h" // Must include Text header to access font data
+#include "Text.h" 
 
 // Define the static data instance
 Renderer2D::Renderer2DData Renderer2D::s_Data;
@@ -16,39 +16,24 @@ void Renderer2D::Init()
 {
 	s_Data.QuadBuffer = new Renderer2DData::QuadVertex[s_Data.MaxVertices];
 
-	glGenVertexArrays(1, &s_Data.QuadVA);
-	glBindVertexArray(s_Data.QuadVA);
+	auto device = Window::GetDevice();
+	auto context = Window::GetContext();
 
-	glGenBuffers(1, &s_Data.QuadVB);
-	glBindBuffer(GL_ARRAY_BUFFER, s_Data.QuadVB);
-	glBufferData(GL_ARRAY_BUFFER, s_Data.MaxVertices * sizeof(Renderer2DData::QuadVertex), nullptr, GL_DYNAMIC_DRAW);
+	// 1. Create Vertex Buffer (Dynamic)
+	D3D11_BUFFER_DESC vbDesc = {};
+	vbDesc.ByteWidth = s_Data.MaxVertices * sizeof(Renderer2DData::QuadVertex);
+	vbDesc.Usage = D3D11_USAGE_DYNAMIC;
+	vbDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	vbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-	// Enable Attributes
-	// 0: Position
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Renderer2DData::QuadVertex), (const void*) offsetof(Renderer2DData::QuadVertex, Position));
+	HRESULT hr = device->CreateBuffer(&vbDesc, nullptr, s_Data.QuadVB.GetAddressOf());
+	if (FAILED(hr))
+	{
+		Logger::Error("Renderer2D: Failed to create Vertex Buffer!");
+		return;
+	}
 
-	// 1: Color
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Renderer2DData::QuadVertex), (const void*) offsetof(Renderer2DData::QuadVertex, Color));
-
-	// 2: TexCoord
-	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Renderer2DData::QuadVertex), (const void*) offsetof(Renderer2DData::QuadVertex, TexCoord));
-
-	// 3: TexIndex
-	glEnableVertexAttribArray(3);
-	glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(Renderer2DData::QuadVertex), (const void*) offsetof(Renderer2DData::QuadVertex, TexIndex));
-
-	// 4: TilingFactor
-	glEnableVertexAttribArray(4);
-	glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, sizeof(Renderer2DData::QuadVertex), (const void*) offsetof(Renderer2DData::QuadVertex, TilingFactor));
-
-	// 5: IsText (For SDF switching in shader)
-	glEnableVertexAttribArray(5);
-	glVertexAttribPointer(5, 1, GL_FLOAT, GL_FALSE, sizeof(Renderer2DData::QuadVertex), (const void*) offsetof(Renderer2DData::QuadVertex, IsText));
-
-	// Indices
+	// 2. Create Index Buffer (Static)
 	uint32_t* quadIndices = new uint32_t[s_Data.MaxIndices];
 	uint32_t offset = 0;
 	for (uint32_t i = 0; i < s_Data.MaxIndices; i += 6)
@@ -64,31 +49,112 @@ void Renderer2D::Init()
 		offset += 4;
 	}
 
-	glGenBuffers(1, &s_Data.QuadIB);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, s_Data.QuadIB);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, s_Data.MaxIndices * sizeof(uint32_t), quadIndices, GL_STATIC_DRAW);
+	D3D11_BUFFER_DESC ibDesc = {};
+	ibDesc.ByteWidth = s_Data.MaxIndices * sizeof(uint32_t);
+	ibDesc.Usage = D3D11_USAGE_DEFAULT;
+	ibDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	ibDesc.CPUAccessFlags = 0;
 
+	D3D11_SUBRESOURCE_DATA ibData = {};
+	ibData.pSysMem = quadIndices;
+
+	hr = device->CreateBuffer(&ibDesc, &ibData, s_Data.QuadIB.GetAddressOf());
+	if (FAILED(hr))
+	{
+		Logger::Error("Renderer2D: Failed to create Index Buffer!");
+	}
 	delete[] quadIndices;
 
-	// White Texture (1x1)
-	glGenTextures(1, &s_Data.WhiteTexture);
-	glBindTexture(GL_TEXTURE_2D, s_Data.WhiteTexture);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	uint32_t color = 0xffffffff;
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, &color);
+	// 3. Create White Texture (1x1)
+	D3D11_TEXTURE2D_DESC texDesc = {};
+	texDesc.Width = 1;
+	texDesc.Height = 1;
+	texDesc.MipLevels = 1;
+	texDesc.ArraySize = 1;
+	texDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	texDesc.SampleDesc.Count = 1;
+	texDesc.Usage = D3D11_USAGE_DEFAULT;
+	texDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 
-	s_Data.TextureSlots[0] = s_Data.WhiteTexture;
+	uint32_t whiteColor = 0xffffffff;
+	D3D11_SUBRESOURCE_DATA texData = {};
+	texData.pSysMem = &whiteColor;
+	texData.SysMemPitch = 4;
+
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> whiteTexture;
+	hr = device->CreateTexture2D(&texDesc, &texData, whiteTexture.GetAddressOf());
+	if (FAILED(hr))
+	{
+		Logger::Error("Renderer2D: Failed to create White Texture!");
+	}
+	else
+	{
+		hr = device->CreateShaderResourceView(whiteTexture.Get(), nullptr, s_Data.WhiteTextureSRV.GetAddressOf());
+		if (FAILED(hr))
+			Logger::Error("Renderer2D: Failed to create White Texture SRV!");
+	}
+
+	// 4. Create Sampler State
+	D3D11_SAMPLER_DESC samplerDesc = {};
+	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	samplerDesc.MinLOD = 0;
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+	hr = device->CreateSamplerState(&samplerDesc, s_Data.TextureSampler.GetAddressOf());
+	if (FAILED(hr))
+		Logger::Error("Renderer2D: Failed to create Sampler State!");
+
+	// 5. Create Blend State
+	D3D11_BLEND_DESC blendDesc = {};
+	blendDesc.RenderTarget[0].BlendEnable = TRUE;
+	blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+	blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+	blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+	blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+	blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+	blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+	hr = device->CreateBlendState(&blendDesc, s_Data.BlendState.GetAddressOf());
+	if (FAILED(hr))
+		Logger::Error("Renderer2D: Failed to create Blend State!");
+
+	// 6. Create Rasterizer State (Cull None for 2D usually, or Back)
+	D3D11_RASTERIZER_DESC rasterDesc = {};
+	rasterDesc.FillMode = D3D11_FILL_SOLID;
+	rasterDesc.CullMode = D3D11_CULL_NONE; // Don't cull for 2D
+	rasterDesc.FrontCounterClockwise = FALSE; // Default
+	rasterDesc.DepthClipEnable = TRUE;
+
+	hr = device->CreateRasterizerState(&rasterDesc, s_Data.RasterizerState.GetAddressOf());
+	if (FAILED(hr))
+		Logger::Error("Renderer2D: Failed to create Rasterizer State!");
+
+	// 7. Create Depth Stencil State
+	D3D11_DEPTH_STENCIL_DESC depthDesc = {};
+	depthDesc.DepthEnable = TRUE;
+	depthDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	depthDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+
+	hr = device->CreateDepthStencilState(&depthDesc, s_Data.DepthStencilState.GetAddressOf());
+	if (FAILED(hr))
+		Logger::Error("Renderer2D: Failed to create Depth Stencil State!");
+
+	// Initialize Texture Slots
+	s_Data.TextureSlots[0] = s_Data.WhiteTextureSRV.Get();
 	for (size_t i = 1; i < s_Data.MaxTextureSlots; i++)
-		s_Data.TextureSlots[i] = 0;
+		s_Data.TextureSlots[i] = nullptr;
 
+	// Load Shaders
 	ResourceManager::GetInstance().LoadShadersFromDir();
 	s_Data.TextureShader = ResourceManager::GetInstance().GetShader("basic");
 	if (!s_Data.TextureShader)
 	{
-		Logger::Warn("Renderer2D Warning: 'BatchShader' not found. Make sure to load a shader capable of batching.");
+		Logger::Warn("Renderer2D Warning: 'basic' shader not found.");
 	}
 
 	// Helper for rotation
@@ -96,31 +162,26 @@ void Renderer2D::Init()
 	s_Data.QuadVertexPositions[1] = { 0.5f, -0.5f, 0.0f, 1.0f };
 	s_Data.QuadVertexPositions[2] = { 0.5f, 0.5f, 0.0f, 1.0f };
 	s_Data.QuadVertexPositions[3] = { -0.5f, 0.5f, 0.0f, 1.0f };
-
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LEQUAL);
 }
 
 void Renderer2D::Shutdown()
 {
 	delete[] s_Data.QuadBuffer;
-	glDeleteVertexArrays(1, &s_Data.QuadVA);
-	glDeleteBuffers(1, &s_Data.QuadVB);
-	glDeleteBuffers(1, &s_Data.QuadIB);
-	glDeleteTextures(1, &s_Data.WhiteTexture);
+	s_Data.QuadVB.Reset();
+	s_Data.QuadIB.Reset();
+	s_Data.WhiteTextureSRV.Reset();
+	s_Data.TextureSampler.Reset();
+	s_Data.BlendState.Reset();
+	s_Data.RasterizerState.Reset();
+	s_Data.DepthStencilState.Reset();
 }
 
 void Renderer2D::BeginScene(Camera& camera)
 {
 	if (s_Data.TextureShader)
 	{
-		s_Data.TextureShader->Use();
-		// Assuming Camera has GetViewProjection or similar.
-		// If you only have GetTransform() (Ortho), use that.
-		s_Data.TextureShader->setMat4("u_ViewProjection", camera.GetProjectionMatrix());
+		s_Data.TextureShader->Bind();
+		s_Data.TextureShader->SetMat4("u_ViewProjection", camera.GetProjectionMatrix());
 	}
 	StartBatch();
 }
@@ -129,8 +190,8 @@ void Renderer2D::BeginScene(const glm::mat4& viewProj)
 {
 	if (s_Data.TextureShader)
 	{
-		s_Data.TextureShader->Use();
-		s_Data.TextureShader->setMat4("u_ViewProjection", viewProj);
+		s_Data.TextureShader->Bind();
+		s_Data.TextureShader->SetMat4("u_ViewProjection", viewProj);
 	}
 	StartBatch();
 }
@@ -152,29 +213,38 @@ void Renderer2D::Flush()
 	if (s_Data.IndexCount == 0)
 		return;
 
-	uint32_t dataSize = (uint32_t) ((uint8_t*) s_Data.QuadBufferPtr - (uint8_t*) s_Data.QuadBuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, s_Data.QuadVB);
-	glBufferSubData(GL_ARRAY_BUFFER, 0, dataSize, s_Data.QuadBuffer);
+	auto context = Window::GetContext();
 
-	// Bind Textures
-	for (uint32_t i = 0; i < s_Data.TextureSlotIndex; i++)
+	// 1. Update Vertex Buffer
+	uint32_t dataSize = (uint32_t)((uint8_t*)s_Data.QuadBufferPtr - (uint8_t*)s_Data.QuadBuffer);
+	
+	D3D11_MAPPED_SUBRESOURCE mappedRes;
+	HRESULT hr = context->Map(s_Data.QuadVB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedRes);
+	if (SUCCEEDED(hr))
 	{
-		glActiveTexture(GL_TEXTURE0 + i);
-		glBindTexture(GL_TEXTURE_2D, s_Data.TextureSlots[i]);
+		memcpy(mappedRes.pData, s_Data.QuadBuffer, dataSize);
+		context->Unmap(s_Data.QuadVB.Get(), 0);
 	}
 
-	// Update Uniforms (sampler array)
-	// Usually done once on Shader Init, but if shader changes ensure this is set.
-	int samplers[32];
-	for (int i = 0; i < 32; i++)
-	{
-		samplers[i] = i;
-	}
+	// 2. Bind States
+	float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+	context->OMSetBlendState(s_Data.BlendState.Get(), blendFactor, 0xffffffff);
+	context->OMSetDepthStencilState(s_Data.DepthStencilState.Get(), 0);
+	context->RSSetState(s_Data.RasterizerState.Get());
 
-	s_Data.TextureShader->setIntArray("u_Textures", samplers, 32);
+	// 3. Bind Buffers
+	UINT stride = sizeof(Renderer2DData::QuadVertex);
+	UINT offset = 0;
+	context->IASetVertexBuffers(0, 1, s_Data.QuadVB.GetAddressOf(), &stride, &offset);
+	context->IASetIndexBuffer(s_Data.QuadIB.Get(), DXGI_FORMAT_R32_UINT, 0);
+	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	glBindVertexArray(s_Data.QuadVA);
-	glDrawElements(GL_TRIANGLES, s_Data.IndexCount, GL_UNSIGNED_INT, nullptr);
+	// 4. Bind Textures
+	context->PSSetShaderResources(0, s_Data.TextureSlotIndex, s_Data.TextureSlots.data());
+	context->PSSetSamplers(0, 1, s_Data.TextureSampler.GetAddressOf());
+
+	// 5. Draw
+	context->DrawIndexed(s_Data.IndexCount, 0, 0);
 
 	s_Data.Stats.DrawCalls++;
 	s_Data.Stats.VertexCount += s_Data.IndexCount / 6 * 4;
@@ -204,15 +274,14 @@ void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, cons
 	const float texIndex = 0.0f; // White Texture
 	const float tilingFactor = 1.0f;
 	const glm::vec2 texCoords[] = {
-		{ 0.0f, 0.0f },
-        { 1.0f, 0.0f },
-        { 1.0f, 1.0f },
-        { 0.0f, 1.0f }
+		{ 0.0f, 1.0f }, // BL
+        { 1.0f, 1.0f }, // BR
+        { 1.0f, 0.0f }, // TR
+        { 0.0f, 0.0f }  // TL
 	};
 
 	glm::vec3 transformPos;
 	// Center-based anchor logic
-	// BL, BR, TR, TL
 	glm::vec3 offsets[4] = {
 		{ -0.5f * size.x, -0.5f * size.y, 0.0f },
         {  0.5f * size.x, -0.5f * size.y, 0.0f },
@@ -246,9 +315,11 @@ void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, Text
 		NextBatch();
 
 	float textureIndex = 0.0f;
+	ID3D11ShaderResourceView* srv = texture->GetSRV();
+
 	for (uint32_t i = 1; i < s_Data.TextureSlotIndex; i++)
 	{
-		if (s_Data.TextureSlots[i] == texture->GetID())
+		if (s_Data.TextureSlots[i] == srv)
 		{
 			textureIndex = (float) i;
 			break;
@@ -260,18 +331,17 @@ void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, Text
 		if (s_Data.TextureSlotIndex >= s_Data.MaxTextureSlots)
 			NextBatch();
 		textureIndex = (float) s_Data.TextureSlotIndex;
-		s_Data.TextureSlots[s_Data.TextureSlotIndex] = texture->GetID();
+		s_Data.TextureSlots[s_Data.TextureSlotIndex] = srv;
 		s_Data.TextureSlotIndex++;
 	}
 
 	glm::vec2 texCoords[] = {
-		{ 0.0f, 0.0f },
-        { 1.0f, 0.0f },
+		{ 0.0f, 1.0f },
         { 1.0f, 1.0f },
-        { 0.0f, 1.0f }
+        { 1.0f, 0.0f },
+        { 0.0f, 0.0f }
 	};
 
-	// Assuming anchor is center
 	glm::vec3 offsets[4] = {
 		{ -0.5f * size.x, -0.5f * size.y, 0.0f },
         {  0.5f * size.x, -0.5f * size.y, 0.0f },
@@ -307,10 +377,10 @@ void Renderer2D::DrawRotatedQuad(const glm::vec3& position, const glm::vec2& siz
 	const float texIndex = 0.0f;
 	const float tiling = 1.0f;
 	const glm::vec2 texCoords[] = {
-		{ 0.0f, 0.0f },
-        { 1.0f, 0.0f },
+		{ 0.0f, 1.0f },
         { 1.0f, 1.0f },
-        { 0.0f, 1.0f }
+        { 1.0f, 0.0f },
+        { 0.0f, 0.0f }
 	};
 
 	glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) * glm::rotate(glm::mat4(1.0f), rotation, { 0.0f, 0.0f, 1.0f }) * glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
@@ -336,9 +406,11 @@ void Renderer2D::DrawRotatedQuad(const glm::vec3& position, const glm::vec2& siz
 		NextBatch();
 
 	float textureIndex = 0.0f;
+	ID3D11ShaderResourceView* srv = texture->GetSRV();
+
 	for (uint32_t i = 1; i < s_Data.TextureSlotIndex; i++)
 	{
-		if (s_Data.TextureSlots[i] == texture->GetID())
+		if (s_Data.TextureSlots[i] == srv)
 		{
 			textureIndex = (float) i;
 			break;
@@ -350,17 +422,17 @@ void Renderer2D::DrawRotatedQuad(const glm::vec3& position, const glm::vec2& siz
 		if (s_Data.TextureSlotIndex >= s_Data.MaxTextureSlots)
 			NextBatch();
 		textureIndex = (float) s_Data.TextureSlotIndex;
-		s_Data.TextureSlots[s_Data.TextureSlotIndex] = texture->GetID();
+		s_Data.TextureSlots[s_Data.TextureSlotIndex] = srv;
 		s_Data.TextureSlotIndex++;
 	}
 
 	glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) * glm::rotate(glm::mat4(1.0f), rotation, { 0.0f, 0.0f, 1.0f }) * glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
 
 	const glm::vec2 texCoords[] = {
-		{ 0.0f, 0.0f },
-        { 1.0f, 0.0f },
+		{ 0.0f, 1.0f },
         { 1.0f, 1.0f },
-        { 0.0f, 1.0f }
+        { 1.0f, 0.0f },
+        { 0.0f, 0.0f }
 	};
 
 	for (int i = 0; i < 4; i++)
@@ -386,10 +458,10 @@ void Renderer2D::DrawQuad(const glm::mat4& transform, const glm::vec4& color)
 	const float texIndex = 0.0f;
 	const float tiling = 1.0f;
 	const glm::vec2 texCoords[] = {
-		{ 0.0f, 0.0f },
-        { 1.0f, 0.0f },
+		{ 0.0f, 1.0f },
         { 1.0f, 1.0f },
-        { 0.0f, 1.0f }
+        { 1.0f, 0.0f },
+        { 0.0f, 0.0f }
 	};
 
 	for (int i = 0; i < 4; i++)
@@ -413,9 +485,11 @@ void Renderer2D::DrawQuad(const glm::mat4& transform, Texture* texture, float ti
 		NextBatch();
 
 	float textureIndex = 0.0f;
+	ID3D11ShaderResourceView* srv = texture->GetSRV();
+
 	for (uint32_t i = 1; i < s_Data.TextureSlotIndex; i++)
 	{
-		if (s_Data.TextureSlots[i] == texture->GetID())
+		if (s_Data.TextureSlots[i] == srv)
 		{
 			textureIndex = (float) i;
 			break;
@@ -427,15 +501,15 @@ void Renderer2D::DrawQuad(const glm::mat4& transform, Texture* texture, float ti
 		if (s_Data.TextureSlotIndex >= s_Data.MaxTextureSlots)
 			NextBatch();
 		textureIndex = (float) s_Data.TextureSlotIndex;
-		s_Data.TextureSlots[s_Data.TextureSlotIndex] = texture->GetID();
+		s_Data.TextureSlots[s_Data.TextureSlotIndex] = srv;
 		s_Data.TextureSlotIndex++;
 	}
 
 	const glm::vec2 texCoords[] = {
-		{ 0.0f, 0.0f },
-        { 1.0f, 0.0f },
+		{ 0.0f, 1.0f },
         { 1.0f, 1.0f },
-        { 0.0f, 1.0f }
+        { 1.0f, 0.0f },
+        { 0.0f, 0.0f }
 	};
 
 	for (int i = 0; i < 4; i++)
@@ -459,9 +533,11 @@ void Renderer2D::DrawQuadUV(const glm::mat4& transform, Texture* texture, const 
 		NextBatch();
 
 	float textureIndex = 0.0f;
+	ID3D11ShaderResourceView* srv = texture->GetSRV();
+
 	for (uint32_t i = 1; i < s_Data.TextureSlotIndex; i++)
 	{
-		if (s_Data.TextureSlots[i] == texture->GetID())
+		if (s_Data.TextureSlots[i] == srv)
 		{
 			textureIndex = (float) i;
 			break;
@@ -472,7 +548,7 @@ void Renderer2D::DrawQuadUV(const glm::mat4& transform, Texture* texture, const 
 		if (s_Data.TextureSlotIndex >= s_Data.MaxTextureSlots)
 			NextBatch();
 		textureIndex = (float) s_Data.TextureSlotIndex;
-		s_Data.TextureSlots[s_Data.TextureSlotIndex] = texture->GetID();
+		s_Data.TextureSlots[s_Data.TextureSlotIndex] = srv;
 		s_Data.TextureSlotIndex++;
 	}
 
@@ -497,9 +573,11 @@ void Renderer2D::DrawQuadUV(const glm::vec3& position, const glm::vec2& size, Te
 		NextBatch();
 
 	float textureIndex = 0.0f;
+	ID3D11ShaderResourceView* srv = texture->GetSRV();
+
 	for (uint32_t i = 1; i < s_Data.TextureSlotIndex; i++)
 	{
-		if (s_Data.TextureSlots[i] == texture->GetID())
+		if (s_Data.TextureSlots[i] == srv)
 		{
 			textureIndex = (float) i;
 			break;
@@ -510,7 +588,7 @@ void Renderer2D::DrawQuadUV(const glm::vec3& position, const glm::vec2& size, Te
 		if (s_Data.TextureSlotIndex >= s_Data.MaxTextureSlots)
 			NextBatch();
 		textureIndex = (float) s_Data.TextureSlotIndex;
-		s_Data.TextureSlots[s_Data.TextureSlotIndex] = texture->GetID();
+		s_Data.TextureSlots[s_Data.TextureSlotIndex] = srv;
 		s_Data.TextureSlotIndex++;
 	}
 
@@ -548,19 +626,18 @@ void Renderer2D::DrawString(const std::string& text, Text* font, const glm::vec2
 
 void Renderer2D::DrawString(const std::string& text, Text* font, const glm::vec3& position, float scale, const glm::vec4& color)
 {
-	// Assuming Text class has GetAtlasTexture() and GetCharacters() map
-	// You need to ensure your Text class has these accessors.
 	Texture* atlas = font->GetAtlasTexture();
 	auto& characters = font->GetCharacters();
 
-	// Check texture slot availability
 	if (s_Data.IndexCount >= s_Data.MaxIndices || s_Data.TextureSlotIndex > 31)
 		NextBatch();
 
 	float textureIndex = 0.0f;
+	ID3D11ShaderResourceView* srv = atlas->GetSRV();
+
 	for (uint32_t i = 1; i < s_Data.TextureSlotIndex; i++)
 	{
-		if (s_Data.TextureSlots[i] == atlas->GetID())
+		if (s_Data.TextureSlots[i] == srv)
 		{
 			textureIndex = (float) i;
 			break;
@@ -571,7 +648,7 @@ void Renderer2D::DrawString(const std::string& text, Text* font, const glm::vec3
 		if (s_Data.TextureSlotIndex >= s_Data.MaxTextureSlots)
 			NextBatch();
 		textureIndex = (float) s_Data.TextureSlotIndex;
-		s_Data.TextureSlots[s_Data.TextureSlotIndex] = atlas->GetID();
+		s_Data.TextureSlots[s_Data.TextureSlotIndex] = srv;
 		s_Data.TextureSlotIndex++;
 	}
 
@@ -585,7 +662,7 @@ void Renderer2D::DrawString(const std::string& text, Text* font, const glm::vec3
 		auto it = characters.find(*c);
 
 		if (it == characters.end())
-			continue; // Character not found in font atlas, skip it
+			continue; 
 
 		Character ch = it->second;
 
@@ -594,25 +671,12 @@ void Renderer2D::DrawString(const std::string& text, Text* font, const glm::vec3
 		float w = ch.Size.x * scale;
 		float h = ch.Size.y * scale;
 
-		// Skip spaces (no texture area) but advance X
 		if (w > 0.0f && h > 0.0f)
 		{
-			// Check batch limits per character
 			if (s_Data.IndexCount >= s_Data.MaxIndices)
 				NextBatch();
 
-			// Font Atlas UVs are typically Top-Left to Bottom-Right in data,
-			// but we need to map to Quad vertices { BL, BR, TR, TL }
-			// Assuming Character struct has uvMin (Top-Left in texture) and uvMax (Bottom-Right)
-			// GL coords: V=0 is bottom, V=1 is top. FreeType is Top-Down.
-			// Your Atlas UVs should be pre-calculated correctly for GL.
-
-			// If stored as: uvMin = (0,0) [TopLeft], uvMax = (1,1) [BotRight]
-			// BL = min.x, max.y
-			// BR = max.x, max.y
-			// TR = max.x, min.y
-			// TL = min.x, min.y
-
+			// Quad order: BL, BR, TR, TL
 			glm::vec2 uvs[4] = {
 				{ ch.uvMin.x, ch.uvMax.y }, // BL
 				{ ch.uvMax.x, ch.uvMax.y }, // BR
@@ -620,7 +684,6 @@ void Renderer2D::DrawString(const std::string& text, Text* font, const glm::vec3
 				{ ch.uvMin.x, ch.uvMin.y }  // TL
 			};
 
-			// Positions relative to cursor (BL, BR, TR, TL). y grows upward.
 			glm::vec3 pos[4] = {
 				{     xpos,     ypos, z },
                 { xpos + w,     ypos, z },
@@ -628,7 +691,6 @@ void Renderer2D::DrawString(const std::string& text, Text* font, const glm::vec3
                 {     xpos, ypos + h, z }
 			};
 
-			// Add to buffer
 			for (int i = 0; i < 4; i++)
 			{
 				s_Data.QuadBufferPtr->Position = pos[i];
@@ -636,7 +698,7 @@ void Renderer2D::DrawString(const std::string& text, Text* font, const glm::vec3
 				s_Data.QuadBufferPtr->TexCoord = uvs[i];
 				s_Data.QuadBufferPtr->TexIndex = textureIndex;
 				s_Data.QuadBufferPtr->TilingFactor = 1.0f;
-				s_Data.QuadBufferPtr->IsText = 1.0f; // Enable SDF smoothing in shader
+				s_Data.QuadBufferPtr->IsText = 1.0f; 
 				s_Data.QuadBufferPtr++;
 			}
 

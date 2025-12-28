@@ -1,8 +1,8 @@
 #include <iostream>
 
-#include "glew.h"
 #include "Game2D.h"
 #include "gtc/matrix_transform.hpp"
+#include "Core/Window.h"
 
 Game2D::Game2D()
 {
@@ -42,6 +42,9 @@ void Game2D::Init()
 
 	// 4. Initialize Physics
 	m_physicsScene = new PhysicsScene();
+
+    // Create a test quad to verify rendering
+    m_scene->CreateQuad({0, 0, 0}, {1, 1}, {1, 0, 0});
 }
 
 void Game2D::Update(float deltaTime)
@@ -97,7 +100,9 @@ void Game2D::Draw()
 		// This ensures UI elements (HUD) don't move with the world camera
 		Camera uiCamera(m_camera->GetOrthographicSize(), m_camera->GetAspectRatio());
 		
-		glClear(GL_DEPTH_BUFFER_BIT);
+		// Clear Depth Buffer for UI overlay
+		Window::GetContext()->ClearDepthStencilView(Window::GetDepthStencilView(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+
 		Renderer2D::BeginScene(uiCamera);
 		m_scene->RenderUI();
 		Renderer2D::EndScene();

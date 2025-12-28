@@ -188,8 +188,8 @@ bool ResourceManager::LoadShadersFromDir(const std::string& dir)
 		auto lower = ToLower(filename);
 		std::string filepath = chosen + "\\" + filename;
 
-		// Simple heuristic to pair .vert and .frag files
-		if (lower.find("vertex.shader") != std::string::npos || lower.find("vert.shader") != std::string::npos)
+		// Simple heuristic to pair .vert and .frag files (and now .hlsl)
+		if (lower.find("vertex.shader") != std::string::npos || lower.find("vert.shader") != std::string::npos || lower.find("vertex.hlsl") != std::string::npos)
 		{
 			std::string base = filename.substr(0, filename.find_last_of('.'));
 			while (true)
@@ -208,7 +208,7 @@ bool ResourceManager::LoadShadersFromDir(const std::string& dir)
 			}
 			vmap[ToLower(base)] = filepath;
 		}
-		else if (lower.find("fragment.shader") != std::string::npos || lower.find("frag.shader") != std::string::npos)
+		else if (lower.find("fragment.shader") != std::string::npos || lower.find("frag.shader") != std::string::npos || lower.find("pixel.hlsl") != std::string::npos || lower.find("frag.hlsl") != std::string::npos)
 		{
 			std::string base = filename.substr(0, filename.find_last_of('.'));
 			while (true)
@@ -221,6 +221,10 @@ bool ResourceManager::LoadShadersFromDir(const std::string& dir)
 				else if (lowbase.size() >= 4 && lowbase.substr(lowbase.size() - 4) == "frag")
 				{
 					base = base.substr(0, base.size() - 4);
+				}
+				else if (lowbase.size() >= 5 && lowbase.substr(lowbase.size() - 5) == "pixel")
+				{
+					base = base.substr(0, base.size() - 5);
 				}
 				else
 					break;
