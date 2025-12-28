@@ -42,9 +42,6 @@ void Game2D::Init()
 
 	// 4. Initialize Physics
 	m_physicsScene = new PhysicsScene();
-
-    // Create a test quad to verify rendering
-    m_scene->CreateQuad({0, 0, 0}, {1, 1}, {1, 0, 0});
 }
 
 void Game2D::Update(float deltaTime)
