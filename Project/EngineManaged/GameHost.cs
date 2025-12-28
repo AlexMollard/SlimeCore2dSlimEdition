@@ -1,4 +1,5 @@
 ﻿using GameModes.Dude;
+using SlimeCore.GameModes.Factory;
 using SlimeCore.GameModes.Snake;
 using SlimeCore.Source.Core;
 using System.Runtime.CompilerServices;
@@ -12,8 +13,9 @@ public static class GameHost
     [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
     public static void Init()
     {
-        GameManager.LoadMode(new SnakeGame(new SnakeSettings()));
+        //GameManager.LoadMode(new SnakeGame(new SnakeSettings()));
         //GameManager.LoadMode(new DudeGame());
+        GameManager.LoadMode(new FactoryGame(new FactorySettings()));
     }
 
     // The C++ Engine calls this every frame

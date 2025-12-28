@@ -8,7 +8,7 @@ layout (location = 5) in float aIsText;
 
 out vec4 vColor;
 out vec2 vTexCoord;
-out float vTexIndex;
+flat out float vTexIndex;
 out float vTiling;
 out float vIsText;
 

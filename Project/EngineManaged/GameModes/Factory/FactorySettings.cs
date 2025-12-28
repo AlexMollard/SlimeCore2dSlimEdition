@@ -1,0 +1,8 @@
+namespace SlimeCore.GameModes.Factory;
+
+public class FactorySettings
+{
+    public float InitialZoom { get; set; } = 1.0f;
+    public int WorldWidth { get; set; } = 500;
+    public int WorldHeight { get; set; } = 500;
+}

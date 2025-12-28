@@ -1,0 +1,54 @@
+using EngineManaged.Numeric;
+using EngineManaged.Scene;
+using SlimeCore.GameModes.Factory.World;
+using SlimeCore.Source.Core;
+using SlimeCore.Source.Input;
+using System;
+
+namespace SlimeCore.GameModes.Factory.Actors;
+
+public class Player
+{
+    public Entity Entity { get; private set; }
+    public Vec2 Position { get; set; }
+    public float Speed { get; set; } = 5.0f;
+    public float Size { get; set; } = 0.5f;
+
+    public Player(Vec2 startPos)
+    {
+        Position = startPos;
+        Entity = SceneFactory.CreateQuad(Position.X, Position.Y, Size, Size, 1.0f, 1.0f, 1.0f, layer: 10);
+        var sprite = Entity.GetComponent<SpriteComponent>();
+        // Load a texture if available, otherwise use a color
+        // sprite.Texture = ...
+        sprite.Color = (1.0f, 1.0f, 1.0f); // White player for now
+    }
+
+    public void Update(float dt)
+    {
+        HandleInput(dt);
+        
+        var transform = Entity.GetComponent<TransformComponent>();
+        transform.Position = (Position.X, Position.Y);
+    }
+
+    private void HandleInput(float dt)
+    {
+        var move = new Vec2(0, 0);
+        if (Input.GetKeyDown(Keycode.W)) move.Y += 1;
+        if (Input.GetKeyDown(Keycode.S)) move.Y -= 1;
+        if (Input.GetKeyDown(Keycode.A)) move.X -= 1;
+        if (Input.GetKeyDown(Keycode.D)) move.X += 1;
+
+        if (move.Length() > 0)
+        {
+            move = move.Normalized();
+            Position += move * Speed * dt;
+        }
+    }
+
+    public void Destroy()
+    {
+        Entity.Destroy();
+    }
+}

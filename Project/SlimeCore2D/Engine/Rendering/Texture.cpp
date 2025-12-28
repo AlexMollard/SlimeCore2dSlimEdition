@@ -16,6 +16,9 @@ Texture::Texture(const std::string& path, Filter filter, Wrap wrap)
 	// OpenGL expects 0.0 to be at the bottom, images usually have 0.0 at the top
 	stbi_set_flip_vertically_on_load(1);
 
+	// Ensure tight packing for image data (fixes skewing for non-power-of-4 widths)
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
 	int width, height, channels;
 	unsigned char* data = stbi_load(path.c_str(), &width, &height, &channels, 0);
 

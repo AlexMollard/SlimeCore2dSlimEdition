@@ -11,7 +11,7 @@ uniform vec3 position;
 
 out vec4 Color;
 out vec2 TexCoord;
-out float TexIndex;
+flat out float TexIndex;
 
 void main()
 {
