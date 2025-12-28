@@ -239,14 +239,19 @@ public class WorldGenerator
     {
         var w = world.Width();
         var h = world.Height();
-        var reachable = new bool[w, h];
+        var reachable = new bool[w][];
+        for (var i = 0; i < w; i++)
+        {
+            reachable[i] = new bool[h];
+        }
+
         var queue = new Queue<(int x, int y)>();
 
         var startX = w / 2;
         var startY = h / 2;
 
         queue.Enqueue((startX, startY));
-        reachable[startX, startY] = true;
+        reachable[startX][startY] = true;
 
         int[] dx = { 0, 0, 1, -1 };
         int[] dy = { 1, -1, 0, 0 };
@@ -260,9 +265,9 @@ public class WorldGenerator
                 var nx = (cx + dx[i] + w) % w;
                 var ny = (cy + dy[i] + h) % h;
 
-                if (!reachable[nx, ny] && !world[nx, ny].Blocked)
+                if (!reachable[nx][ny] && !world[nx, ny].Blocked)
                 {
-                    reachable[nx, ny] = true;
+                    reachable[nx][ny] = true;
                     queue.Enqueue((nx, ny));
                 }
             }
@@ -271,7 +276,7 @@ public class WorldGenerator
         for (var x = 0; x < w; x++)
             for (var y = 0; y < h; y++)
             {
-                if (!world[x, y].Blocked && !reachable[x, y])
+                if (!world[x, y].Blocked && !reachable[x][y])
                 {
                     world[x, y].Blocked = true;
                     world[x, y].Type = SnakeTerrain.Rock;
