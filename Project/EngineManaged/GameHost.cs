@@ -1,4 +1,4 @@
-using GameModes.Dude;
+﻿using GameModes.Dude;
 using SlimeCore.GameModes.Snake;
 using SlimeCore.Source.Core;
 using System.Runtime.CompilerServices;
@@ -13,6 +13,7 @@ public static class GameHost
     public static void Init()
     {
         GameManager.LoadMode(new SnakeGame(new SnakeSettings()));
+        //GameManager.LoadMode(new DudeGame());
     }
 
     // The C++ Engine calls this every frame

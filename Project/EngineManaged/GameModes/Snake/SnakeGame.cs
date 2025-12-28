@@ -18,133 +18,144 @@ namespace SlimeCore.GameModes.Snake;
 
 public sealed class SnakeGame : GameMode<SnakeGame>, IGameMode, IDisposable
 {
-    private bool _isDisposed;
-    public override Random? Rng { get; set; }
+	private bool _isDisposed;
+	public override Random? Rng { get; set; }
 
-    public const int VIEW_W = 100;
-    public const int VIEW_H = 75;
+	public const int VIEW_W = 100;
+	public const int VIEW_H = 75;
 
-    public SnakeGrid? _world { get; set; }
+	public SnakeGrid? _world { get; set; }
 
-    public static float _cellSpacing = 0.4f;
+	public static float _cellSpacing = 0.4f;
 
-    // Logic constants
-    public const float TICK_NORMAL = 0.12f;
-    public const float TICK_SPRINT = 0.05f;
+	// Logic constants
+	public const float TICK_NORMAL = 0.12f;
+	public const float TICK_SPRINT = 0.05f;
 
-    // Game Logic
-    
-    public float _shake;
-    
-    // Camera & Smoothing
-    public Vec2 _cam;
+	// Game Logic
+
+	public float _shake;
+
+	// Camera & Smoothing
+	public Vec2 _cam;
 
 
-    public required PlayerSnake _snake { get; set; }
-    private ParticleSystem? _particleSys;
+	public PlayerSnake? _snake { get; set; }
+	private ParticleSystem? _particleSys;
+	public SnakeActorManager? ActorManager { get; set; }
 
-    public int _currentScore { get; set; }
+	public int _currentScore { get; set; }
 
-    public float SpawnTimer;
-    public float ChillTimer;
-    
-    public SnakeGameEvents Events = new();
-    public SnakeActorManager ActorManager { get; set; }
+	public float SpawnTimer;
+	public float ChillTimer;
 
-    [SetsRequiredMembers]
-    public SnakeGame(SnakeSettings settings)
-    {
-        _snake = new(settings.InitialZoom * 1.25f);
-        _world = new(settings.WorldWidth, settings.WorldHeight, settings.BaseTerrain, settings.InitialZoom);
-        _particleSys = new(5000);
-        ActorManager = new SnakeActorManager(settings.ActorSingleFrameBudget, 
-            NpcSnakeHunter.HandleUpdateBehaviour);
-    }
+	public SnakeGameEvents Events = new();
+	public SnakeSettings Settings { get; set; }
 
-    public IntPtr TexEnemy;
+	[SetsRequiredMembers]
+	public SnakeGame(SnakeSettings settings)
+	{
+		Settings = settings;
+		InitializeGame();
+	}
 
-    public override void Init()
-    {
-        ChangeState(new StateSnakeMenu());
-    }
+	public void InitializeGame()
+	{
+		// Initialize or re-initialize game subsystems. These may be null until InitializeGame() has run.
+		_snake = new(Settings.InitialZoom * 1.25f);
+		_world = new(Settings.WorldWidth, Settings.WorldHeight, Settings.BaseTerrain, Settings.InitialZoom);
+		_particleSys = new(5000);
+		ActorManager = new SnakeActorManager(Settings.ActorSingleFrameBudget,
+			NpcSnakeHunter.HandleUpdateBehaviour);
+	}
 
-    public override void Shutdown()
-    {
-        UISystem.Clear();
-        
-        _snake.Destroy();
-        _particleSys.Dispose();
-        Events.Clear();
-        _world.Destroy();
-        ActorManager.Destroy();
-    }
+	public IntPtr TexEnemy;
 
-    
+	public override void Init()
+	{
+		ChangeState(new StateSnakeMenu());
+	}
 
-    public override void Update(float dt)
-    {
-        _particleSys.OnUpdate(dt);
-        _shake = Math.Max(0, _shake - dt * 2.0f);
-        if (_currentState != null) _currentState.Update(this, dt);
-    }
+	public override void Shutdown()
+	{
+		UISystem.Clear();
 
-    public void SpawnExplosion(Vec2 worldPos, int count, Vec3 color)
-    {
-        // Calculate relative position to camera
-        var dx = worldPos.X - _cam.X;
-        var dy = worldPos.Y - _cam.Y;
+		_snake?.Destroy();
+		_particleSys?.Dispose();
+		Events.Clear();
+		_world?.Destroy();
+		ActorManager?.Destroy();
+	}
+	
+	public override void Update(float dt)
+	{
+		_particleSys?.OnUpdate(dt);
+		_shake = Math.Max(0, _shake - dt * 2.0f);
+		if (_currentState != null) _currentState.Update(this, dt);
+	}
 
-        // Handle wrapping
-        if (dx > _world.Width() / 2f) dx -= _world.Width();
-        else if (dx < -_world.Width() / 2f) dx += _world.Width();
+	public void SpawnExplosion(Vec2 worldPos, int count, Vec3 color)
+	{
+		// Guard if world or particles not initialized
+		if (_world == null || _particleSys == null) return;
 
-        if (dy > _world.Height() / 2f) dy -= _world.Height();
-        else if (dy < -_world.Height() / 2f) dy += _world.Height();
+		// Calculate relative position to camera
+		var dx = worldPos.X - _cam.X;
+		var dy = worldPos.Y - _cam.Y;
 
-        var px = dx * _cellSpacing;
-        var py = dy * _cellSpacing;
+		// Handle wrapping
+		if (dx > _world.Width() / 2f) dx -= _world.Width();
+		else if (dx < -_world.Width() / 2f) dx += _world.Width();
 
-        var props = new ParticleProps();
-        props.Position = new Vec2(px, py);
-        props.VelocityVariation = new Vec2(2.0f, 2.0f);
-        props.ColorBegin = new Color(color.X, color.Y, color.Z, 1.0f);
-        props.ColorEnd = new Color(color.X, color.Y, color.Z, 0.0f);
-        props.SizeBegin = 0.3f;
-        props.SizeEnd = 0.0f;
-        props.SizeVariation = 0.1f;
-        props.LifeTime = 0.8f;
+		if (dy > _world.Height() / 2f) dy -= _world.Height();
+		else if (dy < -_world.Height() / 2f) dy += _world.Height();
 
-        for (var i = 0; i < count; i++)
-        {
-            var angle = (float)Rng.NextDouble() * 6.28f;
-            var speed = (float)Rng.NextDouble() * 2.0f + 0.5f;
-            props.Velocity = new Vec2((float)Math.Cos(angle), (float)Math.Sin(angle)) * speed;
+		var px = dx * _cellSpacing;
+		var py = dy * _cellSpacing;
 
-            _particleSys.Emit(props);
-        }
-    }
+		var props = new ParticleProps();
+		props.Position = new Vec2(px, py);
+		props.VelocityVariation = new Vec2(2.0f, 2.0f);
+		props.ColorBegin = new Color(color.X, color.Y, color.Z, 1.0f);
+		props.ColorEnd = new Color(color.X, color.Y, color.Z, 0.0f);
+		props.SizeBegin = 0.3f;
+		props.SizeEnd = 0.0f;
+		props.SizeVariation = 0.1f;
+		props.LifeTime = 0.8f;
 
-    public bool IsSnakeAt(int x, int y) => _snake.GetBodyIndexFromWorldPosition(x, y) != -1;
-    public static int Wrap(int v, int m) => (v % m + m) % m;
+		var rng = Rng ?? new Random();
 
-    public void Dispose()
-    {
-        Dispose(true);
-        GC.SuppressFinalize(this);
-    }
+		for (var i = 0; i < count; i++)
+		{
+			var angle = (float)rng.NextDouble() * 6.28f;
+			var speed = (float)rng.NextDouble() * 2.0f + 0.5f;
+			props.Velocity = new Vec2((float)Math.Cos(angle), (float)Math.Sin(angle)) * speed;
 
-    private void Dispose(bool disposing)
-    {
-        if (_isDisposed)
-        {
-            return;
-        }
+			_particleSys.Emit(props);
+		}
+	}
 
-        if (disposing)
-        {
-            _particleSys?.Dispose();
-        }
+	public bool IsSnakeAt(int x, int y) => _snake != null && _snake.GetBodyIndexFromWorldPosition(x, y) != -1;
+	public static int Wrap(int v, int m) => (v % m + m) % m;
 
-        _isDisposed = true;
-    }
+	public void Dispose()
+	{
+		Dispose(true);
+		GC.SuppressFinalize(this);
+	}
+
+	private void Dispose(bool disposing)
+	{
+		if (_isDisposed)
+		{
+			return;
+		}
+
+		if (disposing)
+		{
+			_particleSys?.Dispose();
+		}
+
+		_isDisposed = true;
+	}
 }
