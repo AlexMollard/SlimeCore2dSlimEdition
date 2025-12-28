@@ -16,10 +16,10 @@ void Renderer2D::Init()
 {
 	s_Data.QuadBuffer = new Renderer2DData::QuadVertex[s_Data.MaxVertices];
 
-	glCreateVertexArrays(1, &s_Data.QuadVA);
+	glGenVertexArrays(1, &s_Data.QuadVA);
 	glBindVertexArray(s_Data.QuadVA);
 
-	glCreateBuffers(1, &s_Data.QuadVB);
+	glGenBuffers(1, &s_Data.QuadVB);
 	glBindBuffer(GL_ARRAY_BUFFER, s_Data.QuadVB);
 	glBufferData(GL_ARRAY_BUFFER, s_Data.MaxVertices * sizeof(Renderer2DData::QuadVertex), nullptr, GL_DYNAMIC_DRAW);
 
@@ -64,14 +64,14 @@ void Renderer2D::Init()
 		offset += 4;
 	}
 
-	glCreateBuffers(1, &s_Data.QuadIB);
+	glGenBuffers(1, &s_Data.QuadIB);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, s_Data.QuadIB);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, s_Data.MaxIndices * sizeof(uint32_t), quadIndices, GL_STATIC_DRAW);
 
 	delete[] quadIndices;
 
 	// White Texture (1x1)
-	glCreateTextures(GL_TEXTURE_2D, 1, &s_Data.WhiteTexture);
+	glGenTextures(1, &s_Data.WhiteTexture);
 	glBindTexture(GL_TEXTURE_2D, s_Data.WhiteTexture);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

@@ -152,29 +152,15 @@ void Text::GenerateAtlas(FT_Face face)
 	}
 
 	// 4. Create OpenGL Texture
-	unsigned int textureID;
-	glGenTextures(1, &textureID);
-	glBindTexture(GL_TEXTURE_2D, textureID);
-
-	// Load data
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, atlasWidth, atlasHeight, 0, GL_RED, GL_UNSIGNED_BYTE, atlasData.data());
-
-	// Set options
-	// CLAMP_TO_EDGE is important to prevent artifacts at edges of the quad
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-	// SDF requires Linear filtering to allow the shader to interpolate distances
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	// Note: We use the Texture class wrapper which handles ID generation and binding.
+	// The manual glGenTextures block was redundant and removed.
 
 	// Create and Upload Texture using the new Class
+	// GL_R8 is valid in GLES 3.0 for single channel
 	m_AtlasTexture = new Texture(atlasWidth, atlasHeight, GL_R8, Texture::Filter::Linear, Texture::Wrap::ClampToEdge);
 	
 	// Upload the raw bitmap data we generated into the texture
 	m_AtlasTexture->SetData(atlasData.data(), atlasData.size());
-
-	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 glm::vec2 Text::CalculateSize(const std::string& text, float scale)

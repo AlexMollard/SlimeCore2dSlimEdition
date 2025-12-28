@@ -1,4 +1,5 @@
-#version 330 core
+#version 300 es
+precision mediump float;
 layout(location = 0) in vec4 vertex; // <vec2 pos, vec2 tex>
 out vec2 TexCoords;
 

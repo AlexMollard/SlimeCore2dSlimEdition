@@ -59,7 +59,7 @@ Texture::Texture(const std::string& path, Filter filter, Wrap wrap)
 		// Wrapping
 		GLint glWrap = (wrap == Wrap::Repeat) ? GL_REPEAT : GL_CLAMP_TO_EDGE;
 		if (wrap == Wrap::ClampToBorder)
-			glWrap = GL_CLAMP_TO_BORDER;
+			glWrap = GL_CLAMP_TO_EDGE;
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, glWrap);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, glWrap);
@@ -73,8 +73,8 @@ Texture::Texture(const std::string& path, Filter filter, Wrap wrap)
 
 // Debug Label
 #ifdef _DEBUG
-		std::string label = "Texture: " + path;
-		glObjectLabel(GL_TEXTURE, m_RendererID, -1, label.c_str());
+		// std::string label = "Texture: " + path;
+		// glObjectLabel(GL_TEXTURE, m_RendererID, -1, label.c_str());
 #endif
 
 		stbi_image_free(data);

@@ -28,6 +28,9 @@ int Window::Window_intit(int width, int height, char* name)
 		return -1;
 	}
 
+	glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 	glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
 
 	window = glfwCreateWindow(width, height, name, NULL, NULL);
@@ -54,7 +57,6 @@ int Window::Window_intit(int width, int height, char* name)
 	glfwSwapInterval(1); // V-Sync
 
 	// Initializing Glew
-	glewExperimental = GL_TRUE;
 	if (glewInit() != GLEW_OK)
 	{
 		Logger::Error("Glew is not having a good time");

@@ -77,6 +77,7 @@ Shader::Shader(const std::string& name, const char* vertexPath, const char* frag
 
 	// if geometry shader is given, compile geometry shader
 	unsigned int geometry = 0;
+	/*
 	if (geometryPath != nullptr)
 	{
 		const char* gShaderCode = geometryCode.c_str();
@@ -85,13 +86,16 @@ Shader::Shader(const std::string& name, const char* vertexPath, const char* frag
 		glCompileShader(geometry);
 		CheckCompileErrors(geometry, "GEOMETRY");
 	}
+	*/
 
 	// shader Program
 	m_shaderID = glCreateProgram();
 	glAttachShader(m_shaderID, vertex);
 	glAttachShader(m_shaderID, fragment);
+	/*
 	if (geometryPath != nullptr)
 		glAttachShader(m_shaderID, geometry);
+	*/
 
 	glLinkProgram(m_shaderID);
 	CheckCompileErrors(m_shaderID, "PROGRAM");
@@ -99,11 +103,13 @@ Shader::Shader(const std::string& name, const char* vertexPath, const char* frag
 	// delete the shaders as they're linked into our program now and no longer necessary
 	glDeleteShader(vertex);
 	glDeleteShader(fragment);
+	/*
 	if (geometryPath != nullptr)
 		glDeleteShader(geometry);
+	*/
 
 	// Label for Debugging
-	glObjectLabel(GL_PROGRAM, m_shaderID, -1, name.c_str());
+	// glObjectLabel(GL_PROGRAM, m_shaderID, -1, name.c_str());
 }
 
 Shader::~Shader()
