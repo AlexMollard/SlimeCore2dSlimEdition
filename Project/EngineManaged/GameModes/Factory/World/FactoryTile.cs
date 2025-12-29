@@ -68,11 +68,11 @@ public class FactoryTile : Tile<FactoryTerrain, FactoryTileOptions>
         // Base color based on terrain
         var col = Type switch
         {
-            FactoryTerrain.Grass => new Vec3(0.2f, 0.8f, 0.2f),
-            FactoryTerrain.Concrete => new Vec3(0.5f, 0.5f, 0.5f),
-            FactoryTerrain.Water => new Vec3(0.2f, 0.2f, 0.9f),
-            FactoryTerrain.Sand => new Vec3(0.9f, 0.8f, 0.5f),
-            FactoryTerrain.Stone => new Vec3(0.4f, 0.4f, 0.4f),
+            FactoryTerrain.Grass => new Vec3(0.35f, 0.75f, 0.35f),
+            FactoryTerrain.Concrete => new Vec3(0.6f, 0.6f, 0.65f),
+            FactoryTerrain.Water => new Vec3(0.25f, 0.5f, 0.9f),
+            FactoryTerrain.Sand => new Vec3(0.92f, 0.85f, 0.65f),
+            FactoryTerrain.Stone => new Vec3(0.55f, 0.55f, 0.55f),
             _ => new Vec3(1, 0, 1)
         };
 
@@ -83,12 +83,12 @@ public class FactoryTile : Tile<FactoryTerrain, FactoryTileOptions>
             {
                 FactoryOre.Iron => new Vec3(0.8f, 0.4f, 0.4f),
                 FactoryOre.Copper => new Vec3(0.8f, 0.5f, 0.2f),
-                FactoryOre.Coal => new Vec3(0.1f, 0.1f, 0.1f),
-                FactoryOre.Gold => new Vec3(1.0f, 0.8f, 0.0f),
+                FactoryOre.Coal => new Vec3(0.2f, 0.2f, 0.2f),
+                FactoryOre.Gold => new Vec3(1.0f, 0.85f, 0.2f),
                 _ => new Vec3(1, 1, 1)
             };
             // Blend ore color on top (simple lerp for now)
-            col = Vec3.Lerp(col, oreCol, 0.5f);
+            col = Vec3.Lerp(col, oreCol, 0.6f);
         }
 
         // Structure color override (temporary visualization)
