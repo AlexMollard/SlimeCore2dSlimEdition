@@ -8,6 +8,7 @@ namespace SlimeCore.GameModes.Factory.Actors;
 public enum FactoryActors
 {
     Player = 0,
+    Animals = 1,
 }
 
 public class FactoryActorManager : ActorManager<FactoryActors, FactoryGame>

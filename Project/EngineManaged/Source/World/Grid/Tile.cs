@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SlimeCore.Source.World.Grid;
 
-public abstract record Tile<TEnum, TOptions>
+public abstract class Tile<TEnum, TOptions>
     where TEnum : Enum
     where TOptions : TileOptions<TEnum>, new()
 {

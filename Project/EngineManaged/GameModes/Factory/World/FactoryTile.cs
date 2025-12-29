@@ -35,7 +35,7 @@ public sealed class FactoryTileOptions : TileOptions<FactoryTerrain>
     public FactoryStructure Structure { get; set; } = FactoryStructure.None;
 }
 
-public record FactoryTile : Tile<FactoryTerrain, FactoryTileOptions>
+public class FactoryTile : Tile<FactoryTerrain, FactoryTileOptions>
 {
     public FactoryOre OreType { get; set; } = FactoryOre.None;
     public bool IsMineable { get; set; }

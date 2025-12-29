@@ -15,7 +15,7 @@ public enum SnakeTerrain : int
     Speed
 }
 
-public record SnakeTile : Tile<SnakeTerrain, SnakeTileOptions>
+public class SnakeTile : Tile<SnakeTerrain, SnakeTileOptions>
 {
     /// <summary>
     /// Is this a solid tile that cannot be traversed?
@@ -33,10 +33,6 @@ public record SnakeTile : Tile<SnakeTerrain, SnakeTileOptions>
     public SnakeTile(Action<TileOptions<SnakeTerrain>> configure)
     {
         ApplyOptions(configure);
-    }
-
-    protected SnakeTile(Tile<SnakeTerrain, SnakeTileOptions> original) : base(original)
-    {
     }
 
     public override void ApplyOptions(Action<SnakeTileOptions> configure)
