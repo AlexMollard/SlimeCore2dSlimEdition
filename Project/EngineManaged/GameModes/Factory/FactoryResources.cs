@@ -41,7 +41,9 @@ public static class FactoryResources
 
         TexConveyor = NativeMethods.Resources_LoadTexture("conveyor", "Textures/Factory/conveyor.png");
 
-        TexConveyor = NativeMethods.Resources_LoadTexture("conveyor", "Textures/Factory/Fauna/sheep.png");
+        TexSheep = NativeMethods.Resources_LoadTexture("sheep", "Textures/Factory/Fauna/sheep.png");
+
+
     }
 
     public static IntPtr GetTerrainTexture(SlimeCore.GameModes.Factory.World.FactoryTerrain type)

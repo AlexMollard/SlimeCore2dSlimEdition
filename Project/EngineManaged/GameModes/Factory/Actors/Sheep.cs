@@ -29,7 +29,7 @@ public class Sheep : Actor<FactoryActors, FactoryGame>
         Entity = SceneFactory.CreateQuad(Position.X, Position.Y, Size, Size, 1.0f, 1.0f, 1.0f, layer: 9);
         var sprite = Entity.GetComponent<SpriteComponent>();
         sprite.TexturePtr = FactoryResources.TexSheep;
-        sprite.Color = (1.0f, 1.0f, 1.0f); // White player for now
+        //sprite.Color = (1.0f, 1.0f, 1.0f); // White player for now
     }
 
     public override bool TakeAction(FactoryGame mode, float deltaTime)
