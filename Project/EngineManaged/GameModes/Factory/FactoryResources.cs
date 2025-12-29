@@ -4,6 +4,7 @@ namespace SlimeCore.GameModes.Factory;
 
 public static class FactoryResources
 {
+
     public static IntPtr TexGrass;
     public static IntPtr TexConcrete;
     public static IntPtr TexWater;
@@ -19,10 +20,15 @@ public static class FactoryResources
 
     public static IntPtr TexSheep;
 
-    public static void Load()
+	public static IntPtr TexDebug;
+
+	public static void Load()
     {
-        // Assuming textures are in Textures/Factory/ relative to the executable or content root
-        TexGrass = NativeMethods.Resources_LoadTexture("grass", "Textures/Factory/grass.png");
+		TexDebug = NativeMethods.Resources_LoadTexture("debug", "Textures/debug.png");
+
+
+		// Assuming textures are in Textures/Factory/ relative to the executable or content root
+		TexGrass = NativeMethods.Resources_LoadTexture("grass", "Textures/Factory/grass.png");
         TexConcrete = NativeMethods.Resources_LoadTexture("concrete", "Textures/Factory/concrete.png");
         TexWater = NativeMethods.Resources_LoadTexture("water", "Textures/Factory/water.png");
         TexSand = NativeMethods.Resources_LoadTexture("sand", "Textures/Factory/sand.png");

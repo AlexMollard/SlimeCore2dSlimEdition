@@ -21,8 +21,7 @@ public class Player : Actor<FactoryActors, FactoryGame>, IControllable
         Position = startPos;
         Entity = SceneFactory.CreateQuad(Position.X, Position.Y, Size, Size, 1.0f, 1.0f, 1.0f, layer: 10);
         var sprite = Entity.GetComponent<SpriteComponent>();
-        // Load a texture if available, otherwise use a color
-        // sprite.Texture = ...
+        sprite.TexturePtr = FactoryResources.TexDebug;
         sprite.Color = (1.0f, 1.0f, 1.0f); // White player for now
     }
 
