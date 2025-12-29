@@ -258,14 +258,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
-    <None Include="Game\Resources\Shaders\BasicFragment.shader" />
-    <None Include="Game\Resources\Shaders\BasicVertex.shader" />
     <None Include="Game\Resources\Shaders\BasicPixel.hlsl" />
     <None Include="Game\Resources\Shaders\BasicVertex.hlsl" />
-    <None Include="Game\Resources\Shaders\UIFragment.shader" />
-    <None Include="Game\Resources\Shaders\UIVertex.shader" />
-    <None Include="Game\Resources\Shaders\textFrag.shader" />
-    <None Include="Game\Resources\Shaders\textVert.shader" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

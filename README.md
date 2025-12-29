@@ -1,38 +1,72 @@
-# SlimeCore2dSlimEdition
+# SlimeCore2D (Slim Edition)
 
-A minimal 2D engine and small Snake demo built with OpenGL (GLFW + GLEW), GLM, stb, and FreeType.
+A hybrid 2D game engine combining a high-performance C++ core with flexible C# scripting/game logic.
 
 ---
 
 ## ✨ Overview
-**SlimeCore2d (Slim Edition)** is a lightweight 2D engine and demo project that demonstrates a simple renderer, physics scene, object manager, and a Snake game. It's intended as an educational sample and a base for experimenting with 2D systems and OpenGL in C++.
+**SlimeCore2D (Slim Edition)** is a game engine project that demonstrates how to embed the .NET runtime within a C++ application. It separates low-level systems (Windowing, Rendering, Input) from high-level game logic, allowing you to write your game code in modern C#.
+
+## 🏗 Architecture
+The engine is split into two main components:
+
+### 1. Native Host (`SlimeCore2D`)
+- **Language**: C++
+- **Responsibilities**:
+  - Window creation and management (GLFW)
+  - DirectX 11 context initialization
+  - Hosting the .NET Runtime (`nethost`, `hostfxr`)
+  - Exposing native API hooks for Rendering, Input, and ECS to the managed layer.
+
+### 2. Managed Logic (`EngineManaged`)
+- **Language**: C# (.NET 10)
+- **Responsibilities**:
+  - Game Loop (Update/Draw)
+  - Game Modes (Factory, Snake, etc.)
+  - Entity Component System (ECS) logic
+  - Scene management and World generation
 
 ## ✅ Features
-- Simple 2D renderer with batched quads and shader support
-- Basic physics scene and object management
-- Demo game: classic **Snake** with scoring and high-score saving (`Txt/HS.txt`)
-- Text rendering using FreeType and custom text shaders
-- Shaders stored in `Shaders/` and reusable engine components in `SlimeCore2D/`
+- **Hybrid C++/C# Architecture**: Best of both worlds - native performance for the core, managed productivity for gameplay.
+- **Multiple Game Modes**:
+  - **Factory**: A factory building simulation with tilemaps, resources, and actors.
+  - **Snake**: A classic Snake game implementation.
+  - **Dude**: A platformer/test mode.
+- **2D Rendering**:
+  - Batched Quad Renderer (DirectX 11).
+  - TileMap rendering support.
+  - Text rendering (FreeType).
+- **Input System**: Unified input handling exposed to C#.
 
-## 🧩 Dependencies
-The project includes the following libraries (found in `Project/Dependencies/`):
-- GLFW (windowing and input)
-- GLEW (OpenGL function loader)
-- GLM (math library)
-- stb (single-file libraries: image, truetype, etc.)
-- FreeType (font rendering)
+## 🛠 Build & Run
+### Prerequisites
+- **Visual Studio 2022** (with C++ and .NET Desktop Development workloads).
+- **.NET 10 SDK** (or the specific version configured in `EngineManaged.csproj`).
 
-## 🛠 Build & Run (Windows)
-1. Open `Project/SlimeCore2D.sln` with **Visual Studio 2019/2022**.
-2. Select the platform (x64 or Win32) and a configuration (Debug/Release).
-3. Build the solution and run from Visual Studio, or run the generated executable:
-   - `Project/x64/Debug/SlimeCore2D.exe` (or `x86/Debug` depending on build).
+### Steps
+1. Open `Project/SlimeCore2D.sln` in Visual Studio.
+2. Build the solution (this builds both the C++ host and the C# managed assembly).
+   - The `EngineManaged` project is configured to copy its output to `Scripting/Publish/` where the C++ host expects it.
+3. Set `SlimeCore2D` as the startup project.
+4. Run the application.
 
-Notes:
-- The solution is configured to use the bundled `Dependencies/` folder for includes and libs.
-- Ensure your system has a working OpenGL driver.
+## 🎮 Controls
 
-## ▶️ How to Play
-- Use the **arrow keys** to move the snake.
-- Collect food to grow and increase your score.
-- High scores are saved to `Txt/HS.txt` automatically.
+### Factory Mode (Default)
+- **W, A, S, D**: Move the player character.
+- **Mouse Scroll**: Zoom in/out.
+- **Left Click**: Place Conveyor Belt.
+- **Right Click**: Remove Structure.
+
+### Snake Mode
+- **Arrow Keys**: Move the snake.
+
+## 📂 Project Structure
+- `Project/SlimeCore2D`: C++ Native Host source code.
+- `Project/EngineManaged`: C# Game Logic source code.
+- `Project/Dependencies`: Third-party libraries (GLFW, GLM, etc.).
+- `Project/Shaders`: HLSL shaders (Vertex/Pixel).
+
+## 📝 Notes
+- The project uses `UnmanagedCallersOnly` to allow C++ to call directly into C# static methods without delegates, reducing overhead.
+- Game modes can be switched in `Project/EngineManaged/GameHost.cs`.

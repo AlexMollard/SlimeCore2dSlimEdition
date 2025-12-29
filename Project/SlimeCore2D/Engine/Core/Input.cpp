@@ -1,7 +1,6 @@
 #include "Input.h"
 
 #include "Camera.h"
-#include "glew.h"
 #include "glfw3.h"
 
 Input* Input::s_Instance = nullptr;
