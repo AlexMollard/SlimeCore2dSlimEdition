@@ -1,3 +1,5 @@
+using System;
+
 namespace SlimeCore.GameModes.Factory;
 
 public class FactorySettings
@@ -7,4 +9,6 @@ public class FactorySettings
     public int WorldHeight { get; set; } = 500;
 
     public int ActorBudget { get; set; } = 100;
+
+    public int Seed { get; set; } = Random.Shared.Next();
 }

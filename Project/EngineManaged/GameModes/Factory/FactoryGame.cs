@@ -33,6 +33,7 @@ public sealed class FactoryGame : GameMode<FactoryGame>, IGameMode, IDisposable
     {
         World = new FactoryWorld(Settings.WorldWidth, Settings.WorldHeight, FactoryTerrain.Grass, Settings.InitialZoom);
         ActorManager = new FactoryActorManager(Settings.ActorBudget);
+        Rng = new Random(Settings.Seed);
     }
 
     public override void Init()

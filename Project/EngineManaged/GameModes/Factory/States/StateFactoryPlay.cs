@@ -3,6 +3,7 @@ using EngineManaged.Scene;
 using SlimeCore.GameModes.Factory.Actors;
 using SlimeCore.GameModes.Factory.World;
 using SlimeCore.Source.Core;
+using SlimeCore.Source.World.Actors;
 using System;
 
 namespace SlimeCore.GameModes.Factory.States;
@@ -62,6 +63,14 @@ public class StateFactoryPlay : IGameState<FactoryGame>
         // Create player at center
         _player = new Player(_cam);
         game.ActorManager?.Register(_player);
+        for (var i = 0; i < 5; i++)
+        {
+            var coords = game.Rng.Next(10) > 5 ?
+               new Vec2(_cam.X + i, _cam.Y - i) :
+               new Vec2(_cam.X + i, _cam.Y - i);
+
+            game.ActorManager.Register(new Sheep(coords));
+        }
     }
 
     private void UpdateTile(FactoryGame game, int x, int y)

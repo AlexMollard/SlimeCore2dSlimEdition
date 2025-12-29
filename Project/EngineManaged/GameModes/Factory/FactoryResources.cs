@@ -71,4 +71,13 @@ public static class FactoryResources
             _ => IntPtr.Zero
         };
     }
+
+    public static IntPtr GetActorTexture(string actor)
+    {
+        return actor switch
+        {
+            "Sheep" => TexSheep,
+            _ => IntPtr.Zero
+        };
+    }
 }
