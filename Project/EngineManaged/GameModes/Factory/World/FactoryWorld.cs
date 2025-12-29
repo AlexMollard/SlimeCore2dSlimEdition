@@ -6,17 +6,17 @@ namespace SlimeCore.GameModes.Factory.World;
 
 public class RenderTile
 {
-    public Entity TerrainEntity;
-    public TransformComponent TerrainTransform;
-    public SpriteComponent TerrainSprite;
+    public Entity? TerrainEntity { get; set; }
+    public TransformComponent? TerrainTransform { get; set; }
+    public SpriteComponent? TerrainSprite { get; set; }
 
-    public Entity OreEntity;
-    public TransformComponent OreTransform;
-    public SpriteComponent OreSprite;
+    public Entity? OreEntity { get; set; }
+    public TransformComponent? OreTransform { get; set; }
+    public SpriteComponent? OreSprite { get; set; }
 
-    public Entity StructureEntity;
-    public TransformComponent StructureTransform;
-    public SpriteComponent StructureSprite;
+    public Entity? StructureEntity { get; set; }
+    public TransformComponent? StructureTransform { get; set; }
+    public SpriteComponent? StructureSprite { get; set; }
 
     public bool IsVisible;
 }

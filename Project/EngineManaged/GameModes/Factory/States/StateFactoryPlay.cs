@@ -30,17 +30,18 @@ public class StateFactoryPlay : IGameState<FactoryGame>
         
         // Create player at center
         _player = new Player(_cam);
+        game.ActorManager.Register(_player);
     }
 
     public void Exit(FactoryGame game)
     {
         game.World?.Destroy();
-        _player?.Destroy();
+        game.ActorManager?.Destroy();
     }
 
     public void Update(FactoryGame game, float dt)
     {
-        _player?.Update(dt);
+        game.ActorManager?.Tick(game, dt);
         
         // Camera follows player
         if (_player != null)
