@@ -3,9 +3,12 @@
 #include "Core/Logger.h"
 #include "Rendering/Texture.h"
 #include <algorithm>
+#include <cmath>
 
-TileMap::TileMap(int width, int height, float tileSize)
-    : m_Width(width), m_Height(height), m_TileSize(tileSize), m_Dirty(true), m_IndexCount(0)
+// --- TileMapChunk Implementation ---
+
+TileMapChunk::TileMapChunk(int offsetX, int offsetY, int width, int height, float tileSize)
+    : m_OffsetX(offsetX), m_OffsetY(offsetY), m_Width(width), m_Height(height), m_TileSize(tileSize), m_Dirty(true), m_IndexCount(0)
 {
     int count = width * height;
     m_Layers[0].resize(count, { nullptr, {0,0,0,0}, false });
@@ -13,14 +16,15 @@ TileMap::TileMap(int width, int height, float tileSize)
     m_Layers[2].resize(count, { nullptr, {0,0,0,0}, false });
 }
 
-TileMap::~TileMap()
+TileMapChunk::~TileMapChunk()
 {
     m_VertexBuffer.Reset();
     m_IndexBuffer.Reset();
 }
 
-void TileMap::SetTile(int x, int y, int layer, void* texturePtr, float r, float g, float b, float a)
+void TileMapChunk::SetTile(int x, int y, int layer, void* texturePtr, float r, float g, float b, float a)
 {
+    // x and y are local to the chunk
     if (x < 0 || x >= m_Width || y < 0 || y >= m_Height || layer < 0 || layer > 2)
         return;
 
@@ -31,18 +35,17 @@ void TileMap::SetTile(int x, int y, int layer, void* texturePtr, float r, float 
     m_Dirty = true;
 }
 
-void TileMap::UpdateMesh()
+void TileMapChunk::UpdateMesh()
 {
     if (!m_Dirty) return;
 
     m_Vertices.clear();
     m_Indices.clear();
     m_TextureSlots.clear();
-    m_TextureSlots.push_back(nullptr); // Slot 0 reserved (usually white texture in Renderer2D, but we handle it)
+    m_TextureSlots.push_back(nullptr); // Slot 0 reserved
 
-    // Helper to find or add texture
     auto getTexIndex = [&](void* texPtr) -> float {
-        if (!texPtr) return 0.0f; // Use slot 0 (white) or handle null
+        if (!texPtr) return 0.0f;
         
         Texture* tex = (Texture*)texPtr;
         ID3D11ShaderResourceView* srv = tex->GetSRV();
@@ -55,25 +58,12 @@ void TileMap::UpdateMesh()
 
         if (m_TextureSlots.size() >= 32)
         {
-            // Fallback or flush? For now, just clamp to 0 to avoid crash
-            // Ideally we split draw calls, but for this game we expect < 32 textures
             return 0.0f; 
         }
 
         m_TextureSlots.push_back(srv);
         return (float)(m_TextureSlots.size() - 1);
     };
-
-    // Get White Texture SRV from Renderer2D or create one?
-    // Renderer2D has a private white texture. We can just use nullptr for slot 0 and handle it in shader?
-    // Or better, let's just assume slot 0 is white.
-    // We need to get a valid SRV for slot 0 if we want to support "no texture" tiles.
-    // For now, let's just use the first texture we find as slot 0 if needed, or rely on the fact that 
-    // we only draw textured tiles or colored tiles.
-    // Actually, Renderer2D binds a white texture to slot 0. We should try to do the same.
-    // But we don't have access to Renderer2D's private data.
-    // We can create a 1x1 white texture here or just ignore it if we always have textures.
-    // The factory game uses textures for everything (grass, ore, etc).
 
     uint32_t vertexOffset = 0;
 
@@ -90,21 +80,21 @@ void TileMap::UpdateMesh()
 
                 float texIndex = getTexIndex(tile.Texture);
                 
-                float xPos = (float)x * m_TileSize;
-                float yPos = (float)y * m_TileSize;
+                // Calculate global position
+                float xPos = (float)(m_OffsetX + x) * m_TileSize;
+                float yPos = (float)(m_OffsetY + y) * m_TileSize;
                 
-                // Quad Vertices
                 TileVertex v[4];
-                v[0].Position = { xPos, yPos, 0.0f }; // BL
+                v[0].Position = { xPos, yPos, 0.0f };
                 v[0].TexCoord = { 0.0f, 0.0f };
                 
-                v[1].Position = { xPos + m_TileSize, yPos, 0.0f }; // BR
+                v[1].Position = { xPos + m_TileSize, yPos, 0.0f };
                 v[1].TexCoord = { 1.0f, 0.0f };
                 
-                v[2].Position = { xPos + m_TileSize, yPos + m_TileSize, 0.0f }; // TR
+                v[2].Position = { xPos + m_TileSize, yPos + m_TileSize, 0.0f };
                 v[2].TexCoord = { 1.0f, 1.0f };
                 
-                v[3].Position = { xPos, yPos + m_TileSize, 0.0f }; // TL
+                v[3].Position = { xPos, yPos + m_TileSize, 0.0f };
                 v[3].TexCoord = { 0.0f, 1.0f };
 
                 for (int i = 0; i < 4; i++)
@@ -130,10 +120,8 @@ void TileMap::UpdateMesh()
 
     m_IndexCount = (uint32_t)m_Indices.size();
 
-    // Upload to GPU
     auto device = Window::GetDevice();
 
-    // Vertex Buffer
     if (m_Vertices.size() > 0)
     {
         D3D11_BUFFER_DESC vbDesc = {};
@@ -147,7 +135,6 @@ void TileMap::UpdateMesh()
         device->CreateBuffer(&vbDesc, &vbData, m_VertexBuffer.ReleaseAndGetAddressOf());
     }
 
-    // Index Buffer
     if (m_Indices.size() > 0)
     {
         D3D11_BUFFER_DESC ibDesc = {};
@@ -164,35 +151,119 @@ void TileMap::UpdateMesh()
     m_Dirty = false;
 }
 
-void TileMap::Render(const glm::mat4& viewProj)
+bool TileMapChunk::IsVisible(const glm::mat4& viewProj)
+{
+    float minX = (float)m_OffsetX * m_TileSize;
+    float minY = (float)m_OffsetY * m_TileSize;
+    float maxX = (float)(m_OffsetX + m_Width) * m_TileSize;
+    float maxY = (float)(m_OffsetY + m_Height) * m_TileSize;
+
+    glm::vec4 corners[4] = {
+        {minX, minY, 0.0f, 1.0f},
+        {maxX, minY, 0.0f, 1.0f},
+        {maxX, maxY, 0.0f, 1.0f},
+        {minX, maxY, 0.0f, 1.0f}
+    };
+
+    bool allLeft = true;
+    bool allRight = true;
+    bool allBottom = true;
+    bool allTop = true;
+
+    for (int i = 0; i < 4; i++)
+    {
+        glm::vec4 clipPos = viewProj * corners[i];
+        
+        if (clipPos.x >= -clipPos.w) allLeft = false;
+        if (clipPos.x <= clipPos.w) allRight = false;
+        if (clipPos.y >= -clipPos.w) allBottom = false;
+        if (clipPos.y <= clipPos.w) allTop = false;
+    }
+
+    return !(allLeft || allRight || allBottom || allTop);
+}
+
+void TileMapChunk::Render(const glm::mat4& viewProj)
 {
     if (m_Dirty) UpdateMesh();
     if (m_IndexCount == 0) return;
 
     auto context = Window::GetContext();
-    Shader* shader = Renderer2D::GetShader();
-
-    if (shader)
-    {
-        shader->Bind();
-        shader->SetMat4("u_ViewProjection", viewProj);
-    }
-
-    // Bind Buffers
+    
     UINT stride = sizeof(TileVertex);
     UINT offset = 0;
     context->IASetVertexBuffers(0, 1, m_VertexBuffer.GetAddressOf(), &stride, &offset);
     context->IASetIndexBuffer(m_IndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
     context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    // Bind Textures
-    // We need to fill the slots up to 32 to avoid warnings or issues, or just bind what we have
-    // Renderer2D binds an array of 32.
     std::vector<ID3D11ShaderResourceView*> slots = m_TextureSlots;
     while (slots.size() < 32) slots.push_back(nullptr);
     
     context->PSSetShaderResources(0, (UINT)slots.size(), slots.data());
 
-    // Draw
     context->DrawIndexed(m_IndexCount, 0, 0);
+}
+
+// --- TileMap Implementation ---
+
+TileMap::TileMap(int width, int height, float tileSize)
+    : m_Width(width), m_Height(height), m_TileSize(tileSize)
+{
+    m_ChunksX = (int)ceil((float)width / m_ChunkWidth);
+    m_ChunksY = (int)ceil((float)height / m_ChunkHeight);
+
+    for (int y = 0; y < m_ChunksY; y++)
+    {
+        for (int x = 0; x < m_ChunksX; x++)
+        {
+            int w = std::min(m_ChunkWidth, width - x * m_ChunkWidth);
+            int h = std::min(m_ChunkHeight, height - y * m_ChunkHeight);
+            m_Chunks.push_back(new TileMapChunk(x * m_ChunkWidth, y * m_ChunkHeight, w, h, tileSize));
+        }
+    }
+}
+
+TileMap::~TileMap()
+{
+    for (auto chunk : m_Chunks)
+        delete chunk;
+    m_Chunks.clear();
+}
+
+void TileMap::SetTile(int x, int y, int layer, void* texturePtr, float r, float g, float b, float a)
+{
+    if (x < 0 || x >= m_Width || y < 0 || y >= m_Height) return;
+
+    int cx = x / m_ChunkWidth;
+    int cy = y / m_ChunkHeight;
+    int chunkIndex = cy * m_ChunksX + cx;
+
+    if (chunkIndex >= 0 && chunkIndex < m_Chunks.size())
+    {
+        int lx = x % m_ChunkWidth;
+        int ly = y % m_ChunkHeight;
+        m_Chunks[chunkIndex]->SetTile(lx, ly, layer, texturePtr, r, g, b, a);
+    }
+}
+
+void TileMap::UpdateMesh()
+{
+    for (auto chunk : m_Chunks)
+        chunk->UpdateMesh();
+}
+
+void TileMap::Render(const glm::mat4& viewProj)
+{
+    Shader* shader = Renderer2D::GetShader();
+    if (shader)
+    {
+        shader->Bind();
+        shader->SetMat4("u_ViewProjection", viewProj);
+    }
+
+    for (auto chunk : m_Chunks)
+    {
+        if (chunk->IsVisible(viewProj))
+            chunk->Render(viewProj);
+    }
 }

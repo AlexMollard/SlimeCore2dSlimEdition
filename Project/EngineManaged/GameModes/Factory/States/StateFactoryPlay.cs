@@ -165,14 +165,17 @@ public class StateFactoryPlay : IGameState<FactoryGame>
         {
             if (gridX >= 0 && gridX < game.World.Width() && gridY >= 0 && gridY < game.World.Height())
             {
-                game.World.Set(gridX, gridY, o =>
+                var tile = game.World[gridX, gridY];
+                if (tile.Structure != FactoryStructure.ConveyorBelt)
                 {
-                    o.Structure = FactoryStructure.ConveyorBelt;
-                });
-                UpdateTile(game, gridX, gridY);
-                Native.TileMap_UpdateMesh(_tileMap);
+                    game.World.Set(gridX, gridY, o =>
+                    {
+                        o.Structure = FactoryStructure.ConveyorBelt;
+                    });
+                    UpdateTile(game, gridX, gridY);
+                    Native.TileMap_UpdateMesh(_tileMap);
+                }
             }
-            SafeNativeMethods.Engine_Log("Holding left click");
         }
 
         // Right click to remove
@@ -180,12 +183,16 @@ public class StateFactoryPlay : IGameState<FactoryGame>
         {
             if (gridX >= 0 && gridX < game.World.Width() && gridY >= 0 && gridY < game.World.Height())
             {
-                game.World.Set(gridX, gridY, o =>
+                var tile = game.World[gridX, gridY];
+                if (tile.Structure != FactoryStructure.None)
                 {
-                    o.Structure = FactoryStructure.None;
-                });
-                UpdateTile(game, gridX, gridY);
-                Native.TileMap_UpdateMesh(_tileMap);
+                    game.World.Set(gridX, gridY, o =>
+                    {
+                        o.Structure = FactoryStructure.None;
+                    });
+                    UpdateTile(game, gridX, gridY);
+                    Native.TileMap_UpdateMesh(_tileMap);
+                }
             }
         }
     }
