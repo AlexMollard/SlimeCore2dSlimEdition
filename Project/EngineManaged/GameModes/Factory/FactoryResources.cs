@@ -17,6 +17,8 @@ public static class FactoryResources
 
     public static IntPtr TexConveyor;
 
+    public static IntPtr TexSheep;
+
     public static void Load()
     {
         // Assuming textures are in Textures/Factory/ relative to the executable or content root
@@ -32,6 +34,8 @@ public static class FactoryResources
         TexOreGold = NativeMethods.Resources_LoadTexture("ore_gold", "Textures/Factory/ore_gold.png");
 
         TexConveyor = NativeMethods.Resources_LoadTexture("conveyor", "Textures/Factory/conveyor.png");
+
+        TexConveyor = NativeMethods.Resources_LoadTexture("conveyor", "Textures/Factory/Fauna/sheep.png");
     }
 
     public static IntPtr GetTerrainTexture(SlimeCore.GameModes.Factory.World.FactoryTerrain type)
