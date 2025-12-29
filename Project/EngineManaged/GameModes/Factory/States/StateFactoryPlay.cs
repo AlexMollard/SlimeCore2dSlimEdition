@@ -63,7 +63,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>
             game.World.Zoom = Math.Clamp(game.World.Zoom, 0.05f, 5.0f);
         }
 
-        if (Input.GetMouseDown(Input.MouseButton.Left))
+        if (Input.IsMouseDown(Input.MouseButton.Left))
         {
             var (mx, my) = Input.GetMouseToWorld();
             
@@ -79,10 +79,11 @@ public class StateFactoryPlay : IGameState<FactoryGame>
                     o.Structure = FactoryStructure.ConveyorBelt;
                 });
             }
+            SafeNativeMethods.Engine_Log("Holding left click");
         }
         
         // Right click to remove
-        if (Input.GetMouseDown(Input.MouseButton.Right))
+        if (Input.IsMouseDown(Input.MouseButton.Right))
         {
             var (mx, my) = Input.GetMouseToWorld();
             var gridX = (int)Math.Round(mx / game.World.Zoom + _cam.X);
