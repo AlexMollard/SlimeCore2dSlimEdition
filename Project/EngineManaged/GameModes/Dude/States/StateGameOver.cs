@@ -1,10 +1,10 @@
-using System;
-using EngineManaged.Scene;
-using EngineManaged.UI;
 using EngineManaged;
 using EngineManaged.Numeric;
+using EngineManaged.Scene;
+using EngineManaged.UI;
 using GameModes.Dude;
 using SlimeCore.Source.Core;
+using System;
 
 namespace SlimeCore.GameModes.Dude.States;
 
@@ -157,5 +157,9 @@ public class StateGameOver : IGameState<DudeGame>
         // Animate Button WITH the panel
         _retryBtn.SetPosition(0, panelY - 3.5f);
 
+    }
+
+    public void Draw(DudeGame game)
+    {
     }
 }

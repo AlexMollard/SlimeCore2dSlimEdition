@@ -1,6 +1,6 @@
-﻿using System;
+﻿using EngineManaged.Numeric;
+using System;
 using System.Collections.Generic;
-using EngineManaged.Numeric;
 
 namespace GameModes.Dude;
 

@@ -1,4 +1,3 @@
-using EngineManaged.Scene;
 using System;
 using System.Runtime.InteropServices;
 
@@ -10,6 +9,8 @@ internal static partial class Native
     [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
     internal static extern ulong Entity_Create();
 
+    [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+    internal static extern void Entity_Destroy(ulong id);
 
     [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
     internal static extern bool Entity_IsAlive(ulong id);

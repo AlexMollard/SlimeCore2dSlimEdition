@@ -1,9 +1,6 @@
 using EngineManaged.Numeric;
 using EngineManaged.Scene;
-using SlimeCore.GameModes.Factory.World;
-using SlimeCore.Source.Core;
 using SlimeCore.Source.Input;
-using System;
 
 namespace SlimeCore.GameModes.Factory.Actors;
 
@@ -27,7 +24,7 @@ public class Player
     public void Update(float dt)
     {
         HandleInput(dt);
-        
+
         var transform = Entity.GetComponent<TransformComponent>();
         transform.Position = (Position.X, Position.Y);
     }

@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "Game2D.h"
+#include "Scripting/DotNetHost.h"
 #include "gtc/matrix_transform.hpp"
 #include "Core/Window.h"
 
@@ -66,6 +67,9 @@ void Game2D::Draw()
 	// -----------------------------------------------------------
 	// Reset stats for the new frame
 	Renderer2D::ResetStats();
+
+	// Draw Managed World (TileMap, etc)
+	DotNetHost::GetInstance()->CallDraw();
 
 	// Render Scene Graph
 	if (m_scene)

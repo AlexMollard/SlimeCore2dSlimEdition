@@ -4,8 +4,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
-using System.Text;
-using System.Threading;
 
 namespace SlimeCore.Source.World.Grid;
 
@@ -27,7 +25,7 @@ public class GridSystem<TEnum, TileOptions, Tile>
 
     [NotMapped]
     public ConcurrentDictionary<Vec2i, Tile> Grid { get; set; }
-    
+
     /// <summary>
     /// 
     /// </summary>
@@ -40,7 +38,8 @@ public class GridSystem<TEnum, TileOptions, Tile>
         for (var w = 0; w < width; w++)
             for (var h = 0; h < height; h++)
             {
-                Grid.TryAdd(new Vec2i(w, h), new Tile() { 
+                Grid.TryAdd(new Vec2i(w, h), new Tile()
+                {
                     PositionX = w,
                     PositionY = h,
                     Type = init_type
@@ -111,7 +110,7 @@ public class GridSystem<TEnum, TileOptions, Tile>
             }
             else
             {
-                var toRemoveHeight= Grid.Keys.Where(k => k.Y >= Width() - count).ToArray();
+                var toRemoveHeight = Grid.Keys.Where(k => k.Y >= Width() - count).ToArray();
                 foreach (var Ytile in toRemoveHeight)
                 {
                     Grid.Remove(Ytile, out _);

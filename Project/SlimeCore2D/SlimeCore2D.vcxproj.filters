@@ -108,7 +108,16 @@
     <ClCompile Include="Engine\Scripting\ExportText.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Rendering\TileMap.cpp">
+      <Filter>Source Files\EngineCore</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Scripting\ExportTileMap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Scripting\ExportUI.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Scripting\ExportRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Entities\Quad.cpp">
@@ -221,7 +230,16 @@
     <ClInclude Include="Engine\Scripting\ExportText.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Rendering\TileMap.h">
+      <Filter>Header Files\EngineCore</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Scripting\ExportTileMap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Scripting\ExportUI.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Scripting\ExportRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

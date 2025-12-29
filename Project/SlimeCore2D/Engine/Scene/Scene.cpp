@@ -379,9 +379,23 @@ void Scene::SetGravity(glm::vec2 gravity)
 
 void Scene::Render(Camera& camera)
 {
+	// Sort entities by Z-order (Back-to-Front) to handle transparency correctly
+	// In our LH_ZO projection (Near=10, Far=-10), smaller Z is "farther" (Depth 1)
+	// So we sort Ascending: -10 (Far) -> 10 (Near)
+	std::vector<Entity> sortedEntities = m_ActiveEntities;
+	std::sort(sortedEntities.begin(), sortedEntities.end(), [&](Entity a, Entity b) {
+		float zA = 0.0f;
+		float zB = 0.0f;
+		if (m_Registry.HasComponent<TransformComponent>(a))
+			zA = m_Registry.GetComponent<TransformComponent>(a).Position.z;
+		if (m_Registry.HasComponent<TransformComponent>(b))
+			zB = m_Registry.GetComponent<TransformComponent>(b).Position.z;
+		return zA < zB;
+	});
+
 	Renderer2D::BeginScene(camera);
 
-	for (Entity entity : m_ActiveEntities)
+	for (Entity entity : sortedEntities)
 	{
 		if (m_Registry.HasComponent<TransformComponent>(entity) && 
 			m_Registry.HasComponent<SpriteComponent>(entity))

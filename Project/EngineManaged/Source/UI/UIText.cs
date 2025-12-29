@@ -24,19 +24,19 @@ public readonly struct UIText
     }
 
     public void Anchor(float x, float y) => NativeMethods.UI_SetAnchor(Id, x, y);
-    
+
 
     public void Color(float r, float g, float b) => NativeMethods.UI_SetColor(Id, r, g, b);
-    
+
 
     public void IsVisible(bool val) => NativeMethods.UI_SetVisible(Id, val);
-    
+
 
     public void Layer(int val) => NativeMethods.UI_SetLayer(Id, val);
-    
+
 
     public void UseScreenSpace(bool val) => NativeMethods.UI_SetUseScreenSpace(Id, val);
-    
+
 
     /// <summary>
     /// Gets the width and height of the text in world units.

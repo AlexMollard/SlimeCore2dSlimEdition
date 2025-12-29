@@ -22,8 +22,8 @@ public:
 		ClampToBorder
 	};
 
-	Texture(const std::string& path, Filter filter = Filter::Linear, Wrap wrap = Wrap::Repeat);
-	Texture(uint32_t width, uint32_t height, DXGI_FORMAT format = DXGI_FORMAT_R8G8B8A8_UNORM, Filter filter = Filter::Linear, Wrap wrap = Wrap::ClampToEdge);
+	Texture(const std::string& path, Filter filter = Filter::Nearest, Wrap wrap = Wrap::Repeat);
+	Texture(uint32_t width, uint32_t height, DXGI_FORMAT format = DXGI_FORMAT_R8G8B8A8_UNORM, Filter filter = Filter::Nearest, Wrap wrap = Wrap::ClampToEdge);
 	~Texture();
 
 	Texture(const Texture&) = delete;

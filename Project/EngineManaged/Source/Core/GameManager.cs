@@ -21,6 +21,14 @@ public static class GameManager
         }
     }
 
+    public static void DrawCurrentMode()
+    {
+        if (_currentMode != null)
+        {
+            _currentMode.Draw();
+        }
+    }
+
     /// <summary>
     /// Closes the currently active mode, releasing any associated resources.
     /// </summary>

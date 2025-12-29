@@ -1,5 +1,3 @@
-using System;
-
 namespace SlimeCore
 {
     public static class Logger

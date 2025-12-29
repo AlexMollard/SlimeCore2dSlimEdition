@@ -4,7 +4,6 @@ using EngineManaged.UI;
 using SlimeCore.GameModes.Snake.World;
 using SlimeCore.Source.Core;
 using System;
-using System.Collections.Generic;
 
 namespace SlimeCore.GameModes.Snake.States;
 
@@ -15,14 +14,14 @@ public class StateSnakeOptions : IGameState<SnakeGame>
     private float panelBGWidth = 14.0f;
     private UIText _titleLabel;
     private UIText _titleLabelShadow;
-    
+
     private UIButton? _zoomBtn;
     private UIButton? _terrainBtn;
     private UIButton? _worldSizeBtn;
     private UIButton? _backBtn;
-    
+
     private float _animTimer;
-    
+
     public void Enter(SnakeGame game)
     {
         // --- THEME COLORS ---
@@ -38,7 +37,7 @@ public class StateSnakeOptions : IGameState<SnakeGame>
         _panelBg = SceneFactory.CreateQuad(0, -15, panelBGWidth, 10.0f, bgR, bgG, bgB, layer: 92);
         var bgTransform = _panelBg.GetComponent<TransformComponent>();
         bgTransform.Anchor = (0.5f, 0.5f);
-        
+
         // Title Shadow
         _titleLabelShadow = UIText.Create("OPTIONS", 2, 0.1f, 6.0f - 0.1f);
         _titleLabelShadow.Color(0, 0, 0);
@@ -59,9 +58,9 @@ public class StateSnakeOptions : IGameState<SnakeGame>
                 game.Settings.InitialZoom = 0.8f;
             else
                 game.Settings.InitialZoom = 0.4f;
-                
+
             _zoomBtn.Label.Text($"Zoom: {game.Settings.InitialZoom:0.0}");
-            game.InitializeGame(); 
+            game.InitializeGame();
         };
 
         // --- TERRAIN BUTTON ---
@@ -73,7 +72,7 @@ public class StateSnakeOptions : IGameState<SnakeGame>
             var current = (int)game.Settings.BaseTerrain;
             var next = (current + 1) % Enum.GetValues<SnakeTerrain>().Length;
             game.Settings.BaseTerrain = (SnakeTerrain)next;
-            
+
             _terrainBtn.Label.Text($"Terrain: {game.Settings.BaseTerrain}");
             game.InitializeGame();
         };
@@ -99,7 +98,7 @@ public class StateSnakeOptions : IGameState<SnakeGame>
                 game.Settings.WorldWidth = 240;
                 game.Settings.WorldHeight = 240;
             }
-            
+
             _worldSizeBtn.Label.Text($"Size: {game.Settings.WorldWidth}x{game.Settings.WorldHeight}");
             game.InitializeGame();
         };
@@ -142,5 +141,9 @@ public class StateSnakeOptions : IGameState<SnakeGame>
         _terrainBtn.SetPosition(0, panelY + 0.5f);
         _worldSizeBtn.SetPosition(0, panelY - 1.5f);
         _backBtn.SetPosition(0, panelY - 3.5f);
+    }
+
+    public void Draw(SnakeGame game)
+    {
     }
 }

@@ -1,11 +1,7 @@
 ﻿using SlimeCore.Source.Core;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SlimeCore.Source.World.Actors;
 
@@ -18,20 +14,20 @@ public class ActorManager<TEnum, TGameMode>
     /// PLANNED: Background routines may use this to query the save state grid system
     /// </summary>
     public Guid GridReference { get; set; }
-    
+
     /// <summary>
     /// Configurable action budget per tick
     /// </summary>
     public int ActBudget { get; set; }
-    
+
     /// <summary>
     /// Short fire required preparation functions or spawn functions
     /// </summary>
     private Action<TGameMode, float>[] RequisiteRoutines { get; init; } = [];
-    
+
 
     private readonly Dictionary<TEnum, HashSet<Actor<TEnum, TGameMode>>> _byType = new();
-    
+
     private readonly HashSet<Actor<TEnum, TGameMode>> _all = new();
 
     private PriorityQueue<Actor<TEnum, TGameMode>, int> _active = new();
@@ -49,7 +45,7 @@ public class ActorManager<TEnum, TGameMode>
         {
             routine.Invoke(mode, deltaTime);
         }
-        
+
         var actBudget = ActBudget;
         while (actBudget-- > 0 && _active.Count > 0)
         {

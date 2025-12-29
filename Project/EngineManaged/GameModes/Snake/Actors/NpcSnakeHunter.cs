@@ -1,14 +1,7 @@
 using EngineManaged.Numeric;
 using EngineManaged.Scene;
-using GameModes.Dude;
-using SlimeCore.GameModes.Snake.World;
-using SlimeCore.Source.Core;
 using SlimeCore.Source.World.Actors;
-using SlimeCore.Source.World.Grid;
 using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SlimeCore.GameModes.Snake.Actors;
 
@@ -27,7 +20,7 @@ public class NpcSnakeHunter : Actor<SnakeActors, SnakeGame>
     public required Entity Entity { get; set; }
 
     public HunterType Type { get; set; }
-    
+
     public override SnakeActors Kind => SnakeActors.SnakeHunter;
 
     protected override float ActionInterval =>
@@ -94,7 +87,7 @@ public class NpcSnakeHunter : Actor<SnakeActors, SnakeGame>
 
         PulseIterator = 0;
     }
-    
+
     public Vec2 PathFindToPlayer(SnakeGame game)
     {
         var bestDir = Vec2i.Zero;

@@ -4,7 +4,6 @@ using EngineManaged.UI;
 using SlimeCore.Source.Core;
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace SlimeCore.GameModes.Snake.States;
 
@@ -19,7 +18,7 @@ public class StateSnakeMenu : IGameState<SnakeGame>
     private UIButton? _optionsBtn;
     private float _animTimer;
     private List<Entity> _decorations = new();
-    
+
     public void Enter(SnakeGame game)
     {
         // --- THEME COLORS ---
@@ -36,7 +35,7 @@ public class StateSnakeMenu : IGameState<SnakeGame>
         _panelBg = SceneFactory.CreateQuad(0, -15, panelBGWidth, 10.0f, bgR, bgG, bgB, layer: 92);
         var bgTransform = _panelBg.GetComponent<TransformComponent>();
         bgTransform.Anchor = (0.5f, 0.5f);
-        
+
         // Game Label Shadow
         _gameLabelShadow = UIText.Create("SNAKE", 2, 0.1f, 6.0f - 0.1f);
         _gameLabelShadow.Color(0, 0, 0);
@@ -76,7 +75,7 @@ public class StateSnakeMenu : IGameState<SnakeGame>
             var seg = SceneFactory.CreateQuad(0, -15, 0.8f, 0.8f, 0.4f, 0.8f, 0.4f, layer: 93);
             _decorations.Add(seg);
         }
-        
+
         // Add an "Apple" decoration
         var apple = SceneFactory.CreateQuad(0, -15, 0.8f, 0.8f, 0.9f, 0.1f, 0.1f, layer: 93);
         _decorations.Add(apple);
@@ -90,8 +89,8 @@ public class StateSnakeMenu : IGameState<SnakeGame>
         _gameLabelShadow.Destroy();
         _startBtn?.Destroy();
         _optionsBtn?.Destroy();
-        
-        foreach(var d in _decorations) d.Destroy();
+
+        foreach (var d in _decorations) d.Destroy();
         _decorations.Clear();
     }
 
@@ -118,12 +117,12 @@ public class StateSnakeMenu : IGameState<SnakeGame>
             if (i < _decorations.Count - 1) // Ensure we don't grab the apple
             {
                 var xOffset = -3.0f + (i * 1.1f);
-                var yOffset = 2.5f + MathF.Sin(_animTimer * 5.0f + i) * 0.2f; 
+                var yOffset = 2.5f + MathF.Sin(_animTimer * 5.0f + i) * 0.2f;
                 var t = _decorations[i].GetComponent<TransformComponent>();
                 t.Position = (xOffset, panelY + yOffset);
             }
         }
-        
+
         // Apple position
         if (_decorations.Count > 0)
         {
@@ -131,5 +130,9 @@ public class StateSnakeMenu : IGameState<SnakeGame>
             var t = apple.GetComponent<TransformComponent>();
             t.Position = (3.0f, panelY + 2.5f);
         }
+    }
+
+    public void Draw(SnakeGame game)
+    {
     }
 }

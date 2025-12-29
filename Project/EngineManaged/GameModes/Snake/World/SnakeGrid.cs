@@ -1,9 +1,6 @@
 ﻿using EngineManaged.Scene;
 using SlimeCore.Source.World.Grid;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text;
 
 namespace SlimeCore.GameModes.Snake.World;
 

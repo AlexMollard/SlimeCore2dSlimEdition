@@ -189,7 +189,10 @@
     <ClCompile Include="Engine\Scripting\ExportScene.cpp" />
     <ClCompile Include="Engine\Scripting\ExportParticles.cpp" />
     <ClCompile Include="Engine\Scripting\ExportText.cpp" />
+    <ClCompile Include="Engine\Rendering\TileMap.cpp" />
+    <ClCompile Include="Engine\Scripting\ExportTileMap.cpp" />
     <ClCompile Include="Engine\Scripting\ExportUI.cpp" />
+    <ClCompile Include="Engine\Scripting\ExportRenderer.cpp" />
     <ClCompile Include="Engine\Physics\CollisionManager.cpp" />
     <ClCompile Include="Engine\Core\Input.cpp" />
     <ClCompile Include="Engine\Rendering\Quad.cpp" />
@@ -226,7 +229,10 @@
     <ClInclude Include="Engine\Scripting\ExportScene.h" />
     <ClInclude Include="Engine\Scripting\ExportParticles.h" />
     <ClInclude Include="Engine\Scripting\ExportText.h" />
+    <ClInclude Include="Engine\Rendering\TileMap.h" />
+    <ClInclude Include="Engine\Scripting\ExportTileMap.h" />
     <ClInclude Include="Engine\Scripting\ExportUI.h" />
+    <ClInclude Include="Engine\Scripting\ExportRenderer.h" />
     <ClInclude Include="Engine\Physics\CollisionManager.h" />
     <ClInclude Include="Engine\Core\Input.h" />
     <ClInclude Include="Engine\Core\Keycode.h" />

@@ -1,12 +1,12 @@
-using System;
 using EngineManaged;
-using EngineManaged.Scene;
-using EngineManaged.UI;
 using EngineManaged.Numeric;
 using EngineManaged.Rendering;
-using SlimeCore.Source.Input;
+using EngineManaged.Scene;
+using EngineManaged.UI;
 using GameModes.Dude;
 using SlimeCore.Source.Core;
+using SlimeCore.Source.Input;
+using System;
 
 namespace SlimeCore.GameModes.Dude.States;
 
@@ -57,6 +57,10 @@ public class StatePlaying : IGameState<DudeGame>
         HandleHaters(game, dt);
         HandleCollectables(game, dt);
         HandleGems(game, dt);
+    }
+
+    public void Draw(DudeGame game)
+    {
     }
 
     private void UpdateAmbientParticles(DudeGame game, float dt)

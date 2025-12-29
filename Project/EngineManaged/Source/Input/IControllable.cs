@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace SlimeCore.Source.Input;
+﻿namespace SlimeCore.Source.Input;
 /// <summary>
 /// An Entity/Object which can recieve input commands
 /// </summary>

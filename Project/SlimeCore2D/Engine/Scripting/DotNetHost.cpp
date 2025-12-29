@@ -102,8 +102,16 @@ static bool load_hostfxr()
 	return true;
 }
 
+DotNetHost* DotNetHost::s_Instance = nullptr;
+
+DotNetHost* DotNetHost::GetInstance()
+{
+	return s_Instance;
+}
+
 bool DotNetHost::Init()
 {
+	s_Instance = this;
 	const std::wstring& runtimeConfigPath = GetRuntimeConfigPath();
 
 	if (!std::filesystem::exists(runtimeConfigPath))
@@ -172,6 +180,15 @@ bool DotNetHost::Init()
 		return false;
 	}
 
+	// Get ScriptRuntime_Draw
+	rc = load_assembly_and_get_function_pointer(managedDllPath.c_str(), L"SlimeCore.GameHost, EngineManaged", L"Draw", UNMANAGEDCALLERSONLY_METHOD, nullptr, (void**) &m_draw);
+
+	if (rc != 0 || !m_draw)
+	{
+		LogRc("load_assembly_and_get_function_pointer draw", rc);
+		return false;
+	}
+
 	return true;
 }
 
@@ -181,6 +198,7 @@ void DotNetHost::Shutdown()
 	// Typically you let process shutdown handle it.
 	m_init = nullptr;
 	m_update = nullptr;
+	m_draw = nullptr;
 }
 
 void DotNetHost::CallInit()
@@ -193,4 +211,10 @@ void DotNetHost::CallUpdate(float dt)
 {
 	if (m_update)
 		m_update(dt);
+}
+
+void DotNetHost::CallDraw()
+{
+	if (m_draw)
+		m_draw();
 }

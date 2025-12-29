@@ -1,8 +1,5 @@
-using EngineManaged;
-using EngineManaged.Scene;
 using EngineManaged.UI;
 using SlimeCore.Source.Core;
-using System;
 
 namespace SlimeCore.GameModes.Factory.States;
 
@@ -34,6 +31,10 @@ public class StateFactoryMenu : IGameState<FactoryGame>
     }
 
     public void Update(FactoryGame game, float dt)
+    {
+    }
+
+    public void Draw(FactoryGame game)
     {
     }
 }

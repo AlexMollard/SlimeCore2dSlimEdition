@@ -21,6 +21,11 @@ namespace SlimeCore.Source.Core
         void Update(float dt);
 
         /// <summary>
+        /// Called every frame during the draw phase.
+        /// </summary>
+        void Draw();
+
+        /// <summary>
         /// Called when switching to a different mode or closing the engine.
         /// Use this to destroy entities, clear UI, and unsubscribe from events.
         /// </summary>

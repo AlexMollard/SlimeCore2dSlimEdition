@@ -1,15 +1,10 @@
 ﻿using EngineManaged.Numeric;
 using EngineManaged.Scene;
-using SlimeCore.GameModes.Snake.World;
-using SlimeCore.Source.Core;
 using SlimeCore.Source.Input;
 using SlimeCore.Source.World.Actors;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace SlimeCore.GameModes.Snake.Actors;
 
@@ -22,7 +17,7 @@ public class PlayerSnake : Actor<SnakeActors, SnakeGame>, IControllable
     public override SnakeActors Kind => SnakeActors.Snake;
 
     public required float HeadSize { get; set; }
-    
+
     public float SpeedBoostTimer { get; set; }
 
     /// <summary>
@@ -62,7 +57,7 @@ public class PlayerSnake : Actor<SnakeActors, SnakeGame>, IControllable
     [SetsRequiredMembers]
     public PlayerSnake(float headSize)
     {
-       HeadSize = headSize;
+        HeadSize = headSize;
     }
 
     public void Initialize()

@@ -15,7 +15,7 @@ public sealed class FactoryGame : GameMode<FactoryGame>, IGameMode, IDisposable
     // Viewport settings
     public const int VIEW_W = 40;
     public const int VIEW_H = 30;
-    
+
     public const int MAX_VIEW_W = 200;
     public const int MAX_VIEW_H = 150;
 
@@ -44,6 +44,11 @@ public sealed class FactoryGame : GameMode<FactoryGame>, IGameMode, IDisposable
     public override void Update(float dt)
     {
         if (_currentState != null) _currentState.Update(this, dt);
+    }
+
+    public override void Draw()
+    {
+        if (_currentState != null) _currentState.Draw(this);
     }
 
     public void Dispose()

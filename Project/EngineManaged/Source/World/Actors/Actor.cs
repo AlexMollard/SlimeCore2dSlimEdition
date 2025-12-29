@@ -1,11 +1,7 @@
 ﻿using EngineManaged.Numeric;
 using SlimeCore.Source.Core;
-using SlimeCore.Source.World.Grid;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SlimeCore.Source.World.Actors;
 /// <summary>
@@ -41,7 +37,7 @@ public abstract class Actor<TEnum, TGameMode>
     public abstract bool TakeAction(TGameMode mode, float deltaTime);
 
     public abstract void Destroy();
-    
+
     protected static int ToPriority(TEnum value)
         => Convert.ToInt32(value);
 

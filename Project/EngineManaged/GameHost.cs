@@ -1,6 +1,4 @@
-﻿using GameModes.Dude;
-using SlimeCore.GameModes.Factory;
-using SlimeCore.GameModes.Snake;
+﻿using SlimeCore.GameModes.Factory;
 using SlimeCore.Source.Core;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -27,5 +25,12 @@ public static class GameHost
 
         // Update Game
         GameManager.UpdateCurrentMode(dt);
+    }
+
+    // The C++ Engine calls this every frame during Draw phase
+    [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
+    public static void Draw()
+    {
+        GameManager.DrawCurrentMode();
     }
 }

@@ -5,11 +5,7 @@ using SlimeCore.GameModes.Snake.Actors;
 using SlimeCore.GameModes.Snake.World;
 using SlimeCore.Source.Core;
 using SlimeCore.Source.Input;
-using SlimeCore.Source.World.Actors;
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Text;
 
 namespace SlimeCore.GameModes.Snake.States;
 
@@ -31,7 +27,7 @@ public class StateSnakeOverworld : IGameState<SnakeGame>
     // Food
     private static int _foodCount;
     private const int MAX_FOOD = 25;
-    
+
     private enum FoodType { None, Apple, Gold, Plum, Chili }
     private FoodType[][]? _foodMap { get; set; }
     public void Enter(SnakeGame game)
@@ -135,11 +131,15 @@ public class StateSnakeOverworld : IGameState<SnakeGame>
         // Wrap camera position cleanly
         game._cam.X = (game._cam.X % game._world.Width() + game._world.Width()) % game._world.Width();
         game._cam.Y = (game._cam.Y % game._world.Height() + game._world.Height()) % game._world.Height();
+    }
 
+    public void Draw(SnakeGame game)
+    {
+        var interp = _accum / _tick;
         Render(game, interp);
     }
-    
-    
+
+
 
     private void Render(SnakeGame game, float interp)
     {

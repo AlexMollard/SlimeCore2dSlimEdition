@@ -1,11 +1,11 @@
-using System;
-using System.Collections.Generic;
-using EngineManaged.Scene;
-using EngineManaged.UI;
 using EngineManaged.Numeric;
 using EngineManaged.Rendering;
+using EngineManaged.Scene;
+using EngineManaged.UI;
 using SlimeCore.GameModes.Dude.States;
 using SlimeCore.Source.Core;
+using System;
+using System.Collections.Generic;
 
 namespace GameModes.Dude;
 

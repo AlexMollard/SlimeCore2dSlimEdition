@@ -3,6 +3,7 @@ using SlimeCore.Source.World.Grid;
 using System;
 
 namespace SlimeCore.GameModes.Snake.World;
+
 public enum SnakeTerrain : int
 {
     Grass,

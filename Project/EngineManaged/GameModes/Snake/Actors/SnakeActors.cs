@@ -1,7 +1,5 @@
 ﻿using SlimeCore.Source.World.Actors;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace SlimeCore.GameModes.Snake.Actors;
 

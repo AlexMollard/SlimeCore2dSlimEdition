@@ -1,8 +1,5 @@
 ﻿using EngineManaged.Numeric;
-using GameModes.Dude;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace SlimeCore.GameModes.Snake.Actors;
 

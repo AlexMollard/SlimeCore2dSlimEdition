@@ -1,5 +1,4 @@
 using EngineManaged;
-using EngineManaged.Numeric;
 using EngineManaged.Scene;
 using EngineManaged.UI;
 using GameModes.Dude;
@@ -107,6 +106,10 @@ public class StateLevelUp : IGameState<DudeGame>
                 return;
             }
         }
+    }
+
+    public void Draw(DudeGame game)
+    {
     }
 
     private void CreateSidebar(DudeGame game)

@@ -1,7 +1,4 @@
 ﻿using SlimeCore.GameModes.Snake.World;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace SlimeCore.GameModes.Snake;
 
@@ -10,7 +7,7 @@ public class SnakeSettings
     /// <summary>
     /// Initial zoom level for the snake game, AKA cell size
     /// </summary>
-    public float InitialZoom { get; set; }= 0.4f;
+    public float InitialZoom { get; set; } = 0.4f;
     /// <summary>
     /// Height of the snake world maps in cells
     /// </summary>

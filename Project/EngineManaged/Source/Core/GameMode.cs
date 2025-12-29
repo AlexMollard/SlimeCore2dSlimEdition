@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace SlimeCore.Source.Core;
 /// <summary>
@@ -26,10 +24,18 @@ public abstract class GameMode<TGameMode> : IGameMode
             _currentState.Enter((TGameMode)this);
         }
     }
-    
+
     public abstract void Init();
 
     public abstract void Update(float dt);
+
+    public virtual void Draw()
+    {
+        if (_currentState != null)
+        {
+            _currentState.Draw((TGameMode)this);
+        }
+    }
 
     public abstract void Shutdown();
 

@@ -124,7 +124,9 @@ SLIME_EXPORT void __cdecl Entity_SetLayer(EntityId id, int layer)
 	auto& reg = Scene::GetActiveScene()->GetRegistry();
 	if (auto* t = reg.TryGetComponent<TransformComponent>((Entity)id))
 	{
-		t->Position.z = layer * 0.1f;
+		// Use very small step to keep within [-10, 10] range easily
+		// Layer 100 -> Z=0.01f.
+		t->Position.z = layer * 0.0001f;
 	}
 	if (auto* s = reg.TryGetComponent<SpriteComponent>((Entity)id))
 	{

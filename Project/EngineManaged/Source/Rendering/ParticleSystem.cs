@@ -1,6 +1,6 @@
+using EngineManaged.Numeric;
 using System;
 using System.Runtime.InteropServices;
-using EngineManaged.Numeric;
 
 namespace EngineManaged.Rendering
 {

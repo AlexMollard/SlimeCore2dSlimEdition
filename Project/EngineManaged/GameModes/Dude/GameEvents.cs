@@ -1,5 +1,5 @@
-﻿using System;
-using EngineManaged.Numeric;
+﻿using EngineManaged.Numeric;
+using System;
 
 namespace GameModes.Dude;
 
