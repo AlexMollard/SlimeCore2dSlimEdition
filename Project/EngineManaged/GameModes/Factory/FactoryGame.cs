@@ -1,3 +1,4 @@
+using SlimeCore.GameModes.Factory.Actors;
 using SlimeCore.GameModes.Factory.States;
 using SlimeCore.GameModes.Factory.World;
 using SlimeCore.Source.Core;
@@ -11,6 +12,8 @@ public sealed class FactoryGame : GameMode<FactoryGame>, IGameMode, IDisposable
     public override Random? Rng { get; set; }
     public FactorySettings Settings { get; set; }
     public FactoryWorld? World { get; set; }
+
+    public FactoryActorManager? ActorManager { get; set; }
 
     // Viewport settings
     public const int VIEW_W = 40;
@@ -29,6 +32,7 @@ public sealed class FactoryGame : GameMode<FactoryGame>, IGameMode, IDisposable
     public void InitializeGame()
     {
         World = new FactoryWorld(Settings.WorldWidth, Settings.WorldHeight, FactoryTerrain.Grass, Settings.InitialZoom);
+        ActorManager = new FactoryActorManager(Settings.ActorBudget);
     }
 
     public override void Init()

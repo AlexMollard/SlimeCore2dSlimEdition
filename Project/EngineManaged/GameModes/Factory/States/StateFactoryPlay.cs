@@ -61,6 +61,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>
 
         // Create player at center
         _player = new Player(_cam);
+        game.ActorManager?.Register(_player);
     }
 
     private void UpdateTile(FactoryGame game, int x, int y)
@@ -108,13 +109,13 @@ public class StateFactoryPlay : IGameState<FactoryGame>
         }
 
         game.World?.Destroy();
-        _player?.Destroy();
+        game.ActorManager?.Destroy();
     }
 
     public void Update(FactoryGame game, float dt)
     {
-        _player?.Update(dt);
-
+        game.ActorManager?.Tick(game, dt);
+        
         // Camera follows player
         if (_player != null)
         {
@@ -160,7 +161,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>
             Native.Entity_SetRender(_cursorEntity, inBounds);
         }
 
-        if (Input.GetMouseDown(Input.MouseButton.Left))
+        if (Input.IsMouseDown(Input.MouseButton.Left))
         {
             if (gridX >= 0 && gridX < game.World.Width() && gridY >= 0 && gridY < game.World.Height())
             {
@@ -171,10 +172,11 @@ public class StateFactoryPlay : IGameState<FactoryGame>
                 UpdateTile(game, gridX, gridY);
                 Native.TileMap_UpdateMesh(_tileMap);
             }
+            SafeNativeMethods.Engine_Log("Holding left click");
         }
 
         // Right click to remove
-        if (Input.GetMouseDown(Input.MouseButton.Right))
+        if (Input.IsMouseDown(Input.MouseButton.Right))
         {
             if (gridX >= 0 && gridX < game.World.Width() && gridY >= 0 && gridY < game.World.Height())
             {

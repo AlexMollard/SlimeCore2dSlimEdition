@@ -1,13 +1,18 @@
 using EngineManaged.Numeric;
 using EngineManaged.Scene;
 using SlimeCore.Source.Input;
+using SlimeCore.Source.World.Actors;
+using System;
 
 namespace SlimeCore.GameModes.Factory.Actors;
 
-public class Player
+public class Player : Actor<FactoryActors, FactoryGame>, IControllable
 {
+    public override FactoryActors Kind => FactoryActors.Player;
+
+    protected override float ActionInterval => 0.0f;
+
     public Entity Entity { get; private set; }
-    public Vec2 Position { get; set; }
     public float Speed { get; set; } = 5.0f;
     public float Size { get; set; } = 0.5f;
 
@@ -43,9 +48,24 @@ public class Player
             Position += move * Speed * dt;
         }
     }
+    public void RecieveInput(bool IgnoreInput)
+    {
+        throw new NotImplementedException();
+    }
 
-    public void Destroy()
+    public override bool TakeAction(FactoryGame mode, float deltaTime)
+    {
+        HandleInput(deltaTime);
+
+        var transform = Entity.GetComponent<TransformComponent>();
+        transform.Position = (Position.X, Position.Y);
+        return true;
+    }
+
+    public override void Destroy()
     {
         Entity.Destroy();
     }
+
+    
 }
