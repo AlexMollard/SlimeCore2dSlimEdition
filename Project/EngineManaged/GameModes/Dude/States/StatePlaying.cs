@@ -82,10 +82,10 @@ public class StatePlaying : IGameState<DudeGame>
 
     private void UpdateXPBar(DudeGame game, float dt)
     {
-        var targetWidth = (game.XP / game.XPToNextLevel) * 28.0f;
+        float targetWidth = (game.XP / game.XPToNextLevel) * 28.0f;
         if (targetWidth > 28) targetWidth = 28;
         var (curW, curH) = game.XPBarFill.Size;
-        var newW = Ease.Lerp(curW, targetWidth, 5.0f * dt);
+        float newW = Ease.Lerp(curW, targetWidth, 5.0f * dt);
         game.XPBarFill.Size = (newW, 0.6f);
     }
 
@@ -103,7 +103,7 @@ public class StatePlaying : IGameState<DudeGame>
         if (game.ShieldTimer > 0)
         {
             game.ShieldTimer -= dt;
-            var flash = 0.5f + 0.5f * MathF.Sin(game.TimeAlive * 25);
+            float flash = 0.5f + 0.5f * MathF.Sin(game.TimeAlive * 25);
             var dudeSprite = game.Dude.GetComponent<SpriteComponent>();
             dudeSprite.Color = (flash, flash, flash);
             dudeSprite.IsVisible = game.ShieldTimer > 1.0f || (int)(game.TimeAlive * 15) % 2 == 0;
@@ -163,15 +163,15 @@ public class StatePlaying : IGameState<DudeGame>
         // Rotate towards movement direction
         if (game.DudeVel.LengthSquared() > 0.1f)
         {
-            var angle = MathF.Atan2(game.DudeVel.Y, game.DudeVel.X) * (180.0f / MathF.PI);
+            float angle = MathF.Atan2(game.DudeVel.Y, game.DudeVel.X) * (180.0f / MathF.PI);
             t.Rotation = angle;
         }
 
         // Squash & Stretch
-        var speed = game.DudeVel.Length();
-        var stretch = 1.0f + (speed * 0.02f);
-        var squash = 1.0f / stretch;
-        var baseScale = 0.9f * game.Stats.PlayerSize;
+        float speed = game.DudeVel.Length();
+        float stretch = 1.0f + (speed * 0.02f);
+        float squash = 1.0f / stretch;
+        float baseScale = 0.9f * game.Stats.PlayerSize;
 
         if (MathF.Abs(game.DudeVel.X) > MathF.Abs(game.DudeVel.Y))
             t.Scale = (stretch * baseScale, squash * baseScale);
@@ -196,14 +196,14 @@ public class StatePlaying : IGameState<DudeGame>
         if (game.SpawnTimer <= 0)
         {
             SpawnHater(game);
-            var ramp = MathF.Min(1.5f, game.TimeAlive * 0.02f);
+            float ramp = MathF.Min(1.5f, game.TimeAlive * 0.02f);
             game.SpawnTimer = (1.2f - ramp) / (game.ChillTimer > 0 ? 0.5f : 1.0f);
             if (game.SpawnTimer < 0.2f) game.SpawnTimer = 0.2f;
         }
 
-        var timeScale = game.ChillTimer > 0 ? 0.3f : 1.0f;
+        float timeScale = game.ChillTimer > 0 ? 0.3f : 1.0f;
 
-        for (var i = game.Haters.Count - 1; i >= 0; i--)
+        for (int i = game.Haters.Count - 1; i >= 0; i--)
         {
             var me = game.Haters[i];
 
@@ -211,19 +211,19 @@ public class StatePlaying : IGameState<DudeGame>
             var toPlayer = (game.DudePos - me.Pos).Normalized();
 
             var separation = Vec2.Zero;
-            var neighbors = 0;
-            var myRad = me.Type == HaterType.Chonker ? 2.5f : 1.2f;
+            int neighbors = 0;
+            float myRad = me.Type == HaterType.Chonker ? 2.5f : 1.2f;
 
             foreach (var other in game.Haters)
             {
                 if (me == other) continue;
 
                 var diff = me.Pos - other.Pos;
-                var distSq = diff.LengthSquared();
+                float distSq = diff.LengthSquared();
 
                 if (distSq < myRad * myRad && distSq > 0.001f)
                 {
-                    var pushStrength = me.Type == HaterType.Chonker ? 8.0f : 4.0f;
+                    float pushStrength = me.Type == HaterType.Chonker ? 8.0f : 4.0f;
                     separation += diff.Normalized() * pushStrength;
                     neighbors++;
                 }
@@ -235,20 +235,20 @@ public class StatePlaying : IGameState<DudeGame>
                 force += separation * 1.5f;
             }
 
-            var speed = (me.Type == HaterType.Chonker ? 2.0f : 4.5f) * timeScale;
+            float speed = (me.Type == HaterType.Chonker ? 2.0f : 4.5f) * timeScale;
             me.Pos += force.Normalized() * speed * dt;
 
             var haterTransform = me.Ent.GetComponent<TransformComponent>();
             haterTransform.Position = (me.Pos.X, me.Pos.Y);
 
-            var pulseSpeed = me.Type == HaterType.Chonker ? 5.0f : 15.0f;
-            var baseSize = me.Type == HaterType.Chonker ? 2.2f : 0.8f;
-            var pulse = baseSize + 0.1f * MathF.Sin(game.TimeAlive * pulseSpeed + i);
+            float pulseSpeed = me.Type == HaterType.Chonker ? 5.0f : 15.0f;
+            float baseSize = me.Type == HaterType.Chonker ? 2.2f : 0.8f;
+            float pulse = baseSize + 0.1f * MathF.Sin(game.TimeAlive * pulseSpeed + i);
             haterTransform.Scale = (pulse, pulse);
 
             // Distance check with Vector method
             // Increased kill distance slightly to account for physics collision radius preventing overlap
-            var killDist = (me.Type == HaterType.Chonker ? 1.5f : 0.7f) * game.Stats.PlayerSize * 1.3f;
+            float killDist = (me.Type == HaterType.Chonker ? 1.5f : 0.7f) * game.Stats.PlayerSize * 1.3f;
 
             if (Vec2.Distance(game.DudePos, me.Pos) < killDist)
             {
@@ -277,10 +277,10 @@ public class StatePlaying : IGameState<DudeGame>
         var def = ContentRegistry.GetRandomPowerup(game.Rng, game.Stats.Luck);
         if (def != null) SpawnCollectable(game, def);
 
-        for (var i = game.Collectables.Count - 1; i >= 0; i--)
+        for (int i = game.Collectables.Count - 1; i >= 0; i--)
         {
             var c = game.Collectables[i];
-            var distSq = Vec2.Distance(game.DudePos, c.Pos); // Distance is actual float dist, not squared.
+            float distSq = Vec2.Distance(game.DudePos, c.Pos); // Distance is actual float dist, not squared.
 
             // Use Stat: Magnet Range
             if (distSq < game.Stats.MagnetRange)
@@ -309,10 +309,10 @@ public class StatePlaying : IGameState<DudeGame>
 
     private void HandleGems(DudeGame game, float dt)
     {
-        for (var i = game.Gems.Count - 1; i >= 0; i--)
+        for (int i = game.Gems.Count - 1; i >= 0; i--)
         {
             var g = game.Gems[i];
-            var distSq = (game.DudePos - g.Pos).LengthSquared();
+            float distSq = (game.DudePos - g.Pos).LengthSquared();
 
             if (distSq < game.Stats.MagnetRange * game.Stats.MagnetRange)
             {
@@ -381,9 +381,9 @@ public class StatePlaying : IGameState<DudeGame>
         Vec2 pos;
         if (game.Rng.Next(2) == 0) { pos.X = game.Rng.Next(2) == 0 ? -16 : 16; pos.Y = (game.Rng.NextSingle() * 20) - 10; }
         else { pos.X = (game.Rng.NextSingle() * 28) - 14; pos.Y = game.Rng.Next(2) == 0 ? -11 : 11; }
-        var size = type == HaterType.Chonker ? 2.2f : 0.8f;
-        var r = type == HaterType.Chonker ? 0.6f : 1.0f;
-        var b = type == HaterType.Chonker ? 0.8f : 0.2f;
+        float size = type == HaterType.Chonker ? 2.2f : 0.8f;
+        float r = type == HaterType.Chonker ? 0.6f : 1.0f;
+        float b = type == HaterType.Chonker ? 0.8f : 0.2f;
         var ent = game.CreateSpriteEntity(pos.X, pos.Y, size, size, r, 0f, b, 5, game.TexEnemy);
 
         // Add Physics (Kinematic so we can control position manually but still collide with player)
@@ -410,10 +410,10 @@ public class StatePlaying : IGameState<DudeGame>
 
     private void SpawnGem(DudeGame game, Vec2 pos, int value)
     {
-        var r = value > 10 ? 0.2f : 0.4f;
-        var g = value > 10 ? 0.2f : 1.0f;
-        var b = value > 10 ? 1.0f : 0.8f;
-        var size = value > 10 ? 0.45f : 0.3f;
+        float r = value > 10 ? 0.2f : 0.4f;
+        float g = value > 10 ? 0.2f : 1.0f;
+        float b = value > 10 ? 1.0f : 0.8f;
+        float size = value > 10 ? 0.45f : 0.3f;
         var ent = game.CreateSpriteEntity(pos.X, pos.Y, size, size, r, g, b, 9, game.TexParticle);
         var gemTransform = ent.GetComponent<TransformComponent>();
         gemTransform.Anchor = (0.5f, 0.5f);
@@ -424,7 +424,7 @@ public class StatePlaying : IGameState<DudeGame>
 
     private void UpdateTrails(DudeGame game, float dt)
     {
-        for (var i = game.Trails.Count - 1; i >= 0; i--)
+        for (int i = game.Trails.Count - 1; i >= 0; i--)
         {
             var t = game.Trails[i];
             t.Alpha -= dt * 2.0f; // Slower fade for smoother look
@@ -439,7 +439,7 @@ public class StatePlaying : IGameState<DudeGame>
 
                 // Expand slightly as it dissipates (smoke effect)
                 var transform = t.Ent.GetComponent<TransformComponent>();
-                var expansion = 1.0f + (1.0f - t.Alpha) * 0.2f;
+                float expansion = 1.0f + (1.0f - t.Alpha) * 0.2f;
                 transform.Scale = (t.InitW * expansion, t.InitH * expansion);
             }
         }
@@ -455,8 +455,8 @@ public class StatePlaying : IGameState<DudeGame>
             var t = game.Camera.GetComponent<TransformComponent>();
             if (game.ShakeAmount > 0)
             {
-                var shakeX = (float)(game.Rng.NextDouble() - 0.5) * game.ShakeAmount;
-                var shakeY = (float)(game.Rng.NextDouble() - 0.5) * game.ShakeAmount;
+                float shakeX = (float)(game.Rng.NextDouble() - 0.5) * game.ShakeAmount;
+                float shakeY = (float)(game.Rng.NextDouble() - 0.5) * game.ShakeAmount;
                 t.Position = (shakeX, shakeY);
             }
             else
@@ -470,9 +470,9 @@ public class StatePlaying : IGameState<DudeGame>
     {
         game.DiscoTimer += dt;
         if (game.ChillTimer > 0) return;
-        var r = 0.1f + 0.05f * MathF.Sin(game.DiscoTimer * 2f);
-        var g = 0.1f + 0.05f * MathF.Sin(game.DiscoTimer * 1.5f);
-        var b = 0.15f + 0.05f * MathF.Sin(game.DiscoTimer * 0.8f);
+        float r = 0.1f + 0.05f * MathF.Sin(game.DiscoTimer * 2f);
+        float g = 0.1f + 0.05f * MathF.Sin(game.DiscoTimer * 1.5f);
+        float b = 0.15f + 0.05f * MathF.Sin(game.DiscoTimer * 0.8f);
         var bgSprite = game.Bg.GetComponent<SpriteComponent>();
         bgSprite.Color = (r, g, b);
     }

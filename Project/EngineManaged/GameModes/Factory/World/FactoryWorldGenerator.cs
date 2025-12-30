@@ -18,17 +18,17 @@ public class FactoryWorldGenerator
     private void InitializeNoise()
     {
         _permutation = new int[512];
-        var p = new int[256];
-        for (var i = 0; i < 256; i++) p[i] = i;
+        int[] p = new int[256];
+        for (int i = 0; i < 256; i++) p[i] = i;
 
         // Shuffle
-        for (var i = 0; i < 256; i++)
+        for (int i = 0; i < 256; i++)
         {
-            var swapIdx = _rng.Next(256);
+            int swapIdx = _rng.Next(256);
             (p[swapIdx], p[i]) = (p[i], p[swapIdx]);
         }
 
-        for (var i = 0; i < 256; i++)
+        for (int i = 0; i < 256; i++)
         {
             _permutation[i] = p[i];
             _permutation[i + 256] = p[i];
@@ -41,29 +41,29 @@ public class FactoryWorldGenerator
 
     private float Grad(int hash, float x, float y)
     {
-        var h = hash & 15;
-        var u = h < 8 ? x : y;
-        var v = h < 4 ? y : h == 12 || h == 14 ? x : 0;
+        int h = hash & 15;
+        float u = h < 8 ? x : y;
+        float v = h < 4 ? y : h == 12 || h == 14 ? x : 0;
         return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
     }
 
     private float Noise(float x, float y)
     {
-        var X = (int)Math.Floor(x) & 255;
-        var Y = (int)Math.Floor(y) & 255;
+        int X = (int)Math.Floor(x) & 255;
+        int Y = (int)Math.Floor(y) & 255;
 
         x -= (float)Math.Floor(x);
         y -= (float)Math.Floor(y);
 
-        var u = Fade(x);
-        var v = Fade(y);
+        float u = Fade(x);
+        float v = Fade(y);
 
-        var A = _permutation[X] + Y;
-        var AA = _permutation[A];
-        var AB = _permutation[A + 1];
-        var B = _permutation[X + 1] + Y;
-        var BA = _permutation[B];
-        var BB = _permutation[B + 1];
+        int A = _permutation[X] + Y;
+        int AA = _permutation[A];
+        int AB = _permutation[A + 1];
+        int B = _permutation[X + 1] + Y;
+        int BA = _permutation[B];
+        int BB = _permutation[B + 1];
 
         return Lerp(v, Lerp(u, Grad(_permutation[AA], x, y),
                                Grad(_permutation[BA], x - 1, y)),
@@ -78,7 +78,7 @@ public class FactoryWorldGenerator
         float amplitude = 1;
         float maxValue = 0;
 
-        for (var i = 0; i < octaves; i++)
+        for (int i = 0; i < octaves; i++)
         {
             total += Noise(x * frequency, y * frequency) * amplitude;
             maxValue += amplitude;
@@ -91,20 +91,20 @@ public class FactoryWorldGenerator
 
     public void Generate(FactoryWorld world)
     {
-        var w = world.Width();
-        var h = world.Height();
+        int w = world.Width();
+        int h = world.Height();
 
         // Scale factors
-        var terrainScale = 0.02f; // Slightly larger features
-        var oreScale = 0.08f;
+        float terrainScale = 0.02f; // Slightly larger features
+        float oreScale = 0.08f;
 
-        for (var x = 0; x < w; x++)
+        for (int x = 0; x < w; x++)
         {
-            for (var y = 0; y < h; y++)
+            for (int y = 0; y < h; y++)
             {
                 // 1. Terrain Generation
                 // n represents elevation: -1 to 1
-                var n = OctaveNoise(x * terrainScale, y * terrainScale, 4, 0.5f);
+                float n = OctaveNoise(x * terrainScale, y * terrainScale, 4, 0.5f);
                 
                 var type = FactoryTerrain.Grass;
                 
@@ -125,16 +125,16 @@ public class FactoryWorldGenerator
                 if (type != FactoryTerrain.Water)
                 {
                     // Ore noise maps
-                    var ironNoise = OctaveNoise((x + 1234) * oreScale, (y + 1234) * oreScale, 2, 0.5f);
-                    var copperNoise = OctaveNoise((x + 2345) * oreScale, (y + 2345) * oreScale, 2, 0.5f);
-                    var coalNoise = OctaveNoise((x + 3456) * oreScale, (y + 3456) * oreScale, 2, 0.5f);
-                    var goldNoise = OctaveNoise((x + 4567) * oreScale, (y + 4567) * oreScale, 2, 0.5f);
+                    float ironNoise = OctaveNoise((x + 1234) * oreScale, (y + 1234) * oreScale, 2, 0.5f);
+                    float copperNoise = OctaveNoise((x + 2345) * oreScale, (y + 2345) * oreScale, 2, 0.5f);
+                    float coalNoise = OctaveNoise((x + 3456) * oreScale, (y + 3456) * oreScale, 2, 0.5f);
+                    float goldNoise = OctaveNoise((x + 4567) * oreScale, (y + 4567) * oreScale, 2, 0.5f);
 
                     // Base thresholds (higher = rarer)
-                    var ironThresh = 0.65f;
-                    var copperThresh = 0.65f;
-                    var coalThresh = 0.65f;
-                    var goldThresh = 0.75f;
+                    float ironThresh = 0.65f;
+                    float copperThresh = 0.65f;
+                    float coalThresh = 0.65f;
+                    float goldThresh = 0.75f;
 
                     // Elevation Influence:
                     // Ores are much more common at higher elevations (near and inside mountains)
@@ -143,7 +143,7 @@ public class FactoryWorldGenerator
                     if (n > 0.1f) // Starting at "foothills"
                     {
                         // The higher we go, the more likely ores are
-                        var elevationBonus = (n - 0.1f) * 0.8f; 
+                        float elevationBonus = (n - 0.1f) * 0.8f; 
                         
                         ironThresh -= elevationBonus;
                         copperThresh -= elevationBonus;
@@ -173,7 +173,7 @@ public class FactoryWorldGenerator
                 }
 
                 // 3. Set Mineable flags
-                var isMineable = (ore != FactoryOre.None) || (type == FactoryTerrain.Stone) || (type == FactoryTerrain.Sand);
+                bool isMineable = (ore != FactoryOre.None) || (type == FactoryTerrain.Stone) || (type == FactoryTerrain.Sand);
 
                 world.Set(x, y, o =>
                 {

@@ -7,7 +7,7 @@ internal static class UIInputHelper
 {
     public static (float x, float y) ScreenToUIWorld(float screenX, float screenY, float uiHeight = 18.0f)
     {
-        NativeMethods.Input_GetViewportRect(out var vx, out var vy, out var vw, out var vh);
+        NativeMethods.Input_GetViewportRect(out int vx, out int vy, out int vw, out int vh);
         
         float vpW = vw > 0 ? (float)vw : 1920.0f;
         float vpH = vh > 0 ? (float)vh : 1080.0f;

@@ -111,7 +111,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         // Create player at center
         _player = new Player(_cam);
         game.ActorManager?.Register(_player);
-        for (var i = 0; i < 5; i++)
+        for (int i = 0; i < 5; i++)
         {
             var coords = game.Rng?.Next(10) > 5 ?
                new Vec2(_cam.X + i, _cam.Y - i) :
@@ -128,9 +128,9 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         UISystem.Clear();
 
         // Toolbar Background
-        var barW = 36.0f;
-        var barH = 4.0f;
-        var barY = -13.0f;
+        float barW = 36.0f;
+        float barH = 4.0f;
+        float barY = -13.0f;
         
         var bg = UIImage.Create(0, barY, barW, barH);
         bg.Color(0.1f, 0.1f, 0.1f);
@@ -139,15 +139,15 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         _toolbarBg = bg;
 
         // Buttons
-        var btnW = 8.0f;
-        var btnH = 3.0f;
-        var gap = 0.5f;
-        var startX = -((btnW * 4 + gap * 3) / 2.0f) + btnW / 2.0f; // Centered
+        float btnW = 8.0f;
+        float btnH = 3.0f;
+        float gap = 0.5f;
+        float startX = -((btnW * 4 + gap * 3) / 2.0f) + btnW / 2.0f; // Centered
         
         // Helper to create styled button
         UIButton CreateBtn(string text, int index, Action onClick)
         {
-            var x = startX + index * (btnW + gap);
+            float x = startX + index * (btnW + gap);
             var btn = UIButton.Create(text, x, barY, btnW, btnH, 0.3f, 0.3f, 0.3f, 51, 1, false); // Use World Space
             btn.Label.Color(0.9f, 0.9f, 0.9f);
             btn.Clicked += onClick;
@@ -203,7 +203,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         // Update Rotation Label
         if (_rotationLabel is { } rotLbl)
         {
-             var dirStr = _placementDirection.ToString();
+            string dirStr = _placementDirection.ToString();
              rotLbl.Text($"Rotate: [R] ({dirStr})");
         }
     }
@@ -296,7 +296,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         if (game.World == null) return;
 
         // Zoom
-        var scroll = Input.GetScroll();
+        float scroll = Input.GetScroll();
         if (scroll != 0)
         {
             game.World.Zoom += scroll * 0.05f;
@@ -304,13 +304,13 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         }
 
         var (mx, my) = Input.GetMouseToWorld();
-        var gridX = (int)Math.Floor(mx);
-        var gridY = (int)Math.Floor(my);
+        int gridX = (int)Math.Floor(mx);
+        int gridY = (int)Math.Floor(my);
 
         // Tooltip Logic
         if (_tooltipLabel is { } tt)
         {
-            var showTooltip = false;
+            bool showTooltip = false;
             if (gridX >= 0 && gridX < game.World.Width() && gridY >= 0 && gridY < game.World.Height())
             {
                 var tile = game.World[gridX, gridY];
@@ -333,7 +333,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
             Native.Entity_SetPosition(_cursorEntity, gridX + 0.5f, gridY + 0.5f);
 
             // Hide cursor if out of bounds
-            var inBounds = gridX >= 0 && gridX < game.World.Width() && gridY >= 0 && gridY < game.World.Height();
+            bool inBounds = gridX >= 0 && gridX < game.World.Width() && gridY >= 0 && gridY < game.World.Height();
             Native.Entity_SetRender(_cursorEntity, inBounds);
 
             // Ghost Visuals
@@ -348,7 +348,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
                 else
                 {
                     // Check validity
-                    var isValid = true;
+                    bool isValid = true;
                     var tile = game.World[gridX, gridY];
                     if (_selectedStructure == FactoryStructure.Miner && tile.OreType == FactoryOre.None)
                     {
@@ -361,7 +361,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
                     }
 
                     // Set texture based on selected structure
-                    var tex = FactoryResources.GetStructureTexture(_selectedStructure, _currentTier);
+                    nint tex = FactoryResources.GetStructureTexture(_selectedStructure, _currentTier);
                     
                     // Reset size
                     Native.Entity_SetSize(_cursorEntity, 1.0f, 1.0f);
@@ -403,7 +403,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
                     }
 
                     // Rotation
-                    var rot = 0.0f;
+                    float rot = 0.0f;
                     switch (_placementDirection)
                     {
                         case Direction.East: rot = -90.0f; break;
@@ -418,12 +418,12 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
             // Update Direction Indicator
             if (_cursorDirectionEntity != 0)
             {
-                var showArrow = inBounds && _selectedStructure == FactoryStructure.ConveyorBelt && !_deleteMode;
+                bool showArrow = inBounds && _selectedStructure == FactoryStructure.ConveyorBelt && !_deleteMode;
                 Native.Entity_SetRender(_cursorDirectionEntity, showArrow);
                 
                 if (showArrow)
                 {
-                    var offset = 0.35f;
+                    float offset = 0.35f;
                     float dx = 0, dy = 0;
                     switch (_placementDirection)
                     {
@@ -438,7 +438,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
             }
         }
 
-        var isMouseDown = Input.IsMouseDown(Input.MouseButton.Left);
+        bool isMouseDown = Input.IsMouseDown(Input.MouseButton.Left);
 
         // Handle UI Blocking Logic
         if (isMouseDown && !_wasMouseDown) // Just pressed
@@ -509,8 +509,8 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
                     else if (_lastGridX != -1 && (gridX != _lastGridX || gridY != _lastGridY))
                     {
                         // Dragging logic
-                        var dx = gridX - _lastGridX;
-                        var dy = gridY - _lastGridY;
+                        int dx = gridX - _lastGridX;
+                        int dy = gridY - _lastGridY;
                         
                         if (Math.Abs(dx) > Math.Abs(dy))
                         {

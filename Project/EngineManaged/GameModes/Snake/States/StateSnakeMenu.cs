@@ -69,7 +69,7 @@ public class StateSnakeMenu : IGameState<SnakeGame>
         };
 
         // Add some decorative "Snake" segments on the panel
-        for (var i = 0; i < 4; i++)
+        for (int i = 0; i < 4; i++)
         {
             // Create snake body segments
             var seg = SceneFactory.CreateQuad(0, -15, 0.8f, 0.8f, 0.4f, 0.8f, 0.4f, layer: 93);
@@ -98,8 +98,8 @@ public class StateSnakeMenu : IGameState<SnakeGame>
     {
         _animTimer += dt;
         // 1. Animate Panel Slide Up
-        var slideT = MathF.Min(1.0f, _animTimer * 1.5f);
-        var panelY = Ease.Lerp(-18.0f, -1.0f, Ease.OutBack(slideT));
+        float slideT = MathF.Min(1.0f, _animTimer * 1.5f);
+        float panelY = Ease.Lerp(-18.0f, -1.0f, Ease.OutBack(slideT));
 
         var bgTransform = _panelBg.GetComponent<TransformComponent>();
         bgTransform.Position = (0, panelY);
@@ -112,12 +112,12 @@ public class StateSnakeMenu : IGameState<SnakeGame>
 
         // Animate Decorations
         // Snake segments wiggle
-        for (var i = 0; i < 4; i++)
+        for (int i = 0; i < 4; i++)
         {
             if (i < _decorations.Count - 1) // Ensure we don't grab the apple
             {
-                var xOffset = -3.0f + (i * 1.1f);
-                var yOffset = 2.5f + MathF.Sin(_animTimer * 5.0f + i) * 0.2f;
+                float xOffset = -3.0f + (i * 1.1f);
+                float yOffset = 2.5f + MathF.Sin(_animTimer * 5.0f + i) * 0.2f;
                 var t = _decorations[i].GetComponent<TransformComponent>();
                 t.Position = (xOffset, panelY + yOffset);
             }

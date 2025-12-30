@@ -97,7 +97,7 @@ public class BuildingSystem : IDisposable
         // But we are modifying the struct in the dictionary
         var keys = new List<int>(_buildings.Keys);
         
-        foreach (var key in keys)
+        foreach (int key in keys)
         {
             var b = _buildings[key];
             

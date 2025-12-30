@@ -13,13 +13,13 @@ public record TransformComponent : IComponent
 
     public (float x, float y) Position
     {
-        get { Native.Entity_GetPosition(EntityId, out var x, out var y); return (x, y); }
+        get { Native.Entity_GetPosition(EntityId, out float x, out float y); return (x, y); }
         set => Native.Entity_SetPosition(EntityId, value.x, value.y);
     }
 
     public (float w, float h) Scale
     {
-        get { Native.Entity_GetSize(EntityId, out var w, out var h); return (w, h); }
+        get { Native.Entity_GetSize(EntityId, out float w, out float h); return (w, h); }
         set => Native.Entity_SetSize(EntityId, value.w, value.h);
     }
 
@@ -31,7 +31,7 @@ public record TransformComponent : IComponent
 
     public (float x, float y) Anchor
     {
-        get { Native.Entity_GetAnchor(EntityId, out var x, out var y); return (x, y); }
+        get { Native.Entity_GetAnchor(EntityId, out float x, out float y); return (x, y); }
         set => Native.Entity_SetAnchor(EntityId, value.x, value.y);
     }
 
@@ -48,7 +48,7 @@ public record SpriteComponent : IComponent
 
     public (float r, float g, float b) Color
     {
-        get { Native.Entity_GetColor(EntityId, out var r, out var g, out var b); return (r, g, b); }
+        get { Native.Entity_GetColor(EntityId, out float r, out float g, out float b); return (r, g, b); }
         set => Native.Entity_SetColor(EntityId, value.r, value.g, value.b);
     }
 
@@ -103,7 +103,7 @@ public record RigidBodyComponent : IComponent
 
     public (float x, float y) Velocity
     {
-        get { Native.Entity_GetVelocity(EntityId, out var x, out var y); return (x, y); }
+        get { Native.Entity_GetVelocity(EntityId, out float x, out float y); return (x, y); }
         set => Native.Entity_SetVelocity(EntityId, value.x, value.y);
     }
 
@@ -132,13 +132,13 @@ public record BoxColliderComponent : IComponent
 
     public (float w, float h) Size
     {
-        get { Native.Entity_GetColliderSize(EntityId, out var w, out var h); return (w, h); }
+        get { Native.Entity_GetColliderSize(EntityId, out float w, out float h); return (w, h); }
         set => Native.Entity_SetColliderSize(EntityId, value.w, value.h);
     }
 
     public (float x, float y) Offset
     {
-        get { Native.Entity_GetColliderOffset(EntityId, out var x, out var y); return (x, y); }
+        get { Native.Entity_GetColliderOffset(EntityId, out float x, out float y); return (x, y); }
         set => Native.Entity_SetColliderOffset(EntityId, value.x, value.y);
     }
 

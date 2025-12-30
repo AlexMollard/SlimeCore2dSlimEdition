@@ -307,10 +307,10 @@ public class DudeGame : GameMode<DudeGame>, IGameMode, IDisposable
         props.SizeVariation = 0.3f;
         props.LifeTime = 1.0f;
 
-        for (var i = 0; i < count; i++)
+        for (int i = 0; i < count; i++)
         {
-            var angle = (float)Rng.NextDouble() * 6.28f;
-            var speed = (float)Rng.NextDouble() * 8.0f + 2.0f;
+            float angle = (float)Rng.NextDouble() * 6.28f;
+            float speed = (float)Rng.NextDouble() * 8.0f + 2.0f;
             props.Velocity = new Vec2(MathF.Cos(angle), MathF.Sin(angle)) * speed;
 
             ParticleSys.Emit(props);

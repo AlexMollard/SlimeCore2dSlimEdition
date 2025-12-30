@@ -131,7 +131,7 @@ public class PlayerSnake : Actor<SnakeActors, SnakeGame>, IControllable
 
     public int GetBodyIndexFromWorldPosition(int x, int y)
     {
-        for (var i = 0; i < Body.Count; i++)
+        for (int i = 0; i < Body.Count; i++)
         {
             if (Body[i].X == x && Body[i].Y == y)
             {
@@ -177,27 +177,27 @@ public class PlayerSnake : Actor<SnakeActors, SnakeGame>, IControllable
     private (Vec2i head, Vec2i dir) FindSafeStart(SnakeGame game, Vec2i center, int maxRadius = 60, int requiredForwardClear = 3)
     {
         var dirs = new[] { new Vec2i(1, 0), new Vec2i(0, 1), new Vec2i(-1, 0), new Vec2i(0, -1) };
-        for (var r = 0; r <= maxRadius; r++)
+        for (int r = 0; r <= maxRadius; r++)
         {
-            for (var dx = -r; dx <= r; dx++)
+            for (int dx = -r; dx <= r; dx++)
             {
-                for (var dy = -r; dy <= r; dy++)
+                for (int dy = -r; dy <= r; dy++)
                 {
                     if (Math.Abs(dx) != r && Math.Abs(dy) != r) continue;
 
-                    var x = SnakeGame.Wrap(center.X + dx, game._world.Width());
-                    var y = SnakeGame.Wrap(center.Y + dy, game._world.Height());
+                    int x = SnakeGame.Wrap(center.X + dx, game._world.Width());
+                    int y = SnakeGame.Wrap(center.Y + dy, game._world.Height());
 
                     if (game._world[x, y].Blocked) continue;
 
                     foreach (var d in dirs)
                     {
-                        var tx = SnakeGame.Wrap(x - d.X, game._world.Width());
-                        var ty = SnakeGame.Wrap(y - d.Y, game._world.Height());
+                        int tx = SnakeGame.Wrap(x - d.X, game._world.Width());
+                        int ty = SnakeGame.Wrap(y - d.Y, game._world.Height());
                         if (game._world[tx, ty].Blocked) continue;
 
-                        var ok = true;
-                        for (var i = 1; i <= requiredForwardClear; i++)
+                        bool ok = true;
+                        for (int i = 1; i <= requiredForwardClear; i++)
                         {
                             var checkPos = new Vec2i(x, y) + (d * i);
                             if (game._world[SnakeGame.Wrap(checkPos.X, game._world.Width()), SnakeGame.Wrap(checkPos.Y, game._world.Height())].Blocked)

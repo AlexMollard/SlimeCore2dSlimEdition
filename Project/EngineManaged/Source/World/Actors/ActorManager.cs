@@ -46,7 +46,7 @@ public class ActorManager<TEnum, TGameMode>
             routine.Invoke(mode, deltaTime);
         }
 
-        var actBudget = ActBudget;
+        int actBudget = ActBudget;
         while (actBudget-- > 0 && _active.Count > 0)
         {
             var actor = _active.Dequeue();

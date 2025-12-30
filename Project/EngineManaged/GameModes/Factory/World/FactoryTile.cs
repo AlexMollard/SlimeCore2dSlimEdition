@@ -190,15 +190,15 @@ public class FactoryTile : Tile<FactoryGame, FactoryTerrain, FactoryTileOptions>
         Native.TileMap_SetTile(game.TileMap, PositionX, PositionY, 0, FactoryResources.GetTerrainTexture(Type), 1, 1, 1, 1, 0);
 
         // Layer 1: Ore
-        var oreTex = FactoryResources.GetOreTexture(OreType);
+        nint oreTex = FactoryResources.GetOreTexture(OreType);
         if (oreTex != IntPtr.Zero)
             Native.TileMap_SetTile(game.TileMap, PositionX, PositionY, 1, oreTex, 1, 1, 1, 1, 0);
         else
             Native.TileMap_SetTile(game.TileMap, PositionX, PositionY, 1, IntPtr.Zero, 0, 0, 0, 0, 0);
 
         // Layer 2: Structure
-        var structTex = FactoryResources.GetStructureTexture(Structure, Tier);
-        var rotation = 0.0f;
+        nint structTex = FactoryResources.GetStructureTexture(Structure, Tier);
+        float rotation = 0.0f;
 
         if (Structure == FactoryStructure.ConveyorBelt)
         {
@@ -223,7 +223,7 @@ public class FactoryTile : Tile<FactoryGame, FactoryTerrain, FactoryTileOptions>
             else
             {
                 // Fallback: Use a generic square (maybe the conveyor texture?) but we want color.
-                var baseTex = FactoryResources.GetTerrainTexture(FactoryTerrain.Concrete);
+                nint baseTex = FactoryResources.GetTerrainTexture(FactoryTerrain.Concrete);
 
                 if (Structure == FactoryStructure.Miner)
                 {

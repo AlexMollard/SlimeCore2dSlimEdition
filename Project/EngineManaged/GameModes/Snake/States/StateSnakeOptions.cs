@@ -69,8 +69,8 @@ public class StateSnakeOptions : IGameState<SnakeGame>
         _terrainBtn.Clicked += () =>
         {
             // Cycle Terrain
-            var current = (int)game.Settings.BaseTerrain;
-            var next = (current + 1) % Enum.GetValues<SnakeTerrain>().Length;
+            int current = (int)game.Settings.BaseTerrain;
+            int next = (current + 1) % Enum.GetValues<SnakeTerrain>().Length;
             game.Settings.BaseTerrain = (SnakeTerrain)next;
 
             _terrainBtn.Label.Text($"Terrain: {game.Settings.BaseTerrain}");
@@ -128,8 +128,8 @@ public class StateSnakeOptions : IGameState<SnakeGame>
     {
         _animTimer += dt;
         // 1. Animate Panel Slide Up
-        var slideT = MathF.Min(1.0f, _animTimer * 1.5f);
-        var panelY = Ease.Lerp(-18.0f, -1.0f, Ease.OutBack(slideT));
+        float slideT = MathF.Min(1.0f, _animTimer * 1.5f);
+        float panelY = Ease.Lerp(-18.0f, -1.0f, Ease.OutBack(slideT));
 
         var bgTransform = _panelBg.GetComponent<TransformComponent>();
         bgTransform.Position = (0, panelY);

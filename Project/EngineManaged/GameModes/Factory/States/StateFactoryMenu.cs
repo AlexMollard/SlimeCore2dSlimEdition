@@ -60,9 +60,9 @@ public class StateFactoryMenu : IGameState<FactoryGame>
         {
             gen.Generate(game.World);
             _tileMap = Native.TileMap_Create(game.World.Width(), game.World.Height(), 1.0f);
-            for (var x = 0; x < game.World.Width(); x++)
+            for (int x = 0; x < game.World.Width(); x++)
             {
-                for (var y = 0; y < game.World.Height(); y++)
+                for (int y = 0; y < game.World.Height(); y++)
                 {
                     UpdateTile(game, x, y);
                 }
@@ -75,9 +75,9 @@ public class StateFactoryMenu : IGameState<FactoryGame>
         {
             _cam = new Vec2(game.World.Width() / 2.0f, game.World.Height() / 2.0f);
         }
-        
-        var menuX = _cam.X + MenuOffset;
-        var menuY = _cam.Y;
+
+        float menuX = _cam.X + MenuOffset;
+        float menuY = _cam.Y;
 
         // Create Menu Background (Dark Quad)
         // Position will be updated in Update
@@ -145,14 +145,14 @@ public class StateFactoryMenu : IGameState<FactoryGame>
         _zoomValueLabel = zoomValueLabel;
 
         // Map initial zoom to slider value (0.5 to 3.0)
-        var initialSliderVal = (game.Settings.InitialZoom - 0.5f) / 2.5f;
+        float initialSliderVal = (game.Settings.InitialZoom - 0.5f) / 2.5f;
         
         _zoomSlider = UISlider.Create(SettingsOffset, 0.0f, 8.0f, 0.5f, initialSliderVal, layer: 51, useScreenSpace: false);
         _zoomSlider.SetVisible(false);
         _zoomSlider.OnValueChanged += (val) =>
         {
             // Map slider value back to zoom
-            var zoom = 0.5f + (val * 2.5f);
+            float zoom = 0.5f + (val * 2.5f);
             game.Settings.InitialZoom = zoom;
             if (_zoomValueLabel.HasValue)
                 _zoomValueLabel.Value.Text($"Zoom: {game.Settings.InitialZoom:F1}");
@@ -184,14 +184,14 @@ public class StateFactoryMenu : IGameState<FactoryGame>
         Native.TileMap_SetTile(_tileMap, x, y, 0, FactoryResources.GetTerrainTexture(tile.Type), 1, 1, 1, 1, 0);
 
         // Layer 1: Ore
-        var oreTex = FactoryResources.GetOreTexture(tile.OreType);
+        nint oreTex = FactoryResources.GetOreTexture(tile.OreType);
         if (oreTex != IntPtr.Zero)
             Native.TileMap_SetTile(_tileMap, x, y, 1, oreTex, 1, 1, 1, 1, 0);
         else
             Native.TileMap_SetTile(_tileMap, x, y, 1, IntPtr.Zero, 0, 0, 0, 0, 0);
 
         // Layer 2: Structure
-        var structTex = FactoryResources.GetStructureTexture(tile.Structure);
+        nint structTex = FactoryResources.GetStructureTexture(tile.Structure);
         if (structTex != IntPtr.Zero)
             Native.TileMap_SetTile(_tileMap, x, y, 2, structTex, 1, 1, 1, 1, 0);
         else
@@ -242,10 +242,10 @@ public class StateFactoryMenu : IGameState<FactoryGame>
                  Native.Entity_SetCameraZoom(_cameraEntity, 1.0f / game.World.Zoom);
             }
         }
-        
+
         // Update UI Positions
-        var menuX = _cam.X + MenuOffset;
-        var menuY = _cam.Y;
+        float menuX = _cam.X + MenuOffset;
+        float menuY = _cam.Y;
         
         if (_menuBg != null)
         {
@@ -261,7 +261,7 @@ public class StateFactoryMenu : IGameState<FactoryGame>
         // Update Settings UI Positions
         if (_showSettings)
         {
-            var settingsX = _cam.X + SettingsOffset;
+            float settingsX = _cam.X + SettingsOffset;
             if (_settingsBg != null)
             {
                 var t = _settingsBg.GetComponent<TransformComponent>();
@@ -294,12 +294,12 @@ public class StateFactoryMenu : IGameState<FactoryGame>
     private void SpawnDecorations(FactoryGame game)
     {
         if (game.World == null) return;
-        for (var i = 0; i < 50; i++)
+        for (int i = 0; i < 50; i++)
         {
-            var x = _rng.Next(0, game.World.Width());
-            var y = _rng.Next(0, game.World.Height());
+            int x = _rng.Next(0, game.World.Width());
+            int y = _rng.Next(0, game.World.Height());
             var itemType = (FactoryItemType)_rng.Next(0, 5); // 0 to 4
-            var tex = FactoryResources.GetItemTexture(itemType);
+            nint tex = FactoryResources.GetItemTexture(itemType);
             
             if (tex != IntPtr.Zero)
             {

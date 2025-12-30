@@ -29,7 +29,7 @@ namespace EngineManaged.Numeric
         // -----------------------------------------------------------------
         public float Length() => MathF.Sqrt(X * X + Y * Y + Z * Z);
         public float LengthSquared() => X * X + Y * Y + Z * Z;
-        public Vec3 Normalized() { var len = Length(); return len > 0.0001f ? this / len : new Vec3(0, 0, 0); }
+        public Vec3 Normalized() { float len = Length(); return len > 0.0001f ? this / len : new Vec3(0, 0, 0); }
         public static Vec3 Zero => new(0, 0, 0);
 
         // Linear interpolation

@@ -52,7 +52,7 @@ public class SnakeTile : Tile<SnakeGame, SnakeTerrain, SnakeTileOptions>
     }
     public override Vec3 GetPalette(params object[] extraArgs)
     {
-        var isAlt = (PositionX + PositionY) % 2 == 0;
+        bool isAlt = (PositionX + PositionY) % 2 == 0;
         return Type switch
         {
             SnakeTerrain.Rock => Palette.COL_ROCK,

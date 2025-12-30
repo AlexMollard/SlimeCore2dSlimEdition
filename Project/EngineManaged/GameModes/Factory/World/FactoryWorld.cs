@@ -47,11 +47,11 @@ public class FactoryWorld : GridSystem<FactoryGame, FactoryTerrain, FactoryTileO
 
     public override void Tick(FactoryGame mode, float deltaTime)
     {
-        Logger.Info($"There are {_actionQueue.Count} items needing to be rendered");
+        //Logger.Trace($"There are {_actionQueue.Count} items needing to be rendered");
         base.Tick(mode, deltaTime);
         if (ShouldRender)
         {
-            Logger.Info($"RENDER COMPLETE");
+            //Logger.Trace($"RENDER COMPLETE");
             Native.TileMap_UpdateMesh(mode.TileMap);
         }
     }
@@ -63,7 +63,7 @@ public class FactoryWorld : GridSystem<FactoryGame, FactoryTerrain, FactoryTileO
         if (!Grid.TryGetValue(pos, out var tile)) return;
 
         // Update Terrain Bitmask
-        var mask = 0;
+        int mask = 0;
         if (IsSameTerrain(pos, Direction.North)) mask |= (int)ConnectivityMask.North;
         if (IsSameTerrain(pos, Direction.East)) mask |= (int)ConnectivityMask.East;
         if (IsSameTerrain(pos, Direction.South)) mask |= (int)ConnectivityMask.South;
@@ -85,17 +85,17 @@ public class FactoryWorld : GridSystem<FactoryGame, FactoryTerrain, FactoryTileO
     private void UpdateConveyorShape(FactoryTile tile, Vec2i pos)
     {
         // Check inputs
-        var inputNorth = IsConveyorInput(pos, Direction.North);
-        var inputEast = IsConveyorInput(pos, Direction.East);
-        var inputSouth = IsConveyorInput(pos, Direction.South);
-        var inputWest = IsConveyorInput(pos, Direction.West);
+        bool inputNorth = IsConveyorInput(pos, Direction.North);
+        bool inputEast = IsConveyorInput(pos, Direction.East);
+        bool inputSouth = IsConveyorInput(pos, Direction.South);
+        bool inputWest = IsConveyorInput(pos, Direction.West);
 
         // Determine shape based on inputs and my direction
         // This is a simplified logic, can be expanded
         // We store the "Input Mask" in the upper bits of Bitmask or a separate field
         // For now, let's just use the Bitmask field for Conveyors too, but with different meaning
         
-        var inputMask = 0;
+        int inputMask = 0;
         if (inputNorth) inputMask |= (int)ConnectivityMask.North;
         if (inputEast) inputMask |= (int)ConnectivityMask.East;
         if (inputSouth) inputMask |= (int)ConnectivityMask.South;

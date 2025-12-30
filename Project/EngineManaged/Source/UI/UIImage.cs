@@ -9,7 +9,7 @@ public readonly struct UIImage
 
     public static UIImage Create(float x, float y, float w, float h)
     {
-        var id = NativeMethods.UI_CreateImage(x, y, w, h);
+        ulong id = NativeMethods.UI_CreateImage(x, y, w, h);
         return new UIImage(id);
     }
 
@@ -17,13 +17,13 @@ public readonly struct UIImage
 
     public (float x, float y) Position
     {
-        get { NativeMethods.UI_GetPosition(Id, out var x, out var y); return (x, y); }
+        get { NativeMethods.UI_GetPosition(Id, out float x, out float y); return (x, y); }
         set => NativeMethods.UI_SetPosition(Id, value.x, value.y);
     }
 
     public (float w, float h) Size
     {
-        get { NativeMethods.UI_GetSize(Id, out var w, out var h); return (w, h); }
+        get { NativeMethods.UI_GetSize(Id, out float w, out float h); return (w, h); }
         set => NativeMethods.UI_SetSize(Id, value.w, value.h);
     }
 

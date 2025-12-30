@@ -9,16 +9,16 @@ public static class FactoryPhysics
     public static void ApplyConveyorMovement(FactoryGame game, ref Vec2 position, float dt, float size)
     {
         // Check center point for conveyor influence
-        var gx = (int)Math.Floor(position.X);
-        var gy = (int)Math.Floor(position.Y);
+        int gx = (int)Math.Floor(position.X);
+        int gy = (int)Math.Floor(position.Y);
         
         if (gx >= 0 && gx < game.World.Width() && gy >= 0 && gy < game.World.Height())
         {
             var tile = game.World[gx, gy];
             if (tile.Structure == FactoryStructure.ConveyorBelt)
             {
-                var baseSpeed = 2.0f;
-                var conveyorSpeed = baseSpeed * tile.Tier; 
+                float baseSpeed = 2.0f;
+                float conveyorSpeed = baseSpeed * tile.Tier; 
                 
                 var flowDir = GetConveyorFlow(tile, position.X - gx, position.Y - gy);
                 
@@ -36,7 +36,7 @@ public static class FactoryPhysics
     public static bool CheckCollision(FactoryGame game, Vec2 pos, float size)
     {
         // Check corners of the bounding box
-        var halfSize = size / 2.0f * 0.8f; // Slightly smaller hitbox than visual size
+        float halfSize = size / 2.0f * 0.8f; // Slightly smaller hitbox than visual size
         
         // Check 4 corners
         if (IsSolid(game, pos.X - halfSize, pos.Y - halfSize)) return true;
@@ -49,8 +49,8 @@ public static class FactoryPhysics
 
     public static bool IsSolid(FactoryGame game, float x, float y)
     {
-        var gx = (int)Math.Floor(x);
-        var gy = (int)Math.Floor(y);
+        int gx = (int)Math.Floor(x);
+        int gy = (int)Math.Floor(y);
         
         if (gx < 0 || gx >= game.World.Width() || gy < 0 || gy >= game.World.Height()) return true; // World bounds
         
@@ -108,7 +108,7 @@ public static class FactoryPhysics
     {
         // Determine Center and Rotation
         float cx = 0, cy = 0;
-        var ccw = false;
+        bool ccw = false;
         
         if (outDir == Direction.North)
         {
@@ -130,11 +130,11 @@ public static class FactoryPhysics
             if (inDir == Direction.South) { cx = 0; cy = 0; ccw = true; }
             else if (inDir == Direction.North) { cx = 0; cy = 1; ccw = false; }
         }
-        
+
         // Vector from center to point
-        var dx = lx - cx;
-        var dy = ly - cy;
-        var r = (float)Math.Sqrt(dx*dx + dy*dy);
+        float dx = lx - cx;
+        float dy = ly - cy;
+        float r = (float)Math.Sqrt(dx*dx + dy*dy);
         
         // Tangent
         Vec2 tangent;
@@ -151,7 +151,7 @@ public static class FactoryPhysics
         if (r > 0.001f)
         {
             var radial = new Vec2(dx, dy) / r;
-            var diff = 0.5f - r;
+            float diff = 0.5f - r;
             centering = radial * diff;
         }
         

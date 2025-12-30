@@ -34,7 +34,7 @@ public class StateSnakeOverworld : IGameState<SnakeGame>
     public void Enter(SnakeGame game)
     {
         ResetGameLogic(game);
-        var textureId = NativeMethods.Resources_LoadTexture("Debug", "textures/debug.png");
+        nint textureId = NativeMethods.Resources_LoadTexture("Debug", "textures/debug.png");
         game._snake.Initialize();
         game._world.Initialize(SnakeGame.VIEW_W, SnakeGame.VIEW_H);
 
@@ -67,19 +67,19 @@ public class StateSnakeOverworld : IGameState<SnakeGame>
         {
             game.ActorManager.Tick(game, dt);
             var headPos = game._snake[0];
-            var ignore = game._world[headPos].Type == SnakeTerrain.Ice;
+            bool ignore = game._world[headPos].Type == SnakeTerrain.Ice;
             game._snake.RecieveInput(ignore);
 
             NpcSnakeHunter.HandleUpdateBehaviour(game, dt);
 
             var headTile = game._world[game._snake[0].X, game._snake[0].Y].Type;
-            var speedMultiplier = 1.0f;
+            float speedMultiplier = 1.0f;
 
             if (headTile == SnakeTerrain.Mud) speedMultiplier = 1.8f;
             if (headTile == SnakeTerrain.Speed) speedMultiplier = 0.5f;
 
-            var effectivelySprinting = game._snake.IsSprinting || game._snake.SpeedBoostTimer > 0;
-            var baseTick = effectivelySprinting ? SnakeGame.TICK_SPRINT : SnakeGame.TICK_NORMAL;
+            bool effectivelySprinting = game._snake.IsSprinting || game._snake.SpeedBoostTimer > 0;
+            float baseTick = effectivelySprinting ? SnakeGame.TICK_SPRINT : SnakeGame.TICK_NORMAL;
 
             _tick = baseTick * speedMultiplier;
 
@@ -110,7 +110,7 @@ public class StateSnakeOverworld : IGameState<SnakeGame>
         }
 
         // Smooth Camera
-        var interp = _accum / _tick;
+        float interp = _accum / _tick;
 
         // FIX: Cast Vec2i to Vec2 before scalar multiplication
         var target = game._snake[0] + ((Vec2)game._snake.Direction * interp);
@@ -125,7 +125,7 @@ public class StateSnakeOverworld : IGameState<SnakeGame>
         if (d.Y > game._world.Height() * 0.5f) d.Y -= game._world.Height();
         else if (d.Y < -game._world.Height() * 0.5f) d.Y += game._world.Height();
 
-        var smoothSpeed = Math.Clamp(dt * 10.0f, 0f, 1f);
+        float smoothSpeed = Math.Clamp(dt * 10.0f, 0f, 1f);
 
         game._cam += d * smoothSpeed;
 
@@ -136,11 +136,9 @@ public class StateSnakeOverworld : IGameState<SnakeGame>
 
     public void Draw(SnakeGame game)
     {
-        var interp = _accum / _tick;
+        float interp = _accum / _tick;
         Render(game, interp);
     }
-
-
 
     private void Render(SnakeGame game, float interp)
     {
@@ -166,15 +164,15 @@ public class StateSnakeOverworld : IGameState<SnakeGame>
             activeSnakeColor = Vec3.Lerp(snakeBase, SnakeTile.Palette.COL_TINT_MUD, 0.5f) * 0.7f;
         }
 
-        for (var vx = 0; vx < SnakeGame.VIEW_W; vx++)
+        for (int vx = 0; vx < SnakeGame.VIEW_W; vx++)
         {
-            for (var vy = 0; vy < SnakeGame.VIEW_H; vy++)
+            for (int vy = 0; vy < SnakeGame.VIEW_H; vy++)
             {
-                var wx = SnakeGame.Wrap((int)camFloor.X - SnakeGame.VIEW_W / 2 + vx, game._world.Width());
-                var wy = SnakeGame.Wrap((int)camFloor.Y - SnakeGame.VIEW_H / 2 + vy, game._world.Height());
+                int wx = SnakeGame.Wrap((int)camFloor.X - SnakeGame.VIEW_W / 2 + vx, game._world.Width());
+                int wy = SnakeGame.Wrap((int)camFloor.Y - SnakeGame.VIEW_H / 2 + vy, game._world.Height());
 
-                var px = (vx - SnakeGame.VIEW_W / 2f - camFrac.X + shakeVec.X) * (SnakeGame._cellSpacing);
-                var py = (vy - SnakeGame.VIEW_H / 2f - camFrac.Y + shakeVec.Y) * (SnakeGame._cellSpacing);
+                float px = (vx - SnakeGame.VIEW_W / 2f - camFrac.X + shakeVec.X) * (SnakeGame._cellSpacing);
+                float py = (vy - SnakeGame.VIEW_H / 2f - camFrac.Y + shakeVec.Y) * (SnakeGame._cellSpacing);
 
                 var ent = game._world.GridRenders[vx][vy];
                 var transform = ent.GetComponent<TransformComponent>();
@@ -201,10 +199,10 @@ public class StateSnakeOverworld : IGameState<SnakeGame>
                     tileCol = fCol * (0.8f + 0.2f * (float)Math.Sin(_time * 12f));
                 }
 
-                var sIdx = game._snake.GetBodyIndexFromWorldPosition(wx, wy);
+                int sIdx = game._snake.GetBodyIndexFromWorldPosition(wx, wy);
                 if (sIdx != -1)
                 {
-                    var tailFade = (1.0f - (sIdx * 0.02f));
+                    float tailFade = (1.0f - (sIdx * 0.02f));
                     var finalSnakeCol = activeSnakeColor * tailFade;
                     if (game._snake.IsDead) finalSnakeCol = new Vec3(0.4f, 0.1f, 0.1f);
 
@@ -241,15 +239,15 @@ public class StateSnakeOverworld : IGameState<SnakeGame>
     }
     private void UpdateEyes(SnakeGame game, float hpx, float hpy, float headSize)
     {
-        var forward = headSize * 0.22f;
-        var side = headSize * 0.18f;
+        float forward = headSize * 0.22f;
+        float side = headSize * 0.18f;
 
         var basePos = new Vec2(hpx, hpy);
         // FIX: Cast _dir (Vec2i) to Vec2 before scalar multiply
         var fwdVec = (Vec2)game._snake.Direction * forward;
         var sideVec = new Vec2(-game._snake.Direction.Y, game._snake.Direction.X) * side;
 
-        var eyeSize = headSize * 0.17f;
+        float eyeSize = headSize * 0.17f;
         var eye0Transform = game._snake.Eyes[0].GetComponent<TransformComponent>();
         eye0Transform.Scale = (eyeSize, eyeSize);
         var eye1Transform = game._snake.Eyes[1].GetComponent<TransformComponent>();
@@ -266,10 +264,10 @@ public class StateSnakeOverworld : IGameState<SnakeGame>
     {
         var head = game._snake[0];
         var bestFood = new Vec2i(-1, -1);
-        var minWeightedDist = float.MaxValue;
-        for (var x = 0; x < game._world.Width(); x++)
+        float minWeightedDist = float.MaxValue;
+        for (int x = 0; x < game._world.Width(); x++)
         {
-            for (var y = 0; y < game._world.Height(); y++)
+            for (int y = 0; y < game._world.Height(); y++)
             {
                 if (game._world[x, y].Food)
                 {
@@ -280,16 +278,16 @@ public class StateSnakeOverworld : IGameState<SnakeGame>
                     if (Math.Abs(dy) > game._world.Height() / 2) dy = Math.Sign(dy) * (game._world.Height() - Math.Abs(dy));
 
                     var distVec = new Vec2(dx, dy);
-                    var dist = distVec.Length();
+                    float dist = distVec.Length();
 
-                    var priorityBonus = 0f;
+                    float priorityBonus = 0f;
                     switch (_foodMap[x][y])
                     {
                         case FoodType.Gold: priorityBonus = 25.0f; break;
                         case FoodType.Chili: priorityBonus = 15.0f; break;
                         case FoodType.Plum: priorityBonus = -5.0f; break;
                     }
-                    var weightedDist = dist - priorityBonus;
+                    float weightedDist = dist - priorityBonus;
                     if (weightedDist < minWeightedDist) { minWeightedDist = weightedDist; bestFood = new Vec2i(x, y); }
                 }
             }
@@ -410,7 +408,7 @@ public class StateSnakeOverworld : IGameState<SnakeGame>
             var dirVec = new Vec2(dx, dy);
             var normalizedDir = dirVec.Normalized();
 
-            var orbitDist = SnakeGame._cellSpacing * 0.9f;
+            float orbitDist = SnakeGame._cellSpacing * 0.9f;
 
             var compassSprite = game._snake.Compass.GetComponent<SpriteComponent>();
             compassSprite.IsVisible = true;
@@ -419,7 +417,7 @@ public class StateSnakeOverworld : IGameState<SnakeGame>
             var compassTransform = game._snake.Compass.GetComponent<TransformComponent>();
             compassTransform.Position = (compassPos.X, compassPos.Y);
 
-            var pulse = 0.5f + 0.5f * (float)Math.Abs(Math.Sin(_time * 10f));
+            float pulse = 0.5f + 0.5f * (float)Math.Abs(Math.Sin(_time * 10f));
 
             var cCol = new Vec3(pulse, pulse, 0);
             var ft = _foodMap[nearest.X][nearest.Y];
@@ -452,11 +450,11 @@ public class StateSnakeOverworld : IGameState<SnakeGame>
 
         var gen = new WorldGenerator(_seed);
         gen.Generate(game._world);
-        var worldW = game._world.Width();
-        var worldH = game._world.Height();
+        int worldW = game._world.Width();
+        int worldH = game._world.Height();
 
         _foodMap = new FoodType[worldW][];
-        for (var x = 0; x < worldW; x++)
+        for (int x = 0; x < worldW; x++)
         {
             _foodMap[x] = new FoodType[worldH];
         }
@@ -475,15 +473,15 @@ public class StateSnakeOverworld : IGameState<SnakeGame>
     {
         while (_foodCount < MAX_FOOD)
         {
-            var spawned = false;
-            for (var i = 0; i < 100; i++)
+            bool spawned = false;
+            for (int i = 0; i < 100; i++)
             {
-                var range = 60;
+                int range = 60;
                 var rndOffset = new Vec2i(game.Rng.Next(-range, range), game.Rng.Next(-range, range));
                 var pos = game._snake[0] + rndOffset;
 
-                var x = SnakeGame.Wrap(pos.X, game._world.Width());
-                var y = SnakeGame.Wrap(pos.Y, game._world.Height());
+                int x = SnakeGame.Wrap(pos.X, game._world.Width());
+                int y = SnakeGame.Wrap(pos.Y, game._world.Height());
 
                 if (!game._world[x, y].Blocked &&
                     !game._world[x, y].Food &&
@@ -492,7 +490,7 @@ public class StateSnakeOverworld : IGameState<SnakeGame>
                     game._world[x, y].Food = true;
                     _foodCount++;
                     spawned = true;
-                    var roll = game.Rng.NextDouble();
+                    double roll = game.Rng.NextDouble();
                     if (roll < 0.10) _foodMap[x][y] = FoodType.Gold;
                     else if (roll < 0.20) _foodMap[x][y] = FoodType.Chili;
                     else if (roll < 0.35) _foodMap[x][y] = FoodType.Plum;

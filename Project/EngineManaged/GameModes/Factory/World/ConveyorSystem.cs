@@ -45,7 +45,7 @@ public class ConveyorSystem : IDisposable
             _map.Dispose();
         }
         
-        foreach(var ent in _itemEntities) Native.Entity_Destroy(ent);
+        foreach(ulong ent in _itemEntities) Native.Entity_Destroy(ent);
         _itemEntities.Clear();
     }
 
@@ -220,7 +220,7 @@ public class ConveyorSystem : IDisposable
             if (i < _items.Count)
             {
                 var item = _items[i];
-                var ent = _itemEntities[i];
+                ulong ent = _itemEntities[i];
                 
                 Native.Entity_SetRender(ent, true);
                 
@@ -304,7 +304,7 @@ public class ConveyorSystem : IDisposable
                 Native.Entity_SetPosition(ent, x + lx, y + ly);
                 
                 // Set Texture based on Item Type
-                var tex = FactoryResources.GetItemTexture(item.Type);
+                nint tex = FactoryResources.GetItemTexture(item.Type);
                 if (tex != IntPtr.Zero)
                 {
                     Native.Entity_SetTexturePtr(ent, tex);

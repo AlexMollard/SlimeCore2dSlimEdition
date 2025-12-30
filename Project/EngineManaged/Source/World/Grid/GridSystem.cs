@@ -51,8 +51,8 @@ public class GridSystem<TGameMode, TEnum, TileOptions, Tile>
         Debug.Assert(tickBudget == 0 || (tickBudget % 2) == 0, "Tick budget for GridSystem equated to 0 or was not divisible by 2");
 
         Grid = new ConcurrentDictionary<Vec2i, Tile>();
-        for (var w = 0; w < width; w++)
-            for (var h = 0; h < height; h++)
+        for (int w = 0; w < width; w++)
+            for (int h = 0; h < height; h++)
             {
                 Grid.TryAdd(new Vec2i(w, h), new Tile()
                 {
@@ -71,9 +71,9 @@ public class GridSystem<TGameMode, TEnum, TileOptions, Tile>
     /// <param name="deltaTime"></param>
     public virtual void Tick(TGameMode mode, float deltaTime)
     {
-        var halfBudget = TickBudget / 2;
-        var budget = TickBudget;
-        for (var i = 0; i < halfBudget; i++)
+        int halfBudget = TickBudget / 2;
+        int budget = TickBudget;
+        for (int i = 0; i < halfBudget; i++)
         {
             if (_actionQueue.Count == 0)
             {
@@ -87,7 +87,7 @@ public class GridSystem<TGameMode, TEnum, TileOptions, Tile>
             budget--;
         }
 
-        for (var i = 0; i < budget; i++)
+        for (int i = 0; i < budget; i++)
         {
             if (_actionQueue.Count == 0)
             {

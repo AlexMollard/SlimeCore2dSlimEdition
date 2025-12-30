@@ -115,7 +115,7 @@ public class Sheep : Actor<FactoryActors, FactoryGame>
         FactoryPhysics.ApplyConveyorMovement(mode, ref pos, deltaTime, Size);
         Position = pos;
 
-        var bob = MathF.Sin(_bobTime * 6f) * 0.05f;
+        float bob = MathF.Sin(_bobTime * 6f) * 0.05f;
 
         var transform = Entity.GetComponent<TransformComponent>();
         transform.Position = (Position.X, Position.Y + bob);

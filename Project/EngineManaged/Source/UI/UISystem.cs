@@ -31,13 +31,13 @@ public static class UISystem
     {
         var (mxWorld, myWorld) = Input.GetMousePos();
         var (mxScreen, myScreen) = Input.GetMouseScreenPos();
-        var down = Input.IsMouseDown(Input.MouseButton.Left);
+        bool down = Input.IsMouseDown(Input.MouseButton.Left);
 
-        var hoverIndex = -1;
-        var highestLayer = int.MinValue;
+        int hoverIndex = -1;
+        int highestLayer = int.MinValue;
 
         // 1. Detect Hover (considering Layers)
-        for (var i = 0; i < _buttons.Count; i++)
+        for (int i = 0; i < _buttons.Count; i++)
         {
             var b = _buttons[i];
             b.IsHovered = false; // Reset frame
@@ -103,12 +103,12 @@ public static class UISystem
             if (hoverIndex != -1) _buttons[hoverIndex].IsPressed = true;
 
             // Unpress others
-            for (var i = 0; i < _buttons.Count; i++)
+            for (int i = 0; i < _buttons.Count; i++)
                 if (i != hoverIndex) _buttons[i].IsPressed = false;
         }
         else if (!down && _prevMouseDown) // Mouse Up
         {
-            for (var i = 0; i < _buttons.Count; i++)
+            for (int i = 0; i < _buttons.Count; i++)
             {
                 var b = _buttons[i];
                 if (b.IsPressed)
@@ -135,10 +135,10 @@ public static class UISystem
         }
 
         // 3. Update Visuals
-        for (var i = 0; i < _buttons.Count; i++) _buttons[i].UpdateColor();
+        for (int i = 0; i < _buttons.Count; i++) _buttons[i].UpdateColor();
 
         // 4. Handle Sliders
-        for (var i = 0; i < _sliders.Count; i++)
+        for (int i = 0; i < _sliders.Count; i++)
         {
             var s = _sliders[i];
             if (!s.Enabled) continue;

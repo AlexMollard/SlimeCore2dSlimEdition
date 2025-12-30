@@ -52,8 +52,8 @@ public class UISlider
         bg.UseScreenSpace(useScreenSpace);
         bg.Color(0.2f, 0.2f, 0.2f); // Dark grey track
 
-        var handleH = h * 2.0f;
-        var handleW = h; 
+        float handleH = h * 2.0f;
+        float handleW = h; 
         var handle = UIImage.Create(x, y, handleW, handleH);
         handle.Anchor(0.5f, 0.5f);
         handle.Layer(layer + 1);
@@ -106,8 +106,8 @@ public class UISlider
     internal bool ContainsPoint(float mx, float my)
     {
         var (bx, by) = Background.Position;
-        var w = _width + _handleWidth; 
-        var h = Math.Max(_height, _handleHeight);
+        float w = _width + _handleWidth;
+        float h = Math.Max(_height, _handleHeight);
         
         return (mx > bx - w / 2 && mx < bx + w / 2 && my > by - h / 2 && my < by + h / 2);
     }

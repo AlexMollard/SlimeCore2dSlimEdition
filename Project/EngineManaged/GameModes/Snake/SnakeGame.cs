@@ -94,8 +94,8 @@ public sealed class SnakeGame : GameMode<SnakeGame>, IGameMode, IDisposable
         if (_world == null || _particleSys == null) return;
 
         // Calculate relative position to camera
-        var dx = worldPos.X - _cam.X;
-        var dy = worldPos.Y - _cam.Y;
+        float dx = worldPos.X - _cam.X;
+        float dy = worldPos.Y - _cam.Y;
 
         // Handle wrapping
         if (dx > _world.Width() / 2f) dx -= _world.Width();
@@ -104,8 +104,8 @@ public sealed class SnakeGame : GameMode<SnakeGame>, IGameMode, IDisposable
         if (dy > _world.Height() / 2f) dy -= _world.Height();
         else if (dy < -_world.Height() / 2f) dy += _world.Height();
 
-        var px = dx * _cellSpacing;
-        var py = dy * _cellSpacing;
+        float px = dx * _cellSpacing;
+        float py = dy * _cellSpacing;
 
         var props = new ParticleProps();
         props.Position = new Vec2(px, py);
@@ -119,10 +119,10 @@ public sealed class SnakeGame : GameMode<SnakeGame>, IGameMode, IDisposable
 
         var rng = Rng ?? new Random();
 
-        for (var i = 0; i < count; i++)
+        for (int i = 0; i < count; i++)
         {
-            var angle = (float)rng.NextDouble() * 6.28f;
-            var speed = (float)rng.NextDouble() * 2.0f + 0.5f;
+            float angle = (float)rng.NextDouble() * 6.28f;
+            float speed = (float)rng.NextDouble() * 2.0f + 0.5f;
             props.Velocity = new Vec2((float)Math.Cos(angle), (float)Math.Sin(angle)) * speed;
 
             _particleSys.Emit(props);

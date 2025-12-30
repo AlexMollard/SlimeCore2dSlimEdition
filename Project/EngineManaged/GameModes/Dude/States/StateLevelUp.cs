@@ -62,29 +62,29 @@ public class StateLevelUp : IGameState<DudeGame>
         _animTime += dt;
 
         // Title Animation
-        var bob = MathF.Sin(_animTime * 2.0f) * 0.2f;
+        float bob = MathF.Sin(_animTime * 2.0f) * 0.2f;
         _upgradeTitle.Position = (-10, 7.5f + bob);
 
         // Note: Input.GetMousePos returns tuple (float, float), not Vec2, so we keep this as is.
         var (mx, my) = Input.GetMousePos();
-        var mouseDown = Input.GetMouseDown(Input.MouseButton.Left);
+        bool mouseDown = Input.GetMouseDown(Input.MouseButton.Left);
 
-        for (var i = 0; i < _cards.Count; i++)
+        for (int i = 0; i < _cards.Count; i++)
         {
             var card = _cards[i];
 
             // Entrance Animation
-            var t = MathF.Min(1.0f, (_animTime * 2.0f) - (i * 0.15f));
+            float t = MathF.Min(1.0f, (_animTime * 2.0f) - (i * 0.15f));
             if (t < 0) t = 0;
 
-            var startY = -15.0f;
-            var endY = 0.0f;
-            var curY = Ease.Lerp(startY, endY, Ease.OutBack(t));
+            float startY = -15.0f;
+            float endY = 0.0f;
+            float curY = Ease.Lerp(startY, endY, Ease.OutBack(t));
 
             // Hover Logic
-            var hovered = t >= 1.0f && card.Contains(mx, my);
+            bool hovered = t >= 1.0f && card.Contains(mx, my);
 
-            var targetScale = hovered ? 1.15f : 1.0f;
+            float targetScale = hovered ? 1.15f : 1.0f;
             card.Scale = Ease.Lerp(card.Scale, targetScale, dt * 15f);
 
             // Apply Transforms
@@ -114,17 +114,17 @@ public class StateLevelUp : IGameState<DudeGame>
 
     private void CreateSidebar(DudeGame game)
     {
-        var xPos = 12.5f;
-        var yStart = 5.0f;
+        float xPos = 12.5f;
+        float yStart = 5.0f;
 
         _sidebarHeader = UIText.Create("Equiped", 1, xPos, yStart);
         _sidebarHeader.Anchor(0.5f, 0.5f);
         _sidebarHeader.Color(0.6f, 0.6f, 0.6f);
 
-        var i = 0;
+        int i = 0;
         foreach (var kvp in game.UpgradeCounts)
         {
-            var text = $"{kvp.Key} x{kvp.Value}";
+            string text = $"{kvp.Key} x{kvp.Value}";
             var ui = UIText.Create(text, 1, xPos, yStart - 1.5f - (i * 1.0f));
             ui.Anchor(0.5f, 0.5f);
             ui.Color(1, 1, 1);
@@ -135,16 +135,16 @@ public class StateLevelUp : IGameState<DudeGame>
 
     private void SpawnCards(DudeGame game)
     {
-        var startX = -7.0f;
-        var gap = 7.0f;
+        float startX = -7.0f;
+        float gap = 7.0f;
 
-        for (var i = 0; i < 3; i++)
+        for (int i = 0; i < 3; i++)
         {
             // Get from Registry
             var def = ContentRegistry.GetRandomUpgrade(game.Rng);
 
-            var xPos = startX + (i * gap);
-            var currentLvl = game.UpgradeCounts.ContainsKey(def.Title) ? game.UpgradeCounts[def.Title] : 0;
+            float xPos = startX + (i * gap);
+            int currentLvl = game.UpgradeCounts.ContainsKey(def.Title) ? game.UpgradeCounts[def.Title] : 0;
 
             // Pass def to card
             var card = new UpgradeCard(xPos, 0, def, currentLvl + 1);

@@ -122,8 +122,8 @@ public class StateGameOver : IGameState<DudeGame>
             var t = game.Camera.GetComponent<TransformComponent>();
             if (game.ShakeAmount > 0)
             {
-                var shakeX = (float)(game.Rng.NextDouble() - 0.5) * game.ShakeAmount;
-                var shakeY = (float)(game.Rng.NextDouble() - 0.5) * game.ShakeAmount;
+                float shakeX = (float)(game.Rng.NextDouble() - 0.5) * game.ShakeAmount;
+                float shakeY = (float)(game.Rng.NextDouble() - 0.5) * game.ShakeAmount;
                 t.Position = (shakeX, shakeY);
             }
             else
@@ -141,8 +141,8 @@ public class StateGameOver : IGameState<DudeGame>
         _gameOverText.Position = (shake.X, 6.0f + shake.Y);
 
         // 2. Animate Panel Slide Up
-        var slideT = MathF.Min(1.0f, _animTimer * 1.5f);
-        var panelY = Ease.Lerp(-18.0f, -1.0f, Ease.OutBack(slideT));
+        float slideT = MathF.Min(1.0f, _animTimer * 1.5f);
+        float panelY = Ease.Lerp(-18.0f, -1.0f, Ease.OutBack(slideT));
 
         var bgTransform = _panelBg.GetComponent<TransformComponent>();
         bgTransform.Position = (0, panelY);

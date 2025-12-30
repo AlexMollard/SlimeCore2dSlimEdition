@@ -23,8 +23,8 @@ public class WorldGenerator
 
     public void Generate(SnakeGrid world)
     {
-        var w = world.Width();
-        var h = world.Height();
+        int w = world.Width();
+        int h = world.Height();
 
         // 1. INITIALIZE CANVAS
         world.SetAll(o =>
@@ -36,7 +36,7 @@ public class WorldGenerator
         // 2. DEFINE HIGHWAYS
         var highwayX = new List<int>();
         var highwayY = new List<int>();
-        foreach (var p in _highwayPercent)
+        foreach (float p in _highwayPercent)
         {
             highwayX.Add((int)(w * p));
             highwayY.Add((int)(h * p));
@@ -44,7 +44,7 @@ public class WorldGenerator
 
         // 3. GENERATE CITY BLOCKS
         // We start slightly offset to avoid cutting off blocks at the wrap point
-        var cx = STREET_WIDTH;
+        int cx = STREET_WIDTH;
         while (cx < w - STREET_WIDTH)
         {
             if (IsOverlappingHighway(cx, highwayX))
@@ -53,10 +53,10 @@ public class WorldGenerator
                 continue;
             }
 
-            var blockW = _rng.Next(BLOCK_MIN, BLOCK_MAX);
+            int blockW = _rng.Next(BLOCK_MIN, BLOCK_MAX);
             blockW = ClampBlockToHighway(cx, blockW, highwayX, w);
 
-            var cy = STREET_WIDTH;
+            int cy = STREET_WIDTH;
             while (cy < h - STREET_WIDTH)
             {
                 if (IsOverlappingHighway(cy, highwayY))
@@ -65,7 +65,7 @@ public class WorldGenerator
                     continue;
                 }
 
-                var blockH = _rng.Next(BLOCK_MIN, BLOCK_MAX);
+                int blockH = _rng.Next(BLOCK_MIN, BLOCK_MAX);
                 blockH = ClampBlockToHighway(cy, blockH, highwayY, h);
 
                 if (blockW > 4 && blockH > 4)
@@ -94,16 +94,16 @@ public class WorldGenerator
 
     private bool IsOverlappingHighway(int pos, List<int> highways)
     {
-        foreach (var h in highways)
+        foreach (int h in highways)
             if (pos >= h - 2 && pos <= h + HIGHWAY_WIDTH + 2) return true;
         return false;
     }
 
     private int ClampBlockToHighway(int pos, int size, List<int> highways, int max)
     {
-        var end = pos + size;
+        int end = pos + size;
         if (end >= max - STREET_WIDTH) size = max - STREET_WIDTH - pos;
-        foreach (var h in highways)
+        foreach (int h in highways)
         {
             if (pos < h && end > h - STREET_WIDTH)
                 size = (h - STREET_WIDTH) - pos;
@@ -113,7 +113,7 @@ public class WorldGenerator
 
     private void ProcessPlaza(SnakeGrid world, int x, int y, int w, int h)
     {
-        var roll = _rng.NextDouble();
+        double roll = _rng.NextDouble();
         if (roll < 0.45)
         {
             FillRect(world, x, y, w, h, e =>
@@ -150,10 +150,10 @@ public class WorldGenerator
 
     private void DrawHighways(SnakeGrid world, List<int> hx, List<int> hy)
     {
-        var w = world.Width();
-        var h = world.Height();
-        foreach (var x in hx)
-            for (var y = 0; y < h; y++)
+        int w = world.Width();
+        int h = world.Height();
+        foreach (int x in hx)
+            for (int y = 0; y < h; y++)
             {
                 world.Set(x, y, o =>
                 {
@@ -166,8 +166,8 @@ public class WorldGenerator
                     o.Blocked = false;
                 });
             }
-        foreach (var y in hy)
-            for (var x = 0; x < w; x++)
+        foreach (int y in hy)
+            for (int x = 0; x < w; x++)
             {
                 world.Set(x, y, o =>
                 {
@@ -184,15 +184,15 @@ public class WorldGenerator
 
     private void RemoveSingleTileWalls(SnakeGrid world)
     {
-        var w = world.Width();
-        var h = world.Height();
-        for (var x = 0; x < w; x++)
+        int w = world.Width();
+        int h = world.Height();
+        for (int x = 0; x < w; x++)
         {
-            for (var y = 0; y < h; y++)
+            for (int y = 0; y < h; y++)
             {
                 if (world[x, y].Blocked)
                 {
-                    var neighbors = 0;
+                    int neighbors = 0;
                     // Wrap check for neighbors
                     if (world[(x + 1) % w, y].Blocked) neighbors++;
                     if (world[(x - 1 + w) % w, y].Blocked) neighbors++;
@@ -211,8 +211,8 @@ public class WorldGenerator
 
     private void FillRect(SnakeGrid world, int bx, int by, int bw, int bh, Action<SnakeTileOptions> configure)
     {
-        for (var x = bx; x < bx + bw; x++)
-            for (var y = by; y < by + bh; y++)
+        for (int x = bx; x < bx + bw; x++)
+            for (int y = by; y < by + bh; y++)
             {
                 world.Set(x, y, configure);
             }
@@ -220,11 +220,11 @@ public class WorldGenerator
 
     private void ClearCenter(SnakeGrid world)
     {
-        var cw = world.Width() / 2;
-        var ch = world.Height() / 2;
-        var r = 10;
-        for (var x = cw - r; x <= cw + r; x++)
-            for (var y = ch - r; y <= ch + r; y++)
+        int cw = world.Width() / 2;
+        int ch = world.Height() / 2;
+        int r = 10;
+        for (int x = cw - r; x <= cw + r; x++)
+            for (int y = ch - r; y <= ch + r; y++)
             {
                 world.Set(x, y, o =>
                 {
@@ -236,18 +236,18 @@ public class WorldGenerator
 
     private void PruneUnreachableAreas(SnakeGrid world)
     {
-        var w = world.Width();
-        var h = world.Height();
-        var reachable = new bool[w][];
-        for (var i = 0; i < w; i++)
+        int w = world.Width();
+        int h = world.Height();
+        bool[][] reachable = new bool[w][];
+        for (int i = 0; i < w; i++)
         {
             reachable[i] = new bool[h];
         }
 
         var queue = new Queue<(int x, int y)>();
 
-        var startX = w / 2;
-        var startY = h / 2;
+        int startX = w / 2;
+        int startY = h / 2;
 
         queue.Enqueue((startX, startY));
         reachable[startX][startY] = true;
@@ -258,11 +258,11 @@ public class WorldGenerator
         while (queue.Count > 0)
         {
             var (cx, cy) = queue.Dequeue();
-            for (var i = 0; i < 4; i++)
+            for (int i = 0; i < 4; i++)
             {
                 // FLOOD FILL NOW WRAPS AROUND THE WORLD
-                var nx = (cx + dx[i] + w) % w;
-                var ny = (cy + dy[i] + h) % h;
+                int nx = (cx + dx[i] + w) % w;
+                int ny = (cy + dy[i] + h) % h;
 
                 if (!reachable[nx][ny] && !world[nx, ny].Blocked)
                 {
@@ -272,8 +272,8 @@ public class WorldGenerator
             }
         }
 
-        for (var x = 0; x < w; x++)
-            for (var y = 0; y < h; y++)
+        for (int x = 0; x < w; x++)
+            for (int y = 0; y < h; y++)
             {
                 if (!world[x, y].Blocked && !reachable[x][y])
                 {

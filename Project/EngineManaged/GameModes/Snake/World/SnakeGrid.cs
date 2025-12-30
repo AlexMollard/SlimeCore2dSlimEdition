@@ -23,10 +23,10 @@ public class SnakeGrid : GridSystem<SnakeGame, SnakeTerrain, SnakeTileOptions, S
     public void Initialize(int viewWidth, int viewHeight)
     {
         GridRenders = new Entity[viewWidth][];
-        for (var x = 0; x < viewWidth; x++)
+        for (int x = 0; x < viewWidth; x++)
         {
             GridRenders[x] = new Entity[viewHeight];
-            for (var y = 0; y < viewHeight; y++)
+            for (int y = 0; y < viewHeight; y++)
             {
                 var entity = SceneFactory.CreateQuad(0, 0, Zoom, Zoom, 1f, 1f, 1f, layer: 0);
                 var transform = entity.GetComponent<TransformComponent>();

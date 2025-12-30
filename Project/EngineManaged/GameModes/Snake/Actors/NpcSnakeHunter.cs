@@ -33,17 +33,17 @@ public class NpcSnakeHunter : Actor<SnakeActors, SnakeGame>
         var type = game.Rng.NextDouble() < 0.10 ? HunterType.Chonker : HunterType.Normal;
         var snakePos = game._snake.Body[0];
 
-        var angle = game.Rng.NextDouble() * Math.PI * 2;
-        var dist = game.Rng.NextDouble() * spawnRadius;
+        double angle = game.Rng.NextDouble() * Math.PI * 2;
+        double dist = game.Rng.NextDouble() * spawnRadius;
 
         var pos = new Vec2i(
             snakePos.X + (int)Math.Round(Math.Cos(angle) * dist),
             snakePos.Y + (int)Math.Round(Math.Sin(angle) * dist)
         );
 
-        var size = type == HunterType.Chonker ? 2.2f : 0.8f;
-        var r = type == HunterType.Chonker ? 0.6f : 1.0f;
-        var b = type == HunterType.Chonker ? 0.8f : 0.2f;
+        float size = type == HunterType.Chonker ? 2.2f : 0.8f;
+        float r = type == HunterType.Chonker ? 0.6f : 1.0f;
+        float b = type == HunterType.Chonker ? 0.8f : 0.2f;
         var hunter = SceneFactory.CreateQuad(0, 0, size, size, r, 0f, b, layer: 4);
 
         // Add Physics (Kinematic so we can control position manually but still collide with player)
@@ -70,13 +70,13 @@ public class NpcSnakeHunter : Actor<SnakeActors, SnakeGame>
     public static void HandleUpdateBehaviour(SnakeGame game, float dt)
     {
         game.SpawnTimer -= dt;
-        var hunterCount = game.ActorManager.Count(SnakeActors.SnakeHunter);
+        int hunterCount = game.ActorManager.Count(SnakeActors.SnakeHunter);
         if (game.SpawnTimer <= 0 && hunterCount < MaxHunters)
         {
             var hunterActor = SpawnHunter(game);
-            var snakeDistance = Vec2i.Distance((Vec2i)hunterActor.Position, game._snake.Body[0]);
+            float snakeDistance = Vec2i.Distance((Vec2i)hunterActor.Position, game._snake.Body[0]);
             SafeNativeMethods.Engine_Log($"Spawning Hunter with Id: {hunterActor.Entity.Id}, {snakeDistance} from snake, there are {hunterCount} hunters");
-            var ramp = MathF.Min(1.5f, game._currentScore * 0.02f);
+            float ramp = MathF.Min(1.5f, game._currentScore * 0.02f);
             game.SpawnTimer = (1.2f - ramp) / (game.ChillTimer > 0 ? 0.5f : 1.0f);
             if (game.SpawnTimer < 0.2f)
             {
@@ -91,7 +91,7 @@ public class NpcSnakeHunter : Actor<SnakeActors, SnakeGame>
     public Vec2 PathFindToPlayer(SnakeGame game)
     {
         var bestDir = Vec2i.Zero;
-        var bestScore = float.MaxValue;
+        float bestScore = float.MaxValue;
 
         var dirs = new[]
         {
@@ -105,13 +105,13 @@ public class NpcSnakeHunter : Actor<SnakeActors, SnakeGame>
         {
             var next = (Vec2i)Position + d;
 
-            var wx = SnakeGame.Wrap(next.X, game._world.Width());
-            var wy = SnakeGame.Wrap(next.Y, game._world.Height());
+            int wx = SnakeGame.Wrap(next.X, game._world.Width());
+            int wy = SnakeGame.Wrap(next.Y, game._world.Height());
 
             if (game._world[wx, wy].Blocked)
                 continue;
 
-            var dist = Vec2i.Distance(next, game._snake.Body[0]);
+            float dist = Vec2i.Distance(next, game._snake.Body[0]);
 
             if (dist < bestScore)
             {
@@ -135,24 +135,24 @@ public class NpcSnakeHunter : Actor<SnakeActors, SnakeGame>
             return false;
         }
         PulseIterator++;
-        var timeScale = mode.ChillTimer > 0 ? 0.3f : 1.0f;
+        float timeScale = mode.ChillTimer > 0 ? 0.3f : 1.0f;
         // Vectorized Direction
         var toPlayer = PathFindToPlayer(mode);
 
         var separation = Vec2.Zero;
-        var neighbors = 0;
-        var myRad = Type == HunterType.Chonker ? 2.5f : 1.2f;
+        int neighbors = 0;
+        float myRad = Type == HunterType.Chonker ? 2.5f : 1.2f;
 
         foreach (var other in mode.ActorManager.Active(SnakeActors.SnakeHunter))
         {
             if (this == other) continue;
 
             var diff = Position - other.Position;
-            var distSq = diff.LengthSquared();
+            float distSq = diff.LengthSquared();
 
             if (distSq < myRad * myRad && distSq > 0.001f)
             {
-                var pushStrength = Type == HunterType.Chonker ? 8.0f : 4.0f;
+                float pushStrength = Type == HunterType.Chonker ? 8.0f : 4.0f;
                 separation += diff.Normalized() * pushStrength;
                 neighbors++;
             }
@@ -161,7 +161,7 @@ public class NpcSnakeHunter : Actor<SnakeActors, SnakeGame>
         var force = toPlayer * 2.0f;
         if (neighbors > 0) force += separation * 1.5f;
 
-        var speed = (Type == HunterType.Chonker ? 2.0f : 4.5f) * timeScale;
+        float speed = (Type == HunterType.Chonker ? 2.0f : 4.5f) * timeScale;
         Position += force.Normalized() * speed * deltaTime;
 
         var hunterSprite = Entity.GetComponent<SpriteComponent>();
@@ -169,8 +169,8 @@ public class NpcSnakeHunter : Actor<SnakeActors, SnakeGame>
 
         var hunterTransform = Entity.GetComponent<TransformComponent>();
 
-        var dx = Position.X - mode._cam.X;
-        var dy = Position.Y - mode._cam.Y;
+        float dx = Position.X - mode._cam.X;
+        float dy = Position.Y - mode._cam.Y;
 
         if (dx > mode._world.Width() / 2f) dx -= mode._world.Width();
         else if (dx < -mode._world.Width() / 2f) dx += mode._world.Width();
@@ -183,14 +183,14 @@ public class NpcSnakeHunter : Actor<SnakeActors, SnakeGame>
             dy * SnakeGame._cellSpacing
         );
 
-        var pulseSpeed = Type == HunterType.Chonker ? 5.0f : 15.0f;
-        var baseSize = Type == HunterType.Chonker ? 2.2f : 0.8f;
-        var pulse = baseSize + 0.1f * MathF.Sin(mode._currentScore * pulseSpeed + PulseIterator);
+        float pulseSpeed = Type == HunterType.Chonker ? 5.0f : 15.0f;
+        float baseSize = Type == HunterType.Chonker ? 2.2f : 0.8f;
+        float pulse = baseSize + 0.1f * MathF.Sin(mode._currentScore * pulseSpeed + PulseIterator);
         hunterTransform.Scale = (pulse, pulse);
 
         // Distance check with Vector method
         // Increased kill distance slightly to account for physics collision radius preventing overlap
-        var killDist = (Type == HunterType.Chonker ? 2.4f : 1.0f) * mode._snake.HeadSize;
+        float killDist = (Type == HunterType.Chonker ? 2.4f : 1.0f) * mode._snake.HeadSize;
 
         if (Vec2.Distance(mode._snake.Body[0], Position) < killDist)
         {

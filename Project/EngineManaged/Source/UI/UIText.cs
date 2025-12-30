@@ -9,7 +9,7 @@ public readonly struct UIText
 
     public static UIText Create(string text, int fontSize, float x, float y)
     {
-        var id = NativeMethods.UI_CreateText(text, fontSize, x, y);
+        ulong id = NativeMethods.UI_CreateText(text, fontSize, x, y);
         return new UIText(id);
     }
 
@@ -19,7 +19,7 @@ public readonly struct UIText
 
     public (float x, float y) Position
     {
-        get { NativeMethods.UI_GetPosition(Id, out var x, out var y); return (x, y); }
+        get { NativeMethods.UI_GetPosition(Id, out float x, out float y); return (x, y); }
         set => NativeMethods.UI_SetPosition(Id, value.x, value.y);
     }
 
@@ -43,7 +43,7 @@ public readonly struct UIText
     /// </summary>
     public (float width, float height) GetSize()
     {
-        NativeMethods.UI_GetTextSize(Id, out var width, out var height);
+        NativeMethods.UI_GetTextSize(Id, out float width, out float height);
         return (width, height);
     }
 

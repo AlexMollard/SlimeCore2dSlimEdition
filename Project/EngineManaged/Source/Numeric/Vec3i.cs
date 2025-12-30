@@ -27,7 +27,7 @@ namespace EngineManaged.Numeric
 
         public int LengthSquared() => X * X + Y * Y + Z * Z;
         public float Length() => MathF.Sqrt(LengthSquared());
-        public Vec3i Normalized() { var len = Length(); return len > 0.0001f ? this / (int)len : new Vec3i(0, 0, 0); }
+        public Vec3i Normalized() { float len = Length(); return len > 0.0001f ? this / (int)len : new Vec3i(0, 0, 0); }
         public static int Dot(in Vec3i a, in Vec3i b) => a.X * b.X + a.Y * b.Y + a.Z * b.Z;
         public static float Distance(in Vec3i a, in Vec3i b) => (a - b).Length();
 

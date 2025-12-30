@@ -94,7 +94,7 @@ dotnet_style_allow_statement_immediately_after_block_experimental = true
 
 # only use var when it's obvious what the variable type is
 csharp_style_var_elsewhere = true:error
-csharp_style_var_for_built_in_types = true:error
+csharp_style_var_for_built_in_types = false:error
 csharp_style_var_when_type_is_apparent = true:error
 
 # Expression-bodied members
@@ -322,7 +322,7 @@ dotnet_diagnostic.CA1040.severity = error # Avoid empty interfaces
 dotnet_diagnostic.CA1041.severity = error # Provide ObsoleteAttribute message
 dotnet_diagnostic.CA1043.severity = none # Use integral or string argument for indexers
 dotnet_diagnostic.CA1044.severity = error # Properties should not be write only
-dotnet_diagnostic.CA1045.severity = error # Do not pass types by reference
+dotnet_diagnostic.CA1045.severity = none # Do not pass types by reference
 dotnet_diagnostic.CA1046.severity = error # Do not overload operator equals on reference types
 dotnet_diagnostic.CA1047.severity = error # Do not declare protected members in sealed types
 dotnet_diagnostic.CA1050.severity = error # Declare types in namespaces
