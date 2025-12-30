@@ -1,4 +1,5 @@
 ﻿using EngineManaged.Numeric;
+using SlimeCore.Source.Common;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -57,6 +58,12 @@ public class GridSystem<TEnum, TileOptions, Tile>
     {
         get => Grid[position];
         set => Grid[position] = value;
+    }
+
+    public Tile this[Vec2 position]
+    {
+        get => Grid[position.ToVec2Int()];
+        set => Grid[position.ToVec2Int()] = value;
     }
 
     public void SetAll(Action<TileOptions> configure)

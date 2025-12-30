@@ -1,4 +1,4 @@
-﻿using EngineManaged.Numeric;
+using EngineManaged.Numeric;
 using EngineManaged.Scene;
 using SlimeCore.Source.World.Actors;
 using System;
@@ -14,7 +14,7 @@ public class Sheep : Actor<FactoryActors, FactoryGame>
 
     public Entity Entity { get; private set; }
 
-    public float Speed { get; set; } = 4.5f;
+    public float Speed { get; set; } = 3.5f;
     public float Size { get; set; } = 0.5f;
 
     private Vec2 _velocity;
@@ -49,18 +49,18 @@ public class Sheep : Actor<FactoryActors, FactoryGame>
             // Time to reconsider life choices
             if (_decisionTimer <= 0f)
             {
-                _decisionTimer = Random.Shared.NextSingle() * 3f + 1f;
+                _decisionTimer = mode.Rng.NextSingle() * 3f + 1f;
 
-                if (Random.Shared.NextSingle() < 0.35f)
+                if (mode.Rng.NextSingle() < 0.35f)
                 {
-                    _pauseTimer = Random.Shared.NextSingle() * 2f;
+                    _pauseTimer = mode.Rng.NextSingle() * 2f;
                     _targetDir = Vec2.Zero;
                 }
                 else
                 {
                     _targetDir = new Vec2(
-                        Random.Shared.NextSingle() * 2f - 1f,
-                        Random.Shared.NextSingle() * 2f - 1f
+                        mode.Rng.NextSingle() * 2f - 1f,
+                        mode.Rng.NextSingle() * 2f - 1f
                     ).Normalized();
                 }
             }

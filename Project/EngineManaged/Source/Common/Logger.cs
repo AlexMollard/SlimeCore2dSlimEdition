@@ -1,4 +1,4 @@
-namespace SlimeCore
+namespace SlimeCore.Source.Common
 {
     public static class Logger
     {

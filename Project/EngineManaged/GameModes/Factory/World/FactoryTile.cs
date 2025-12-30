@@ -139,4 +139,26 @@ public class FactoryTile : Tile<FactoryTerrain, FactoryTileOptions>
 
         return col;
     }
+
+    public bool IsBlocked()
+    {
+        if (Type == FactoryTerrain.Concrete)
+        {
+            return true;
+        }
+        if (Structure != FactoryStructure.None)
+        {
+            return true;
+        }
+        return false;
+    }
+
+    public bool IsLiquid()
+    {
+        if (Type == FactoryTerrain.Water)
+        {
+            return true;
+        }
+        return false;
+    }
 }
