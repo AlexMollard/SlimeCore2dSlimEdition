@@ -73,7 +73,37 @@ public class Sheep : Actor<FactoryActors, FactoryGame>
             );
         }
 
-        Position += _velocity * deltaTime;
+        // Apply movement with collision
+        var move = _velocity * deltaTime;
+        if (move.Length() > 0)
+        {
+            // Try X movement
+            if (!FactoryPhysics.CheckCollision(mode, Position + new Vec2(move.X, 0), Size))
+            {
+                Position += new Vec2(move.X, 0);
+            }
+            else
+            {
+                _velocity.X = -_velocity.X * 0.5f; // Bounce
+                _targetDir.X = -_targetDir.X;
+            }
+            
+            // Try Y movement
+            if (!FactoryPhysics.CheckCollision(mode, Position + new Vec2(0, move.Y), Size))
+            {
+                Position += new Vec2(0, move.Y);
+            }
+            else
+            {
+                _velocity.Y = -_velocity.Y * 0.5f; // Bounce
+                _targetDir.Y = -_targetDir.Y;
+            }
+        }
+
+        // Apply Conveyor Physics
+        var pos = Position;
+        FactoryPhysics.ApplyConveyorMovement(mode, ref pos, deltaTime, Size);
+        Position = pos;
 
         var bob = MathF.Sin(_bobTime * 6f) * 0.05f;
 
