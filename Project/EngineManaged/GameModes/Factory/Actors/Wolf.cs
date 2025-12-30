@@ -1,4 +1,4 @@
-using EngineManaged.Numeric;
+﻿using EngineManaged.Numeric;
 using EngineManaged.Scene;
 using SlimeCore.GameModes.Factory.World;
 using SlimeCore.Source.World.Actors;
@@ -8,7 +8,7 @@ using System.Text;
 
 namespace SlimeCore.GameModes.Factory.Actors;
 
-public class Sheep : Actor<FactoryActors, FactoryGame>
+public class Wolf : Actor<FactoryActors, FactoryGame>
 {
     public override FactoryActors Kind => FactoryActors.Animals;
     protected override float ActionInterval => 0.5f;
@@ -25,12 +25,12 @@ public class Sheep : Actor<FactoryActors, FactoryGame>
     private float _bobTime;
     private float _hunger;
 
-    public Sheep(Vec2 startPos)
+    public Wolf(Vec2 startPos)
     {
         Position = startPos;
         Entity = SceneFactory.CreateQuad(Position.X, Position.Y, Size, Size, 1.0f, 1.0f, 1.0f, layer: 9);
         var sprite = Entity.GetComponent<SpriteComponent>();
-        sprite.TexturePtr = FactoryResources.TexSheep;
+        sprite.TexturePtr = FactoryResources.TexWolf;
         //sprite.Color = (1.0f, 1.0f, 1.0f); // White player for now
     }
 
@@ -45,11 +45,6 @@ public class Sheep : Actor<FactoryActors, FactoryGame>
             _pauseTimer -= deltaTime;
             _velocity *= 0.9f; // gentle settling
             var position = Position.ToVec2Int();
-            if (_hunger < 100f && mode.World[position].Type == FactoryTerrain.Grass)
-            {
-                mode.World.Set(position, x => x.Type = FactoryTerrain.Dirt);
-                _hunger += 20f;
-            }
         }
         else
         {
@@ -97,7 +92,7 @@ public class Sheep : Actor<FactoryActors, FactoryGame>
                 _velocity.X = -_velocity.X * 0.5f; // Bounce
                 _targetDir.X = -_targetDir.X;
             }
-            
+
             // Try Y movement
             if (!FactoryPhysics.CheckCollision(mode, Position + new Vec2(0, move.Y), Size))
             {
@@ -128,14 +123,13 @@ public class Sheep : Actor<FactoryActors, FactoryGame>
         Entity.Destroy();
     }
 
-
     public static void Populate(FactoryGame game, int amount)
     {
         var coords = new Vec2i(game.Rng!.Next(game.World.Width()), game.Rng!.Next(game.World.Width()));
         int counter = 0;
         for (int i = 0; i < amount; i++)
         {
-            game.ActorManager?.Register(new Sheep(coords));
+            game.ActorManager?.Register(new Wolf(coords));
             counter += game.Rng.Next(10);
             if (counter % 2 == 0)
             {
@@ -143,4 +137,6 @@ public class Sheep : Actor<FactoryActors, FactoryGame>
             }
         }
     }
+
 }
+

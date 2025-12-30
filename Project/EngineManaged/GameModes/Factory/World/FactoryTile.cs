@@ -170,6 +170,8 @@ public class FactoryTile : Tile<FactoryGame, FactoryTerrain, FactoryTileOptions>
             {
                 Type = FactoryTerrain.Grass;
             }
+
+            Progress += 10;
         }
     }
 

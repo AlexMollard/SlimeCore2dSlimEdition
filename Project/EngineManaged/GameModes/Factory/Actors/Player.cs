@@ -76,16 +76,6 @@ public class Player : Actor<FactoryActors, FactoryGame>, IControllable
         }
     }
 
-
-
-
-
-
-
-
-
-
-
     public override void Destroy()
     {
         Entity.Destroy();

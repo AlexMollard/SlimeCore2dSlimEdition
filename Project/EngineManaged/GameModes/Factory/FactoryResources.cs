@@ -30,9 +30,10 @@ public static class FactoryResources
     public static IntPtr TexItemGoldOre;
     public static IntPtr TexItemStone;
 
-    public static IntPtr TexSheep;
+    public static IntPtr TexSheep { get; set; }
+    public static IntPtr TexWolf { get; set; }
 
-	public static IntPtr TexDebug;
+    public static IntPtr TexDebug;
 
 	public static void Load()
     {
@@ -68,6 +69,8 @@ public static class FactoryResources
         TexItemStone = NativeMethods.Resources_LoadTexture("item_stone", "Textures/Factory/Items/stone.png");
 
         TexSheep = NativeMethods.Resources_LoadTexture("sheep", "Textures/Factory/Fauna/sheep.png");
+        TexWolf = NativeMethods.Resources_LoadTexture("wolf", "Textures/Factory/Fauna/wolf.png");
+
 
 
     }
@@ -136,6 +139,7 @@ public static class FactoryResources
         return actor switch
         {
             "Sheep" => TexSheep,
+            "Wolf" => TexWolf,
             _ => IntPtr.Zero
         };
     }

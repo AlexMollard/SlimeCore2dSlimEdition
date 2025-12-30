@@ -111,14 +111,8 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         // Create player at center
         _player = new Player(_cam);
         game.ActorManager?.Register(_player);
-        for (int i = 0; i < 5; i++)
-        {
-            var coords = game.Rng?.Next(10) > 5 ?
-               new Vec2(_cam.X + i, _cam.Y - i) :
-               new Vec2(_cam.X + i, _cam.Y - i);
-
-            game.ActorManager?.Register(new Sheep(coords));
-        }
+        Sheep.Populate(game, 500);
+        Wolf.Populate(game, 100);
 
         CreateUI();
     }

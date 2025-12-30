@@ -9,6 +9,7 @@ public enum FactoryActors
 {
     Player = 0,
     Animals = 1,
+    Plants = 2,
 }
 
 public class FactoryActorManager : ActorManager<FactoryActors, FactoryGame>
