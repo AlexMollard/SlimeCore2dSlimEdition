@@ -21,6 +21,7 @@ public:
 	void Update_Window();
 	int Window_shouldClose();
 	void Window_destroy();
+    void Resize(int width, int height);
 
 	float GetDeltaTime();
 

@@ -363,7 +363,9 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
                 {
                     var (count, item) = _buildingSystem.GetBuildingInventory(gridX, gridY);
                     tt.Text($"{item}: {count}");
-                    tt.Position = (mx + 0.5f, my + 0.5f);
+                    // Convert world mouse pos to UI pos (relative to camera center)
+                    // Since UI camera is at (0,0), we just subtract the main camera position
+                    tt.Position = (mx - _cam.X, my - _cam.Y);
                     showTooltip = true;
                 }
             }

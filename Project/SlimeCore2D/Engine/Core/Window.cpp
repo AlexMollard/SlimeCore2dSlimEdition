@@ -43,6 +43,8 @@ int Window::Window_intit(int width, int height, char* name)
 		glfwTerminate();
 		return -1;
 	}
+    
+    glfwSetWindowUserPointer(window, this);
 	
 	Input::GetInstance()->Init(window);
 
@@ -211,30 +213,38 @@ float Window::GetDeltaTime()
 	return delta;
 }
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+void Window::Resize(int width, int height)
 {
-	if (height == 0)
-		height = 1;
+    if (width == 0 || height == 0) return;
 
-	Input::GetInstance()->SetViewportRect(0, 0, width, height);
+    CleanupRenderTarget();
 
-    // Update DX11 Viewport
-    if (Window::GetContext())
+    if (m_SwapChain)
     {
-        D3D11_VIEWPORT vp;
-        vp.Width = (float)width;
-        vp.Height = (float)height;
-        vp.MinDepth = 0.0f;
-        vp.MaxDepth = 1.0f;
-        vp.TopLeftX = 0;
-        vp.TopLeftY = 0;
-        Window::GetContext()->RSSetViewports(1, &vp);
+        m_SwapChain->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, 0);
     }
 
-	Camera* cam = Input::GetInstance()->GetCamera();
+    CreateRenderTarget(width, height);
+    
+    // Update Input Viewport
+    Input::GetInstance()->SetViewportRect(0, 0, width, height);
+    
+    // Update Camera
+    Camera* cam = Input::GetInstance()->GetCamera();
 	if (cam)
 	{
 		float aspectRatio = (float) width / (float) height;
 		cam->SetProjection(cam->GetOrthographicSize(), aspectRatio);
 	}
+}
+
+void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+	if (height == 0) height = 1;
+
+    Window* win = (Window*)glfwGetWindowUserPointer(window);
+    if (win)
+    {
+        win->Resize(width, height);
+    }
 }
