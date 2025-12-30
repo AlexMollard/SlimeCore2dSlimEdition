@@ -25,12 +25,25 @@ namespace EngineManaged.Numeric
         // -----------------------------------------------------------------
         public static Vec2 Zero => new(0, 0);
 
+        public Vec2i ToVec2Int() => new((int)MathF.Floor(X), (int)MathF.Floor(Y));
+
         public float Length() => MathF.Sqrt(X * X + Y * Y);
         public float LengthSquared() => X * X + Y * Y;
         public Vec2 Normalized() { var len = Length(); return len > 0.0001f ? this / len : new Vec2(0, 0); }
         public static Vec2 Lerp(in Vec2 a, in Vec2 b, float t) => a + (b - a) * t;
         public static float Dot(in Vec2 a, in Vec2 b) => a.X * b.X + a.Y * b.Y;
         public static float Distance(in Vec2 a, in Vec2 b) => (a - b).Length();
+
+        public static Vec2 Rotate(in Vec2 v, float radians)
+        {
+            var cos = MathF.Cos(radians);
+            var sin = MathF.Sin(radians);
+
+            return new Vec2(
+                v.X * cos - v.Y * sin,
+                v.X * sin + v.Y * cos
+            );
+        }
 
         // -----------------------------------------------------------------
         // Equality / hash

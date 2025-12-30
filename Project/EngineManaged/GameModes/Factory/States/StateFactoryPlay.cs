@@ -12,11 +12,9 @@ namespace SlimeCore.GameModes.Factory.States;
 
 public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
 {
+    
     private Vec2 _cam;
     private Player? _player;
-    private IntPtr _tileMap;
-    private ConveyorSystem? _conveyorSystem;
-    private BuildingSystem? _buildingSystem;
     private float _time;
     private ulong _cameraEntity;
     private ulong _cursorEntity;
@@ -81,24 +79,27 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         var gen = new FactoryWorldGenerator(game.Rng?.Next() ?? 0);
         if (game.World != null)
         {
+
+            //Generate terrain
             gen.Generate(game.World);
 
             // Create TileMap
-            _tileMap = Native.TileMap_Create(game.World.Width(), game.World.Height(), 1.0f);
-            
-            // Create Systems
-            _conveyorSystem = new ConveyorSystem(game.World.Width(), game.World.Height(), 1.0f);
-            _buildingSystem = new BuildingSystem(game.World, _conveyorSystem);
+            game.TileMap = Native.TileMap_Create(game.World.Width(), game.World.Height(), 1.0f);
+
+            //Create Systems
+            game.ConveyorSystem = new ConveyorSystem(game.World.Width(), game.World.Height(), 1.0f);
+            game.BuildingSystem = new BuildingSystem(game.World, game.ConveyorSystem);
 
             // Populate TileMap
-            for (var x = 0; x < game.World.Width(); x++)
-            {
-                for (var y = 0; y < game.World.Height(); y++)
-                {
-                    UpdateTile(game, x, y);
-                }
-            }
-            Native.TileMap_UpdateMesh(_tileMap);
+            //for (var x = 0; x < game.World.Width(); x++)
+            //{
+            //    for (var y = 0; y < game.World.Height(); y++)
+            //    {
+            //        game.World[x, y].UpdateTile(game);
+            //    }
+            //}
+            //Native.TileMap_UpdateMesh(game.TileMap);
+            game.World.ManualTick(game, 0f);
         }
 
         // Center camera on world
@@ -127,9 +128,9 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         UISystem.Clear();
 
         // Toolbar Background
-        float barW = 36.0f;
-        float barH = 4.0f;
-        float barY = -13.0f;
+        var barW = 36.0f;
+        var barH = 4.0f;
+        var barY = -13.0f;
         
         var bg = UIImage.Create(0, barY, barW, barH);
         bg.Color(0.1f, 0.1f, 0.1f);
@@ -138,10 +139,10 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         _toolbarBg = bg;
 
         // Buttons
-        float btnW = 8.0f;
-        float btnH = 3.0f;
-        float gap = 0.5f;
-        float startX = -((btnW * 4 + gap * 3) / 2.0f) + btnW / 2.0f; // Centered
+        var btnW = 8.0f;
+        var btnH = 3.0f;
+        var gap = 0.5f;
+        var startX = -((btnW * 4 + gap * 3) / 2.0f) + btnW / 2.0f; // Centered
         
         // Helper to create styled button
         UIButton CreateBtn(string text, int index, Action onClick)
@@ -202,72 +203,8 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         // Update Rotation Label
         if (_rotationLabel is { } rotLbl)
         {
-             string dirStr = _placementDirection.ToString();
+             var dirStr = _placementDirection.ToString();
              rotLbl.Text($"Rotate: [R] ({dirStr})");
-        }
-    }
-
-    private void UpdateTile(FactoryGame game, int x, int y)
-    {
-        if (_tileMap == IntPtr.Zero || game.World == null) return;
-
-        var tile = game.World[x, y];
-
-        // Layer 0: Terrain
-        Native.TileMap_SetTile(_tileMap, x, y, 0, FactoryResources.GetTerrainTexture(tile.Type), 1, 1, 1, 1, 0);
-
-        // Layer 1: Ore
-        var oreTex = FactoryResources.GetOreTexture(tile.OreType);
-        if (oreTex != IntPtr.Zero)
-            Native.TileMap_SetTile(_tileMap, x, y, 1, oreTex, 1, 1, 1, 1, 0);
-        else
-            Native.TileMap_SetTile(_tileMap, x, y, 1, IntPtr.Zero, 0, 0, 0, 0, 0);
-
-        // Layer 2: Structure
-        var structTex = FactoryResources.GetStructureTexture(tile.Structure, tile.Tier);
-        var rotation = 0.0f;
-        
-        if (tile.Structure == FactoryStructure.ConveyorBelt)
-        {
-            // Use ConveyorSystem
-            _conveyorSystem.PlaceConveyor(x, y, tile.Tier, tile.Direction);
-            _buildingSystem.RemoveBuilding(x, y); // Ensure no building
-            
-            // Don't render in TileMap
-            Native.TileMap_SetTile(_tileMap, x, y, 2, IntPtr.Zero, 0, 0, 0, 0, 0);
-        }
-        else if (tile.Structure == FactoryStructure.Miner || tile.Structure == FactoryStructure.Storage)
-        {
-            // Use BuildingSystem
-            _buildingSystem.PlaceBuilding(x, y, tile.Structure, tile.Direction, tile.Tier);
-            _conveyorSystem.RemoveConveyor(x, y); // Ensure no conveyor
-            
-            if (structTex != IntPtr.Zero)
-            {
-                // Use the texture
-                Native.TileMap_SetTile(_tileMap, x, y, 2, structTex, 1, 1, 1, 1, rotation);
-            }
-            else
-            {
-                // Fallback: Use a generic square (maybe the conveyor texture?) but we want color.
-                var baseTex = FactoryResources.GetTerrainTexture(FactoryTerrain.Concrete);
-                
-                if (tile.Structure == FactoryStructure.Miner)
-                    Native.TileMap_SetTile(_tileMap, x, y, 2, baseTex, 0.6f, 0.2f, 0.6f, 1.0f, 0);
-                else
-                    Native.TileMap_SetTile(_tileMap, x, y, 2, baseTex, 0.6f, 0.4f, 0.2f, 1.0f, 0);
-            }
-        }
-        else
-        {
-            // Remove from systems
-            _conveyorSystem.RemoveConveyor(x, y);
-            _buildingSystem.RemoveBuilding(x, y);
-            
-            if (structTex != IntPtr.Zero)
-                Native.TileMap_SetTile(_tileMap, x, y, 2, structTex, 1, 1, 1, 1, rotation);
-            else
-                Native.TileMap_SetTile(_tileMap, x, y, 2, IntPtr.Zero, 0, 0, 0, 0, 0);
         }
     }
 
@@ -288,6 +225,23 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         UISystem.Clear();
         game.World?.Destroy();
         game.ActorManager?.Destroy();
+        if (game.TileMap != IntPtr.Zero)
+        {
+            Native.TileMap_Destroy(game.TileMap);
+            game.TileMap = IntPtr.Zero;
+        }
+
+        if (game.ConveyorSystem != null)
+        {
+            game.ConveyorSystem.Dispose();
+            game.ConveyorSystem = null;
+        }
+
+        if (game.BuildingSystem != null)
+        {
+            game.BuildingSystem.Dispose();
+            game.BuildingSystem = null;
+        }
     }
 
     public void Update(FactoryGame game, float dt)
@@ -301,8 +255,8 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         UpdateUI();
         
         // Update Systems
-        _buildingSystem?.Update(dt);
-        _conveyorSystem?.Update(dt, _buildingSystem);
+        game.BuildingSystem?.Update(dt);
+        game.ConveyorSystem?.Update(dt, game.BuildingSystem);
         
         // Input for Tier Selection
         if (Input.GetKeyReleased(Keycode.KEY_1)) _currentTier = 1;
@@ -329,6 +283,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         }
 
         HandleMouse(game);
+        game.World?.Tick(game, dt);
     }
 
     public void Draw(FactoryGame game)
@@ -355,13 +310,13 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         // Tooltip Logic
         if (_tooltipLabel is { } tt)
         {
-            bool showTooltip = false;
+            var showTooltip = false;
             if (gridX >= 0 && gridX < game.World.Width() && gridY >= 0 && gridY < game.World.Height())
             {
                 var tile = game.World[gridX, gridY];
-                if (tile.Structure == FactoryStructure.Storage && _buildingSystem != null)
+                if (tile.Structure == FactoryStructure.Storage && game.BuildingSystem != null)
                 {
-                    var (count, item) = _buildingSystem.GetBuildingInventory(gridX, gridY);
+                    var (count, item) = game.BuildingSystem.GetBuildingInventory(gridX, gridY);
                     tt.Text($"{item}: {count}");
                     // Convert world mouse pos to UI pos (relative to camera center)
                     // Since UI camera is at (0,0), we just subtract the main camera position
@@ -514,13 +469,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
                     if (tile.Structure != FactoryStructure.None)
                     {
                         game.World.Set(gridX, gridY, o => o.Structure = FactoryStructure.None);
-                        game.World.UpdateNeighbors(new Vec2i(gridX, gridY));
-                        UpdateTile(game, gridX, gridY);
-                        UpdateTile(game, gridX, gridY + 1);
-                        UpdateTile(game, gridX + 1, gridY);
-                        UpdateTile(game, gridX, gridY - 1);
-                        UpdateTile(game, gridX - 1, gridY);
-                        Native.TileMap_UpdateMesh(_tileMap);
+                        game.World.UpdateNeighbors(game, new Vec2i(gridX, gridY));
                     }
                 }
                 else
@@ -581,7 +530,6 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
                         if (game.World[_lastGridX, _lastGridY].Structure == FactoryStructure.ConveyorBelt)
                         {
                             game.World.Set(_lastGridX, _lastGridY, o => o.Direction = newDir);
-                            UpdateTile(game, _lastGridX, _lastGridY);
                         }
                     }
                     else
@@ -598,16 +546,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
                         o.Tier = _currentTier;
                     });
                     
-                    game.World.UpdateNeighbors(new Vec2i(gridX, gridY));
-                    UpdateTile(game, gridX, gridY);
-                    // Also update neighbors visuals as their connectivity might have changed
-                    UpdateTile(game, gridX, gridY + 1);
-                    UpdateTile(game, gridX + 1, gridY);
-                    UpdateTile(game, gridX, gridY - 1);
-                    UpdateTile(game, gridX - 1, gridY);
-
-                    Native.TileMap_UpdateMesh(_tileMap);
-                    
+                    game.World.UpdateNeighbors(game, new Vec2i(gridX, gridY));
                     // Update last grid pos if we moved
                     if (gridX != _lastGridX || gridY != _lastGridY)
                     {
@@ -633,15 +572,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
                         o.Structure = FactoryStructure.None;
                     });
                     
-                    game.World.UpdateNeighbors(new Vec2i(gridX, gridY));
-                    UpdateTile(game, gridX, gridY);
-                    // Update neighbors visuals
-                    UpdateTile(game, gridX, gridY + 1);
-                    UpdateTile(game, gridX + 1, gridY);
-                    UpdateTile(game, gridX, gridY - 1);
-                    UpdateTile(game, gridX - 1, gridY);
-
-                    Native.TileMap_UpdateMesh(_tileMap);
+                    game.World.UpdateNeighbors(game, new Vec2i(gridX, gridY));
                 }
             }
         }
@@ -649,14 +580,14 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
 
     private void Render(FactoryGame game)
     {
-        if (_tileMap != IntPtr.Zero)
+        if (game.TileMap != IntPtr.Zero)
         {
-            Native.TileMap_Render(_tileMap);
+            Native.TileMap_Render(game.TileMap);
         }
         
-        if (_conveyorSystem != null)
+        if (game.ConveyorSystem != null)
         {
-            _conveyorSystem.Render(_time);
+            game.ConveyorSystem.Render(_time);
         }
 
         // Update player visual position
@@ -676,27 +607,6 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
 
     protected virtual void Dispose(bool disposing)
     {
-        if (disposing)
-        {
-            if (_conveyorSystem != null)
-            {
-                _conveyorSystem.Dispose();
-                _conveyorSystem = null;
-            }
-            
-            if (_buildingSystem != null)
-            {
-                _buildingSystem.Dispose();
-                _buildingSystem = null;
-            }
-        }
-
-        if (_tileMap != IntPtr.Zero)
-        {
-            Native.TileMap_Destroy(_tileMap);
-            _tileMap = IntPtr.Zero;
-        }
-        
         if (_cameraEntity != 0)
         {
             Native.Entity_Destroy(_cameraEntity);

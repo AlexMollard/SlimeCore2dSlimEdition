@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SlimeCore.GameModes.Snake.World;
 
-public class SnakeGrid : GridSystem<SnakeTerrain, SnakeTileOptions, SnakeTile>
+public class SnakeGrid : GridSystem<SnakeGame, SnakeTerrain, SnakeTileOptions, SnakeTile>
 {
     [NotMapped]
     public Entity[][]? GridRenders { get; set; }
