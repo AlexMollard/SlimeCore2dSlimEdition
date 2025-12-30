@@ -17,6 +17,18 @@ public static class FactoryResources
     public static IntPtr TexOreGold;
 
     public static IntPtr TexConveyor;
+    public static IntPtr TexMinerT1;
+    public static IntPtr TexMinerT2;
+    public static IntPtr TexMinerT3;
+    public static IntPtr TexStorageT1;
+    public static IntPtr TexStorageT2;
+    public static IntPtr TexStorageT3;
+
+    public static IntPtr TexItemIronOre;
+    public static IntPtr TexItemCopperOre;
+    public static IntPtr TexItemCoal;
+    public static IntPtr TexItemGoldOre;
+    public static IntPtr TexItemStone;
 
     public static IntPtr TexSheep;
 
@@ -40,6 +52,20 @@ public static class FactoryResources
         TexOreGold = NativeMethods.Resources_LoadTexture("ore_gold", "Textures/Factory/ore_gold.png");
 
         TexConveyor = NativeMethods.Resources_LoadTexture("conveyor", "Textures/Factory/conveyor.png");
+        
+        TexMinerT1 = NativeMethods.Resources_LoadTexture("miner_t1", "Textures/Factory/miner_t1.png");
+        TexMinerT2 = NativeMethods.Resources_LoadTexture("miner_t2", "Textures/Factory/miner_t2.png");
+        TexMinerT3 = NativeMethods.Resources_LoadTexture("miner_t3", "Textures/Factory/miner_t3.png");
+        
+        TexStorageT1 = NativeMethods.Resources_LoadTexture("storage_t1", "Textures/Factory/storage_t1.png");
+        TexStorageT2 = NativeMethods.Resources_LoadTexture("storage_t2", "Textures/Factory/storage_t2.png");
+        TexStorageT3 = NativeMethods.Resources_LoadTexture("storage_t3", "Textures/Factory/storage_t3.png");
+
+        TexItemIronOre = NativeMethods.Resources_LoadTexture("item_iron_ore", "Textures/Factory/Items/iron_ore.png");
+        TexItemCopperOre = NativeMethods.Resources_LoadTexture("item_copper_ore", "Textures/Factory/Items/copper_ore.png");
+        TexItemCoal = NativeMethods.Resources_LoadTexture("item_coal", "Textures/Factory/Items/coal.png");
+        TexItemGoldOre = NativeMethods.Resources_LoadTexture("item_gold_ore", "Textures/Factory/Items/gold_ore.png");
+        TexItemStone = NativeMethods.Resources_LoadTexture("item_stone", "Textures/Factory/Items/stone.png");
 
         TexSheep = NativeMethods.Resources_LoadTexture("sheep", "Textures/Factory/Fauna/sheep.png");
 
@@ -71,11 +97,36 @@ public static class FactoryResources
         };
     }
 
-    public static IntPtr GetStructureTexture(SlimeCore.GameModes.Factory.World.FactoryStructure structure)
+    public static IntPtr GetStructureTexture(SlimeCore.GameModes.Factory.World.FactoryStructure structure, int tier = 1)
     {
         return structure switch
         {
             SlimeCore.GameModes.Factory.World.FactoryStructure.ConveyorBelt => TexConveyor,
+            SlimeCore.GameModes.Factory.World.FactoryStructure.Miner => tier switch 
+            {
+                2 => TexMinerT2,
+                3 => TexMinerT3,
+                _ => TexMinerT1
+            },
+            SlimeCore.GameModes.Factory.World.FactoryStructure.Storage => tier switch
+            {
+                2 => TexStorageT2,
+                3 => TexStorageT3,
+                _ => TexStorageT1
+            },
+            _ => IntPtr.Zero
+        };
+    }
+
+    public static IntPtr GetItemTexture(SlimeCore.GameModes.Factory.World.FactoryItemType item)
+    {
+        return item switch
+        {
+            SlimeCore.GameModes.Factory.World.FactoryItemType.IronOre => TexItemIronOre,
+            SlimeCore.GameModes.Factory.World.FactoryItemType.CopperOre => TexItemCopperOre,
+            SlimeCore.GameModes.Factory.World.FactoryItemType.Coal => TexItemCoal,
+            SlimeCore.GameModes.Factory.World.FactoryItemType.GoldOre => TexItemGoldOre,
+            SlimeCore.GameModes.Factory.World.FactoryItemType.Stone => TexItemStone,
             _ => IntPtr.Zero
         };
     }

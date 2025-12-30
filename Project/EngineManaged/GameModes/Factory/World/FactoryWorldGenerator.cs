@@ -6,7 +6,7 @@ public class FactoryWorldGenerator
 {
     private readonly int _seed;
     private readonly Random _rng;
-    private int[] _permutation;
+    private int[] _permutation = null!;
 
     public FactoryWorldGenerator(int seed)
     {

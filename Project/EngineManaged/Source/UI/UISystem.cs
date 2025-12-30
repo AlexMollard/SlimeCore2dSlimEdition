@@ -7,6 +7,8 @@ public static class UISystem
     private static readonly List<UIButton> _buttons = new();
     private static bool _prevMouseDown;
 
+    public static bool IsMouseOverUI { get; private set; }
+
     public static void Register(UIButton btn) => _buttons.Add(btn);
     public static void Unregister(UIButton btn) => _buttons.Remove(btn);
 
@@ -38,8 +40,37 @@ public static class UISystem
             if (!b.Enabled) continue;
 
             // Use appropriate coordinate system based on button's screen-space setting
-            var mx = b.UseScreenSpace ? mxScreen : mxWorld;
-            var my = b.UseScreenSpace ? myScreen : myWorld;
+            float mx, my;
+            
+            if (b.UseScreenSpace)
+            {
+                // Button is in Pixels (Top-Left origin)
+                // Input.GetMouseScreenPos returns Pixels (Top-Left origin)
+                mx = mxScreen;
+                my = myScreen;
+            }
+            else
+            {
+                // Button is in UI World Units (Center origin, Y-up)
+                // Input.GetMousePos returns Main World Units (Camera dependent) -> WRONG for UI
+                // We need Screen Pixels -> UI World Units
+                
+                // Note: We assume standard UI Height of 18.0f for now, matching Game2D default.
+                // If FactoryGame uses a different camera size for UI, we might need to parameterize this.
+                // However, Game2D.cpp passes m_camera->GetOrthographicSize() to RenderUI.
+                // FactoryGame sets camera size to 30.0f (VIEW_H).
+                // So we should probably use 30.0f if we are in FactoryGame?
+                // Or better, we should check if we can get the current camera size.
+                // For now, let's try 30.0f since that's what FactoryGame uses.
+                // But wait, StateFactoryMenu uses 18.0f? No, it sets VIEW_H = 30.0f.
+                
+                // TODO: Get this from the active camera or game settings
+                float uiHeight = 30.0f; 
+                
+                var (uix, uiy) = UIInputHelper.ScreenToUIWorld(mxScreen, myScreen, uiHeight);
+                mx = uix;
+                my = uiy;
+            }
 
             if (b.ContainsPoint(mx, my))
             {
@@ -51,7 +82,15 @@ public static class UISystem
             }
         }
 
-        if (hoverIndex != -1) _buttons[hoverIndex].IsHovered = true;
+        if (hoverIndex != -1) 
+        {
+            _buttons[hoverIndex].IsHovered = true;
+            IsMouseOverUI = true;
+        }
+        else
+        {
+            IsMouseOverUI = false;
+        }
 
         // 2. Handle Click States
         if (down && !_prevMouseDown) // Mouse Down
@@ -70,8 +109,20 @@ public static class UISystem
                 if (b.IsPressed)
                 {
                     // Use appropriate coordinate system
-                    var mx = b.UseScreenSpace ? mxScreen : mxWorld;
-                    var my = b.UseScreenSpace ? myScreen : myWorld;
+                    float mx, my;
+                    if (b.UseScreenSpace)
+                    {
+                        mx = mxScreen;
+                        my = myScreen;
+                    }
+                    else
+                    {
+                        float uiHeight = 30.0f;
+                        var (uix, uiy) = UIInputHelper.ScreenToUIWorld(mxScreen, myScreen, uiHeight);
+                        mx = uix;
+                        my = uiy;
+                    }
+
                     if (b.Enabled && b.ContainsPoint(mx, my)) b.InvokeClick();
                     b.IsPressed = false;
                 }

@@ -152,4 +152,9 @@ public sealed class SnakeGame : GameMode<SnakeGame>, IGameMode, IDisposable
 
         _isDisposed = true;
     }
+
+    ~SnakeGame()
+    {
+        Dispose(false);
+    }
 }

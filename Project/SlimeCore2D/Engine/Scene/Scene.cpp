@@ -8,14 +8,13 @@
 Scene* Scene::s_ActiveScene = nullptr;
 
 // Helper function to convert screen-space coordinates (pixels, top-left origin) to UI space (world units, center origin)
-static glm::vec2 ScreenSpaceToUISpace(float screenX, float screenY)
+static glm::vec2 ScreenSpaceToUISpace(float screenX, float screenY, float uiHeight)
 {
 	auto viewport = Input::GetInstance()->GetViewportRect();
 	float vpW = viewport.z > 0 ? (float) viewport.z : 1920.0f;
 	float vpH = viewport.w > 0 ? (float) viewport.w : 1080.0f;
 	float aspect = (vpH > 0.0f) ? (vpW / vpH) : (16.0f / 9.0f);
 
-	const float uiHeight = 18.0f; // match Camera ortho size used in Game2D
 	const float uiWidth = uiHeight * aspect;
 
 	float uiX = (screenX / vpW) * uiWidth - (uiWidth * 0.5f);
@@ -172,7 +171,7 @@ PersistentUIElement* Scene::GetUIElement(ObjectId id)
 	return nullptr;
 }
 
-void Scene::RenderUI()
+void Scene::RenderUI(float uiHeight)
 {
 	for (auto& [id, element] : m_UIElements)
 	{
@@ -180,9 +179,19 @@ void Scene::RenderUI()
 			continue;
 
 		glm::vec2 position = element.Position;
+		glm::vec2 size = element.Scale;
+
 		if (element.UseScreenSpace)
 		{
-			position = ScreenSpaceToUISpace(element.Position.x, element.Position.y);
+			position = ScreenSpaceToUISpace(element.Position.x, element.Position.y, uiHeight);
+			
+			if (!element.IsText)
+			{
+				auto viewport = Input::GetInstance()->GetViewportRect();
+				float vpH = viewport.w > 0 ? (float) viewport.w : 1080.0f;
+				float scaleFactor = uiHeight / vpH;
+				size = size * scaleFactor;
+			}
 		}
 
 		glm::vec3 drawPos = glm::vec3(position.x, position.y, 0.9f + (element.Layer * 0.001f));
@@ -217,8 +226,8 @@ void Scene::RenderUI()
 		}
 		else if (!element.IsText)
 		{
-			float offX = (0.5f - element.Anchor.x) * element.Scale.x;
-			float offY = (0.5f - element.Anchor.y) * element.Scale.y;
+			float offX = (0.5f - element.Anchor.x) * size.x;
+			float offY = (0.5f - element.Anchor.y) * size.y;
 
 			glm::vec3 finalPos = drawPos;
 			finalPos.x += offX;
@@ -226,11 +235,11 @@ void Scene::RenderUI()
 
 			if (element.Image)
 			{
-				Renderer2D::DrawQuad(finalPos, element.Scale, element.Image, 1.0f, element.Color);
+				Renderer2D::DrawQuad(finalPos, size, element.Image, 1.0f, element.Color);
 			}
 			else
 			{
-				Renderer2D::DrawQuad(finalPos, element.Scale, element.Color);
+				Renderer2D::DrawQuad(finalPos, size, element.Color);
 			}
 		}
 	}

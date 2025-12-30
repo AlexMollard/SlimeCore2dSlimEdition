@@ -25,7 +25,9 @@ public enum FactoryOre
 public enum FactoryStructure
 {
     None,
-    ConveyorBelt
+    ConveyorBelt,
+    Miner,
+    Storage
 }
 
 public sealed class FactoryTileOptions : TileOptions<FactoryTerrain>
@@ -35,7 +37,7 @@ public sealed class FactoryTileOptions : TileOptions<FactoryTerrain>
     public FactoryStructure Structure { get; set; } = FactoryStructure.None;
     public int Tier { get; set; } = 1;
     public Direction Direction { get; set; } = Direction.North;
-    public int Bitmask { get; set; } = 0;
+    public int Bitmask { get; set; }
 }
 
 public class FactoryTile : Tile<FactoryTerrain, FactoryTileOptions>
@@ -45,7 +47,7 @@ public class FactoryTile : Tile<FactoryTerrain, FactoryTileOptions>
     public FactoryStructure Structure { get; set; } = FactoryStructure.None;
     public int Tier { get; set; } = 1;
     public Direction Direction { get; set; } = Direction.North;
-    public int Bitmask { get; set; } = 0;
+    public int Bitmask { get; set; }
 
     public FactoryTile()
     {
@@ -117,6 +119,14 @@ public class FactoryTile : Tile<FactoryTerrain, FactoryTileOptions>
                 Direction.West => new Vec3(0.1f, 0.1f, 0),
                 _ => Vec3.Zero
             };
+        }
+        else if (Structure == FactoryStructure.Miner)
+        {
+            col = new Vec3(0.6f, 0.2f, 0.6f); // Purple for Miner
+        }
+        else if (Structure == FactoryStructure.Storage)
+        {
+            col = new Vec3(0.6f, 0.4f, 0.2f); // Brown for Storage
         }
         else
         {

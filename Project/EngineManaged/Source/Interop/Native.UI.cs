@@ -51,4 +51,7 @@ internal static partial class NativeMethods
 
     [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
     internal static extern float UI_GetTextHeight(ulong id);
+
+    [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+    internal static extern void Input_GetViewportRect(out int x, out int y, out int w, out int h);
 }

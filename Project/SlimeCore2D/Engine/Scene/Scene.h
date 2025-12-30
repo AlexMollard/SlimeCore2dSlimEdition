@@ -55,7 +55,7 @@ public:
 	// --- UI Management ---
 	ObjectId CreateUIElement(bool isText);
 	PersistentUIElement* GetUIElement(ObjectId id);
-	void RenderUI();
+	void RenderUI(float uiHeight = 18.0f);
 
 	// --- Core Loop ---
 	void Update(float deltaTime);

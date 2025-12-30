@@ -1,6 +1,8 @@
 using System;
 using System.Runtime.InteropServices;
 
+#pragma warning disable CA1060 // Move P/Invokes to NativeMethods class
+
 internal static partial class Native
 {
     [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]

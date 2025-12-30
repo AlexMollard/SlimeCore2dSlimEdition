@@ -94,6 +94,11 @@ namespace EngineManaged.Rendering
             _isDisposed = true;
         }
 
+        ~ParticleSystem()
+        {
+            Dispose(false);
+        }
+
         public void OnUpdate(float ts)
         {
             if (m_NativeInstance != IntPtr.Zero)

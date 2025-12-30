@@ -5,7 +5,7 @@ namespace EngineManaged.UI;
 
 public class UIButton
 {
-    public readonly Entity Background;
+    public readonly UIImage Background;
     public readonly UIText Label;
 
     public bool Enabled { get; set; } = true;
@@ -27,7 +27,7 @@ public class UIButton
 
     private const float ColorLerp = 0.18f;
 
-    private UIButton(Entity bg, UIText label, int layer, float r, float g, float b)
+    private UIButton(UIImage bg, UIText label, int layer, float r, float g, float b)
     {
         Background = bg;
         Label = label;
@@ -35,24 +35,21 @@ public class UIButton
 
         SetBaseColor(r, g, b);
         _curR = r; _curG = g; _curB = b;
-        var sprite = Background.GetComponent<SpriteComponent>();
-        sprite.Color = (_curR, _curG, _curB);
+        Background.Color(_curR, _curG, _curB);
     }
 
     public static UIButton Create(string text, float x, float y, float w, float h, float r = 0.2f, float g = 0.2f, float b = 0.2f, int layer = 100, int fontSize = 1, bool useScreenSpace = false)
     {
-        var bg = SceneFactory.CreateQuad(x, y, w, h, r, g, b, layer);
-        var transform = bg.GetComponent<TransformComponent>();
-        transform.Anchor = (0.5f, 0.5f);
+        var bg = UIImage.Create(x, y, w, h);
+        bg.Anchor(0.5f, 0.5f);
+        bg.Layer(layer);
+        bg.UseScreenSpace(useScreenSpace);
+        bg.Color(r, g, b);
 
         var lbl = UIText.Create(text, fontSize, x, y);
         lbl.UseScreenSpace(useScreenSpace);
         lbl.Layer(layer + 1);
         lbl.Anchor(0.5f, 0.5f); // Center the text
-
-        // Use text width to properly center text
-        var (textWidth, textHeight) = lbl.GetSize();
-        // Text is already centered at x, y, so no offset needed
 
         var btn = new UIButton(bg, lbl, layer, r, g, b);
         btn.UseScreenSpace = useScreenSpace;
@@ -71,14 +68,9 @@ public class UIButton
         UISystem.Unregister(this);
     }
 
-    // ---------------------------------------------------------------------
-    // Wrapper Methods (Fixes 'does not contain definition' errors)
-    // ---------------------------------------------------------------------
-
     public void SetVisible(bool visible)
     {
-        var sprite = Background.GetComponent<SpriteComponent>();
-        sprite.IsVisible = visible;
+        Background.IsVisible(visible);
         Label.IsVisible(visible);
     }
 
@@ -87,28 +79,17 @@ public class UIButton
         Label.Text(text);
     }
 
-    /// <summary>
-    /// Gets the width and height of the button's text label.
-    /// </summary>
     public (float width, float height) GetTextSize()
     {
         return Label.GetSize();
     }
 
-    /// <summary>
-    /// Gets the width of the button's text label.
-    /// </summary>
     public float TextWidth => Label.Width;
-
-    /// <summary>
-    /// Gets the height of the button's text label.
-    /// </summary>
     public float TextHeight => Label.Height;
 
     public void SetPosition(float x, float y)
     {
-        var transform = Background.GetComponent<TransformComponent>();
-        transform.Position = (x, y);
+        Background.Position = (x, y);
         Label.Position = (x, y);
     }
 
@@ -116,13 +97,8 @@ public class UIButton
     {
         UseScreenSpace = useScreenSpace;
         Label.UseScreenSpace(useScreenSpace);
-        // Note: Entity (Background) doesn't have screen-space support yet
-        // This would need to be added to Entity if needed
+        Background.UseScreenSpace(useScreenSpace);
     }
-
-    // ---------------------------------------------------------------------
-    // Events & Visuals
-    // ---------------------------------------------------------------------
 
     public event Action Clicked
     {
@@ -141,24 +117,9 @@ public class UIButton
 
     internal bool ContainsPoint(float mx, float my)
     {
-        if (UseScreenSpace)
-        {
-            // For screen-space buttons, use the label's position (which is in screen space)
-            // and stored button dimensions (in screen pixels)
-            var (lx, ly) = Label.Position;
-
-            // Check if mouse is within button bounds (using screen coordinates)
-            // Button is centered at label position with stored dimensions
-            return (mx > lx - _buttonWidth / 2 && mx < lx + _buttonWidth / 2 &&
-                    my > ly - _buttonHeight / 2 && my < ly + _buttonHeight / 2);
-        }
-        else
-        {
-            // World space: use background position and size
-            var (bx, by) = Background.GetComponent<TransformComponent>().Position;
-            var (w, h) = Background.GetComponent<TransformComponent>().Scale;
-            return (mx > bx - w / 2 && mx < bx + w / 2 && my > by - h / 2 && my < by + h / 2);
-        }
+        var (bx, by) = Background.Position;
+        var (w, h) = Background.Size;
+        return (mx > bx - w / 2 && mx < bx + w / 2 && my > by - h / 2 && my < by + h / 2);
     }
 
     internal void UpdateColor()
@@ -172,8 +133,7 @@ public class UIButton
         _curG = Lerp(_curG, targetG, ColorLerp);
         _curB = Lerp(_curB, targetB, ColorLerp);
 
-        var sprite = Background.GetComponent<SpriteComponent>();
-        sprite.Color = (_curR, _curG, _curB);
+        Background.Color(_curR, _curG, _curB);
     }
 
     private static float Lerp(float a, float b, float t) => a + (b - a) * t;

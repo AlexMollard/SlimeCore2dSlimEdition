@@ -267,20 +267,20 @@ public class DudeGame : GameMode<DudeGame>, IGameMode, IDisposable
     {
         if (_currentState != null) _currentState.Exit(this);
 
-        Bg.Destroy();
-        Camera.Destroy();
-        DarkOverlay.Destroy();
-        CardBgBackdrop.Destroy();
-        Dude.Destroy();
+        Bg?.Destroy();
+        Camera?.Destroy();
+        DarkOverlay?.Destroy();
+        CardBgBackdrop?.Destroy();
+        Dude?.Destroy();
         XPBarBg.Destroy();
         XPBarFill.Destroy();
         ScoreText.Destroy();
         LevelText.Destroy();
 
-        foreach (var h in Haters) h.Ent.Destroy(); Haters.Clear();
-        foreach (var c in Collectables) c.Ent.Destroy(); Collectables.Clear();
-        foreach (var g in Gems) g.Ent.Destroy(); Gems.Clear();
-        foreach (var t in Trails) t.Ent.Destroy(); Trails.Clear();
+        foreach (var h in Haters) h.Ent?.Destroy(); Haters.Clear();
+        foreach (var c in Collectables) c.Ent?.Destroy(); Collectables.Clear();
+        foreach (var g in Gems) g.Ent?.Destroy(); Gems.Clear();
+        foreach (var t in Trails) t.Ent?.Destroy(); Trails.Clear();
         foreach (var b in Boundaries) b.Destroy(); Boundaries.Clear();
 
         if (ParticleSys != null)
@@ -295,6 +295,8 @@ public class DudeGame : GameMode<DudeGame>, IGameMode, IDisposable
 
     internal void SpawnExplosion(Vec2 pos, int count, float r, float g, float b)
     {
+        if (ParticleSys == null || Rng == null) return;
+
         var props = new ParticleProps();
         props.Position = pos;
         props.VelocityVariation = new Vec2(8.0f, 8.0f); // Speed variation handled by random direction + speed
@@ -327,13 +329,18 @@ public class DudeGame : GameMode<DudeGame>, IGameMode, IDisposable
         {
             return;
         }
+
         if (disposing)
         {
             ParticleSys?.Dispose();
-            return;
         }
+
         _isDisposed = true;
-        //Should we be cleaning up the other native resources here?
+    }
+
+    ~DudeGame()
+    {
+        Dispose(false);
     }
 
     // --- STAT ACCESSORS ---

@@ -105,7 +105,7 @@ void Game2D::Draw()
 		Window::GetContext()->ClearDepthStencilView(Window::GetDepthStencilView(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 
 		Renderer2D::BeginScene(uiCamera);
-		m_scene->RenderUI();
+		m_scene->RenderUI(m_camera->GetOrthographicSize());
 		Renderer2D::EndScene();
 	}
 }

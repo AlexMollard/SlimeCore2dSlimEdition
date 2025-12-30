@@ -155,14 +155,13 @@ public class StateFactoryMenu : IGameState<FactoryGame>
         }
         
         // Update Button Background only
-        if (_startBtn != null)
-        {
-            var t = _startBtn.Background.GetComponent<TransformComponent>();
-            t.Position = (menuX, menuY);
+        // if (_startBtn != null)
+        // {
+		// 	_startBtn.SetPosition(menuX, menuY);
             
-            // Keep Label static
-            _startBtn.Label.Position = (MenuOffset, 0);
-        }
+        //     // Keep Label static
+        //     _startBtn.Label.Position = (MenuOffset, 0);
+        // }
         
         _gameLabel.Position = (MenuOffset, 5.0f);
     }

@@ -18,7 +18,18 @@ public class ConveyorMap : IDisposable
         _nativeMap = Native.ConveyorMap_Create(width, height, tileSize);
     }
 
+    ~ConveyorMap()
+    {
+        Dispose(false);
+    }
+
     public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
     {
         if (_nativeMap != IntPtr.Zero)
         {
