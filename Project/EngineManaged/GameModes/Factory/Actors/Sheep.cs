@@ -1,5 +1,6 @@
 using EngineManaged.Numeric;
 using EngineManaged.Scene;
+using SlimeCore.GameModes.Factory.World;
 using SlimeCore.Source.World.Actors;
 using System;
 using System.Collections.Generic;
@@ -22,6 +23,7 @@ public class Sheep : Actor<FactoryActors, FactoryGame>
     private float _decisionTimer;
     private float _pauseTimer;
     private float _bobTime;
+    private float _hunger;
 
     public Sheep(Vec2 startPos)
     {
@@ -35,20 +37,28 @@ public class Sheep : Actor<FactoryActors, FactoryGame>
     public override bool TakeAction(FactoryGame mode, float deltaTime)
     {
         _bobTime += deltaTime;
+        _hunger -= deltaTime * 2f; // get hungry over time
 
         // Pause, if the sheep wills it
         if (_pauseTimer > 0f)
         {
             _pauseTimer -= deltaTime;
             _velocity *= 0.9f; // gentle settling
+            var position = Position.ToVec2Int();
+            if (_hunger < 100f && mode.World[position].Type == FactoryTerrain.Grass)
+            {
+                mode.World.Set(position, x => x.Type = FactoryTerrain.Dirt);
+                _hunger += 20f;
+            }
         }
         else
         {
             _decisionTimer -= deltaTime;
 
-            // Time to reconsider life choices
+            // Time to reconsider life choices, touch grass
             if (_decisionTimer <= 0f)
             {
+
                 _decisionTimer = mode.Rng.NextSingle() * 3f + 1f;
 
                 if (mode.Rng.NextSingle() < 0.35f)

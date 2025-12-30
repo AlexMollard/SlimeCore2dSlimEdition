@@ -15,7 +15,7 @@ public enum SnakeTerrain : int
     Speed
 }
 
-public class SnakeTile : Tile<SnakeTerrain, SnakeTileOptions>
+public class SnakeTile : Tile<SnakeGame, SnakeTerrain, SnakeTileOptions>
 {
     /// <summary>
     /// Is this a solid tile that cannot be traversed?
@@ -63,6 +63,16 @@ public class SnakeTile : Tile<SnakeTerrain, SnakeTileOptions>
             SnakeTerrain.Speed => (isAlt ? Palette.COL_SPEED_1 : Palette.COL_SPEED_2) * (0.8f + 0.2f * (float)Math.Sin((float)extraArgs[0] * 15f)),
             _ => isAlt ? Palette.COL_GRASS_1 : Palette.COL_GRASS_2
         };
+    }
+
+    public override void Tick(SnakeGame mode, float deltaTime)
+    {
+        return;
+    }
+
+    public override bool TakeAction(SnakeGame mode, float deltaTime)
+    {
+        return false;
     }
 
     // --- Palette ---

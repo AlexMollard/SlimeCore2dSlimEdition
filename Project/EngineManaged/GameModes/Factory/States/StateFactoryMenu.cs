@@ -145,14 +145,14 @@ public class StateFactoryMenu : IGameState<FactoryGame>
         _zoomValueLabel = zoomValueLabel;
 
         // Map initial zoom to slider value (0.5 to 3.0)
-        float initialSliderVal = (game.Settings.InitialZoom - 0.5f) / 2.5f;
+        var initialSliderVal = (game.Settings.InitialZoom - 0.5f) / 2.5f;
         
         _zoomSlider = UISlider.Create(SettingsOffset, 0.0f, 8.0f, 0.5f, initialSliderVal, layer: 51, useScreenSpace: false);
         _zoomSlider.SetVisible(false);
         _zoomSlider.OnValueChanged += (val) =>
         {
             // Map slider value back to zoom
-            float zoom = 0.5f + (val * 2.5f);
+            var zoom = 0.5f + (val * 2.5f);
             game.Settings.InitialZoom = zoom;
             if (_zoomValueLabel.HasValue)
                 _zoomValueLabel.Value.Text($"Zoom: {game.Settings.InitialZoom:F1}");
@@ -294,7 +294,7 @@ public class StateFactoryMenu : IGameState<FactoryGame>
     private void SpawnDecorations(FactoryGame game)
     {
         if (game.World == null) return;
-        for (int i = 0; i < 50; i++)
+        for (var i = 0; i < 50; i++)
         {
             var x = _rng.Next(0, game.World.Width());
             var y = _rng.Next(0, game.World.Height());
