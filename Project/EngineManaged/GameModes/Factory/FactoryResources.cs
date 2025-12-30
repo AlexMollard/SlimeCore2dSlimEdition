@@ -23,12 +23,14 @@ public static class FactoryResources
     public static IntPtr TexStorageT1;
     public static IntPtr TexStorageT2;
     public static IntPtr TexStorageT3;
+    public static IntPtr TexFarmPlot;
 
     public static IntPtr TexItemIronOre;
     public static IntPtr TexItemCopperOre;
     public static IntPtr TexItemCoal;
     public static IntPtr TexItemGoldOre;
     public static IntPtr TexItemStone;
+    public static IntPtr TexItemVegetable;
     //Fauna Textures
     public static IntPtr TexSheep { get; set; }
     public static IntPtr TexWolf { get; set; }
@@ -65,11 +67,14 @@ public static class FactoryResources
         TexStorageT2 = NativeMethods.Resources_LoadTexture("storage_t2", "Textures/Factory/storage_t2.png");
         TexStorageT3 = NativeMethods.Resources_LoadTexture("storage_t3", "Textures/Factory/storage_t3.png");
 
+        TexFarmPlot = NativeMethods.Resources_LoadTexture("farm_plot", "Textures/Factory/Structures/farmplot.png");
+
         TexItemIronOre = NativeMethods.Resources_LoadTexture("item_iron_ore", "Textures/Factory/Items/iron_ore.png");
         TexItemCopperOre = NativeMethods.Resources_LoadTexture("item_copper_ore", "Textures/Factory/Items/copper_ore.png");
         TexItemCoal = NativeMethods.Resources_LoadTexture("item_coal", "Textures/Factory/Items/coal.png");
         TexItemGoldOre = NativeMethods.Resources_LoadTexture("item_gold_ore", "Textures/Factory/Items/gold_ore.png");
         TexItemStone = NativeMethods.Resources_LoadTexture("item_stone", "Textures/Factory/Items/stone.png");
+        TexItemVegetable = NativeMethods.Resources_LoadTexture("item_vegetable", "Textures/Factory/Items/vegetable.png");
 
         TexSheep = NativeMethods.Resources_LoadTexture("sheep", "Textures/Factory/Fauna/sheep.png");
         TexWolf = NativeMethods.Resources_LoadTexture("wolf", "Textures/Factory/Fauna/wolf.png");
@@ -120,6 +125,7 @@ public static class FactoryResources
                 3 => TexStorageT3,
                 _ => TexStorageT1
             },
+            SlimeCore.GameModes.Factory.World.FactoryStructure.FarmPlot => TexFarmPlot,
             _ => IntPtr.Zero
         };
     }
@@ -133,6 +139,7 @@ public static class FactoryResources
             SlimeCore.GameModes.Factory.World.FactoryItemType.Coal => TexItemCoal,
             SlimeCore.GameModes.Factory.World.FactoryItemType.GoldOre => TexItemGoldOre,
             SlimeCore.GameModes.Factory.World.FactoryItemType.Stone => TexItemStone,
+            SlimeCore.GameModes.Factory.World.FactoryItemType.Vegetable => TexItemVegetable,
             _ => IntPtr.Zero
         };
     }

@@ -33,6 +33,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
     private UIButton? _btnConveyor;
     private UIButton? _btnMiner;
     private UIButton? _btnStorage;
+    private UIButton? _btnFarm;
     private UIButton? _btnDelete;
     private UIImage? _toolbarBg;
     private UIText? _tierLabel;
@@ -123,7 +124,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         UISystem.Clear();
 
         // Toolbar Background
-        float barW = 36.0f;
+        float barW = 45.0f;
         float barH = 4.0f;
         float barY = -13.0f;
         
@@ -137,7 +138,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         float btnW = 8.0f;
         float btnH = 3.0f;
         float gap = 0.5f;
-        float startX = -((btnW * 4 + gap * 3) / 2.0f) + btnW / 2.0f; // Centered
+        float startX = -((btnW * 5 + gap * 4) / 2.0f) + btnW / 2.0f; // Centered
         
         // Helper to create styled button
         UIButton CreateBtn(string text, int index, Action onClick)
@@ -152,7 +153,8 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         _btnConveyor = CreateBtn("Conveyor", 0, () => { _selectedStructure = FactoryStructure.ConveyorBelt; _deleteMode = false; });
         _btnMiner = CreateBtn("Miner", 1, () => { _selectedStructure = FactoryStructure.Miner; _deleteMode = false; });
         _btnStorage = CreateBtn("Storage", 2, () => { _selectedStructure = FactoryStructure.Storage; _deleteMode = false; });
-        _btnDelete = CreateBtn("Delete", 3, () => { _deleteMode = true; });
+        _btnFarm = CreateBtn("Farm", 3, () => { _selectedStructure = FactoryStructure.FarmPlot; _deleteMode = false; });
+        _btnDelete = CreateBtn("Delete", 4, () => { _deleteMode = true; });
 
         // Labels
         var tLabel = UIText.Create("Tier: 1", 1, -17.0f, barY + 2.5f); // Left side of bar
@@ -187,6 +189,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         SetBtnState(_btnConveyor, !_deleteMode && _selectedStructure == FactoryStructure.ConveyorBelt);
         SetBtnState(_btnMiner, !_deleteMode && _selectedStructure == FactoryStructure.Miner);
         SetBtnState(_btnStorage, !_deleteMode && _selectedStructure == FactoryStructure.Storage);
+        SetBtnState(_btnFarm, !_deleteMode && _selectedStructure == FactoryStructure.FarmPlot);
         SetBtnState(_btnDelete, _deleteMode);
 
         // Update Tier Label
@@ -211,6 +214,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         _btnConveyor?.Destroy();
         _btnMiner?.Destroy();
         _btnStorage?.Destroy();
+        _btnFarm?.Destroy();
         _btnDelete?.Destroy();
         if (_toolbarBg is { } bg) bg.Destroy();
         if (_tierLabel is { } tl) tl.Destroy();
@@ -350,7 +354,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
                         isValid = false;
                     }
                     else if (_selectedStructure == FactoryStructure.ConveyorBelt && 
-                            (tile.Structure == FactoryStructure.Miner || tile.Structure == FactoryStructure.Storage))
+                            (tile.Structure == FactoryStructure.Miner || tile.Structure == FactoryStructure.Storage || tile.Structure == FactoryStructure.FarmPlot))
                     {
                         isValid = false;
                     }

@@ -7,7 +7,8 @@ public enum FactoryItemType
     CopperOre,
     Coal,
     GoldOre,
-    Stone
+    Stone,
+    Vegetable,
 }
 
 public struct FactoryItem

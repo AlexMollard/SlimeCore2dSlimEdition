@@ -28,7 +28,8 @@ public enum FactoryStructure
     None,
     ConveyorBelt,
     Miner,
-    Storage
+    Storage,
+    FarmPlot,
 }
 
 public sealed class FactoryTileOptions : TileOptions<FactoryTerrain>
@@ -85,7 +86,7 @@ public class FactoryTile : Tile<FactoryGame, FactoryTerrain, FactoryTileOptions>
             Structure = opts.Structure;
         }
 
-        if (Structure == FactoryStructure.ConveyorBelt && Direction != opts.Direction)
+        if ((Structure == FactoryStructure.ConveyorBelt || Structure == FactoryStructure.FarmPlot) && Direction != opts.Direction)
         {
             Rendered = false;
             Direction = opts.Direction;
@@ -201,6 +202,15 @@ public class FactoryTile : Tile<FactoryGame, FactoryTerrain, FactoryTileOptions>
         // Layer 2: Structure
         nint structTex = FactoryResources.GetStructureTexture(Structure, Tier);
         float rotation = 0.0f;
+        if (Structure == FactoryStructure.FarmPlot)
+        {
+            switch (Direction)
+            {
+                case Direction.East: rotation = 1.5708f; break;
+                case Direction.North: rotation = 3.14159f; break;
+                case Direction.West: rotation = -1.5708f; break;
+            }
+        }
 
         if (Structure == FactoryStructure.ConveyorBelt)
         {
@@ -211,7 +221,7 @@ public class FactoryTile : Tile<FactoryGame, FactoryTerrain, FactoryTileOptions>
             // Don't render in TileMap
             Native.TileMap_SetTile(game.TileMap, PositionX, PositionY, 2, IntPtr.Zero, 0, 0, 0, 0, 0);
         }
-        else if (Structure == FactoryStructure.Miner || Structure == FactoryStructure.Storage)
+        else if (Structure == FactoryStructure.Miner || Structure == FactoryStructure.Storage || Structure == FactoryStructure.FarmPlot)
         {
             // Use BuildingSystem
             game.BuildingSystem.PlaceBuilding(PositionX, PositionY, Structure, Direction, Tier);

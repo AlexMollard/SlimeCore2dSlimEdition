@@ -136,6 +136,17 @@ public class BuildingSystem : IDisposable
                     }
                 }
             }
+            else if (b.Type == FactoryStructure.FarmPlot)
+            {
+                b.Timer += dt;
+                float growingTime = 1.0f / b.Tier; // Tier 1 = 1s, Tier 2 = 0.5s, Tier 3 = 0.33s
+                
+                if (b.Timer >= growingTime) 
+                {
+                    b.Timer = 0;
+                    TryOutputToConveyor(b.X, b.Y, FactoryItemType.Vegetable);
+                }
+            }
             
             _buildings[key] = b;
         }
