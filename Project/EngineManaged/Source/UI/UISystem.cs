@@ -5,12 +5,16 @@ namespace EngineManaged.UI;
 public static class UISystem
 {
     private static readonly List<UIButton> _buttons = new();
+    private static readonly List<UISlider> _sliders = new();
     private static bool _prevMouseDown;
 
     public static bool IsMouseOverUI { get; private set; }
 
     public static void Register(UIButton btn) => _buttons.Add(btn);
     public static void Unregister(UIButton btn) => _buttons.Remove(btn);
+
+    public static void Register(UISlider slider) => _sliders.Add(slider);
+    public static void Unregister(UISlider slider) => _sliders.Remove(slider);
 
     /// <summary>
     /// Clears all buttons. Call this when switching Game Modes!
@@ -20,13 +24,14 @@ public static class UISystem
         // Optional: Destroy the native entities too if you want strict cleanup
         // for(int i=0; i<_buttons.Count; i++) _buttons[i].Destroy();
         _buttons.Clear();
+        _sliders.Clear();
     }
 
     public static void Update()
     {
         var (mxWorld, myWorld) = Input.GetMousePos();
         var (mxScreen, myScreen) = Input.GetMouseScreenPos();
-        var down = Input.GetMouseDown(Input.MouseButton.Left);
+        var down = Input.IsMouseDown(Input.MouseButton.Left);
 
         var hoverIndex = -1;
         var highestLayer = int.MinValue;
@@ -131,6 +136,51 @@ public static class UISystem
 
         // 3. Update Visuals
         for (var i = 0; i < _buttons.Count; i++) _buttons[i].UpdateColor();
+
+        // 4. Handle Sliders
+        for (var i = 0; i < _sliders.Count; i++)
+        {
+            var s = _sliders[i];
+            if (!s.Enabled) continue;
+
+            // Coordinate conversion (same as buttons)
+            float mx, my;
+            if (s.UseScreenSpace)
+            {
+                mx = mxScreen;
+                my = myScreen;
+            }
+            else
+            {
+                float uiHeight = 30.0f; // TODO: Parameterize
+                var (uix, uiy) = UIInputHelper.ScreenToUIWorld(mxScreen, myScreen, uiHeight);
+                mx = uix;
+                my = uiy;
+            }
+
+            // Hover
+            s.IsHovered = s.ContainsPoint(mx, my);
+            if (s.IsHovered) IsMouseOverUI = true;
+
+            // Drag Start
+            if (down && !_prevMouseDown && s.IsHovered)
+            {
+                s.IsDragging = true;
+            }
+            
+            // Drag Update
+            if (s.IsDragging)
+            {
+                if (!down) 
+                {
+                    s.IsDragging = false;
+                }
+                else
+                {
+                    s.UpdateFromMouse(mx);
+                }
+            }
+        }
 
         _prevMouseDown = down;
     }

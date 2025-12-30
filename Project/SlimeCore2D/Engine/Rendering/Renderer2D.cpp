@@ -108,6 +108,12 @@ void Renderer2D::Init()
 	if (FAILED(hr))
 		Logger::Error("Renderer2D: Failed to create Sampler State!");
 
+	// Create Linear Sampler
+	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	hr = device->CreateSamplerState(&samplerDesc, s_Data.TextureSamplerLinear.GetAddressOf());
+	if (FAILED(hr))
+		Logger::Error("Renderer2D: Failed to create Linear Sampler State!");
+
 	// 5. Create Blend State
 	D3D11_BLEND_DESC blendDesc = {};
 	blendDesc.RenderTarget[0].BlendEnable = TRUE;
@@ -171,6 +177,7 @@ void Renderer2D::Shutdown()
 	s_Data.QuadIB.Reset();
 	s_Data.WhiteTextureSRV.Reset();
 	s_Data.TextureSampler.Reset();
+	s_Data.TextureSamplerLinear.Reset();
 	s_Data.BlendState.Reset();
 	s_Data.RasterizerState.Reset();
 	s_Data.DepthStencilState.Reset();
@@ -241,7 +248,8 @@ void Renderer2D::Flush()
 
 	// 4. Bind Textures
 	context->PSSetShaderResources(0, s_Data.TextureSlotIndex, s_Data.TextureSlots.data());
-	context->PSSetSamplers(0, 1, s_Data.TextureSampler.GetAddressOf());
+	ID3D11SamplerState* samplers[] = { s_Data.TextureSampler.Get(), s_Data.TextureSamplerLinear.Get() };
+	context->PSSetSamplers(0, 2, samplers);
 
 	// 5. Draw
 	context->DrawIndexed(s_Data.IndexCount, 0, 0);

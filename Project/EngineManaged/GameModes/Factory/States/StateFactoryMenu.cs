@@ -6,6 +6,7 @@ using SlimeCore.GameModes.Factory.Actors;
 using SlimeCore.GameModes.Factory.World;
 using SlimeCore.Source.Core;
 using System;
+using System.Collections.Generic;
 
 namespace SlimeCore.GameModes.Factory.States;
 
@@ -13,6 +14,19 @@ public class StateFactoryMenu : IGameState<FactoryGame>
 {
     private UIText _gameLabel;
     private UIButton? _startBtn;
+    private UIButton? _settingsBtn;
+    private UIButton? _exitBtn;
+
+    // Decorations
+    private List<Entity> _decorations = new();
+    private Random _rng = new();
+    
+    // Settings UI
+    private bool _showSettings;
+    private Entity? _settingsBg;
+    private UIText? _settingsLabel;
+    private UISlider? _zoomSlider;
+    private UIText? _zoomValueLabel;
     
     // Background World
     private Vec2 _cam;
@@ -21,9 +35,10 @@ public class StateFactoryMenu : IGameState<FactoryGame>
     private Entity? _menuBg;
     
     // Menu Layout
-    private const float MenuWidth = 15.0f;
+    private const float MenuWidth = 17.0f;
     private const float MenuHeight = 60.0f; // Make it large enough to cover vertical
-    private const float MenuOffset = -12.0f; // Offset from center to left
+    private const float MenuOffset = -15.0f; // Offset from center to left
+    private const float SettingsOffset = 12.0f; // Offset for settings panel
 
     public void Enter(FactoryGame game)
     {
@@ -71,19 +86,92 @@ public class StateFactoryMenu : IGameState<FactoryGame>
         bgSprite.Alpha = 0.8f; 
         
         // Create UI - Text seems to ignore camera, so we place it relative to screen center (0,0)
-        _gameLabel = UIText.Create("FACTORY\nGAME", 2, MenuOffset, 5.0f);
+        _gameLabel = UIText.Create("FACTORY\nGAME", 2, MenuOffset, 8.0f);
         _gameLabel.UseScreenSpace(false);
         _gameLabel.Color(1.0f, 1.0f, 1.0f);
         _gameLabel.Anchor(0.5f, 0.5f);
         _gameLabel.Layer(52);
 
-        // Button: We create it at screen relative position for the text, but we'll need to move the background manually
-        _startBtn = UIButton.Create("PLAY", MenuOffset, 0, 8.0f, 1.5f, 0.5f, 0.5f, 0.5f, layer: 51, fontSize: 1, useScreenSpace: false);
+        // Buttons
+        _startBtn = UIButton.Create("PLAY", MenuOffset, 2.0f, MenuWidth, 1.5f, 0.2f, 0.6f, 0.2f, layer: 51, fontSize: 1, useScreenSpace: false);
         _startBtn.Label.Color(1.0f, 1.0f, 1.0f);
         _startBtn.Clicked += () =>
         {
             game.ChangeState(new StateFactoryPlay());
         };
+
+        _settingsBtn = UIButton.Create("SETTINGS", MenuOffset, -0.5f, MenuWidth, 1.5f, 0.2f, 0.4f, 0.6f, layer: 51, fontSize: 1, useScreenSpace: false);
+        _settingsBtn.Label.Color(1.0f, 1.0f, 1.0f);
+        _settingsBtn.Clicked += () =>
+        {
+            ToggleSettings(game);
+        };
+
+        _exitBtn = UIButton.Create("EXIT", MenuOffset, -3.0f, MenuWidth, 1.5f, 0.6f, 0.2f, 0.2f, layer: 51, fontSize: 1, useScreenSpace: false);
+        _exitBtn.Label.Color(1.0f, 1.0f, 1.0f);
+        _exitBtn.Clicked += () =>
+        {
+            Environment.Exit(0);
+        };
+        
+        CreateSettingsUI(game);
+        SpawnDecorations(game);
+    }
+
+    private void CreateSettingsUI(FactoryGame game)
+    {
+        // Settings Background
+        // We create it but keep it hidden initially
+        // Position will be updated in Update
+        
+        _settingsBg = SceneFactory.CreateQuad(0, 0, MenuWidth, MenuHeight / 2, 0.0f, 0.0f, 0.0f, 50);
+        var sBgSprite = _settingsBg.GetComponent<SpriteComponent>();
+        sBgSprite.Alpha = 0.8f;
+        sBgSprite.IsVisible = false;
+        
+        var settingsLabel = UIText.Create("SETTINGS", 2, SettingsOffset, 5.0f);
+        settingsLabel.UseScreenSpace(false);
+        settingsLabel.Color(1.0f, 1.0f, 1.0f);
+        settingsLabel.Anchor(0.5f, 0.5f);
+        settingsLabel.Layer(52);
+        settingsLabel.IsVisible(false);
+        _settingsLabel = settingsLabel;
+
+        // Zoom Controls
+        var zoomValueLabel = UIText.Create($"Zoom: {game.Settings.InitialZoom:F1}", 1, SettingsOffset, 2.0f);
+        zoomValueLabel.UseScreenSpace(false);
+        zoomValueLabel.Layer(52);
+        zoomValueLabel.IsVisible(false);
+        _zoomValueLabel = zoomValueLabel;
+
+        // Map initial zoom to slider value (0.5 to 3.0)
+        float initialSliderVal = (game.Settings.InitialZoom - 0.5f) / 2.5f;
+        
+        _zoomSlider = UISlider.Create(SettingsOffset, 0.0f, 8.0f, 0.5f, initialSliderVal, layer: 51, useScreenSpace: false);
+        _zoomSlider.SetVisible(false);
+        _zoomSlider.OnValueChanged += (val) =>
+        {
+            // Map slider value back to zoom
+            float zoom = 0.5f + (val * 2.5f);
+            game.Settings.InitialZoom = zoom;
+            if (_zoomValueLabel.HasValue)
+                _zoomValueLabel.Value.Text($"Zoom: {game.Settings.InitialZoom:F1}");
+        };
+    }
+
+    private void ToggleSettings(FactoryGame game)
+    {
+        _showSettings = !_showSettings;
+        
+        if (_settingsBg != null)
+        {
+            var s = _settingsBg.GetComponent<SpriteComponent>();
+            s.IsVisible = _showSettings;
+        }
+        
+        if (_settingsLabel.HasValue) _settingsLabel.Value.IsVisible(_showSettings);
+        if (_zoomValueLabel.HasValue) _zoomValueLabel.Value.IsVisible(_showSettings);
+        _zoomSlider?.SetVisible(_showSettings);
     }
 
     private void UpdateTile(FactoryGame game, int x, int y)
@@ -112,8 +200,19 @@ public class StateFactoryMenu : IGameState<FactoryGame>
 
     public void Exit(FactoryGame game)
     {
+        foreach (var d in _decorations) d.Destroy();
+        _decorations.Clear();
+
         _gameLabel.Destroy();
         _startBtn?.Destroy();
+        _settingsBtn?.Destroy();
+        _exitBtn?.Destroy();
+        
+        _settingsBg?.Destroy();
+        if (_settingsLabel.HasValue) _settingsLabel.Value.Destroy();
+        if (_zoomValueLabel.HasValue) _zoomValueLabel.Value.Destroy();
+        _zoomSlider?.Destroy();
+        
         _menuBg?.Destroy();
         
         if (_tileMap != IntPtr.Zero)
@@ -154,16 +253,34 @@ public class StateFactoryMenu : IGameState<FactoryGame>
             t.Position = (menuX, menuY);
         }
         
-        // Update Button Background only
-        // if (_startBtn != null)
-        // {
-		// 	_startBtn.SetPosition(menuX, menuY);
-            
-        //     // Keep Label static
-        //     _startBtn.Label.Position = (MenuOffset, 0);
-        // }
+        _gameLabel.Position = (MenuOffset, 8.0f);
+        _startBtn?.SetPosition(MenuOffset, 2.0f);
+        _settingsBtn?.SetPosition(MenuOffset, -0.5f);
+        _exitBtn?.SetPosition(MenuOffset, -3.0f);
         
-        _gameLabel.Position = (MenuOffset, 5.0f);
+        // Update Settings UI Positions
+        if (_showSettings)
+        {
+            var settingsX = _cam.X + SettingsOffset;
+            if (_settingsBg != null)
+            {
+                var t = _settingsBg.GetComponent<TransformComponent>();
+                t.Position = (settingsX, menuY);
+            }
+            
+            if (_settingsLabel.HasValue)
+            {
+                var lbl = _settingsLabel.Value;
+                lbl.Position = (SettingsOffset, 5.0f);
+            }
+            if (_zoomValueLabel.HasValue)
+            {
+                var lbl = _zoomValueLabel.Value;
+                lbl.Position = (SettingsOffset, 2.0f);
+            }
+            _zoomSlider?.SetPosition(SettingsOffset, 0.0f);
+        }
+        UpdateDecorations(dt);
     }
 
     public void Draw(FactoryGame game)
@@ -171,6 +288,34 @@ public class StateFactoryMenu : IGameState<FactoryGame>
         if (_tileMap != IntPtr.Zero)
         {
             Native.TileMap_Render(_tileMap);
+        }
+    }
+
+    private void SpawnDecorations(FactoryGame game)
+    {
+        if (game.World == null) return;
+        for (int i = 0; i < 50; i++)
+        {
+            var x = _rng.Next(0, game.World.Width());
+            var y = _rng.Next(0, game.World.Height());
+            var itemType = (FactoryItemType)_rng.Next(0, 5); // 0 to 4
+            var tex = FactoryResources.GetItemTexture(itemType);
+            
+            if (tex != IntPtr.Zero)
+            {
+                var ent = SceneFactory.CreateQuad(x, y, 1.0f, 1.0f, 1, 1, 1, 40);
+                Native.Entity_SetTexturePtr(ent.Id, tex);
+                _decorations.Add(ent);
+            }
+        }
+    }
+
+    private void UpdateDecorations(float dt)
+    {
+        foreach (var d in _decorations)
+        {
+            var t = d.GetComponent<TransformComponent>();
+            t.Rotation += dt * 45.0f;
         }
     }
 }
