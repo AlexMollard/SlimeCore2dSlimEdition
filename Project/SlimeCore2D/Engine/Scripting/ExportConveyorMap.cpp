@@ -1,5 +1,5 @@
-#include "ExportTileMap.h"
-#include "Rendering/TileMap.h"
+#include "ExportConveyorMap.h"
+#include "Rendering/ConveyorMap.h"
 #include "Scene/Scene.h"
 #include "Core/Input.h"
 
@@ -7,29 +7,34 @@
 #define GLM_FORCE_LEFT_HANDED
 #include <gtc/matrix_transform.hpp>
 
-SLIME_EXPORT void* __cdecl TileMap_Create(int width, int height, float tileSize)
+SLIME_EXPORT void* __cdecl ConveyorMap_Create(int width, int height, float tileSize)
 {
-    return new TileMap(width, height, tileSize);
+    return new ConveyorMap(width, height, tileSize);
 }
 
-SLIME_EXPORT void __cdecl TileMap_Destroy(void* tileMap)
+SLIME_EXPORT void __cdecl ConveyorMap_Destroy(void* map)
 {
-    if (tileMap) delete (TileMap*)tileMap;
+    if (map) delete (ConveyorMap*)map;
 }
 
-SLIME_EXPORT void __cdecl TileMap_SetTile(void* tileMap, int x, int y, int layer, void* texturePtr, float r, float g, float b, float a, float rotation)
+SLIME_EXPORT void __cdecl ConveyorMap_SetConveyor(void* map, int x, int y, int tier, int direction)
 {
-    if (tileMap) ((TileMap*)tileMap)->SetTile(x, y, layer, texturePtr, r, g, b, a, rotation);
+    if (map) ((ConveyorMap*)map)->SetConveyor(x, y, tier, direction);
 }
 
-SLIME_EXPORT void __cdecl TileMap_UpdateMesh(void* tileMap)
+SLIME_EXPORT void __cdecl ConveyorMap_RemoveConveyor(void* map, int x, int y)
 {
-    if (tileMap) ((TileMap*)tileMap)->UpdateMesh();
+    if (map) ((ConveyorMap*)map)->RemoveConveyor(x, y);
 }
 
-SLIME_EXPORT void __cdecl TileMap_Render(void* tileMap)
+SLIME_EXPORT void __cdecl ConveyorMap_UpdateMesh(void* map)
 {
-    if (!tileMap) return;
+    if (map) ((ConveyorMap*)map)->UpdateMesh();
+}
+
+SLIME_EXPORT void __cdecl ConveyorMap_Render(void* map, float time)
+{
+    if (!map) return;
 
     // Calculate ViewProj from Primary Camera
     Scene* scene = Scene::GetActiveScene();
@@ -61,13 +66,14 @@ SLIME_EXPORT void __cdecl TileMap_Render(void* tileMap)
                                   glm::rotate(glm::mat4(1.0f), tc.Rotation, glm::vec3(0, 0, 1));
             glm::mat4 view = glm::inverse(transform);
             
-            // Push TileMap back slightly to ensure it's behind Z=0 entities and ConveyorMap
-            // ConveyorMap is at Z=-0.01. We want TileMap at Z=-0.02
-            glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -0.02f));
+            // Push ConveyorMap slightly behind entities (Z=0) but in front of TileMap (Z=-0.02)
+            // Entities are at Z=0. We want Conveyor at Z=-0.01 (Behind entities)
+            
+            glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -0.01f));
 
             glm::mat4 viewProj = proj * view * model;
             
-            ((TileMap*)tileMap)->Render(viewProj);
+            ((ConveyorMap*)map)->Render(viewProj, time);
         }
     }
 }

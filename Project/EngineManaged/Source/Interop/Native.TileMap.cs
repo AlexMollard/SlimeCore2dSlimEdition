@@ -10,7 +10,7 @@ internal static partial class Native
     internal static extern void TileMap_Destroy(IntPtr tileMap);
 
     [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
-    internal static extern void TileMap_SetTile(IntPtr tileMap, int x, int y, int layer, IntPtr texturePtr, float r, float g, float b, float a);
+    internal static extern void TileMap_SetTile(IntPtr tileMap, int x, int y, int layer, IntPtr texturePtr, float r, float g, float b, float a, float rotation);
 
     [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
     internal static extern void TileMap_UpdateMesh(IntPtr tileMap);

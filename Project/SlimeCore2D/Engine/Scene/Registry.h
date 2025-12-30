@@ -8,6 +8,11 @@
 #include <algorithm>
 #include <limits>
 
+#ifdef max
+#undef max
+#endif // max
+
+
 class IComponentPool {
 public:
 	virtual ~IComponentPool() = default;

@@ -47,6 +47,8 @@ private:
     struct ConstantBuffer
     {
         glm::mat4 ViewProjection;
+        float Time;
+        float Padding[3];
     };
     mutable ConstantBuffer m_CBufferData;
     mutable ComPtr<ID3D11Buffer> m_ConstantBuffer;

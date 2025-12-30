@@ -190,7 +190,9 @@
     <ClCompile Include="Engine\Scripting\ExportParticles.cpp" />
     <ClCompile Include="Engine\Scripting\ExportText.cpp" />
     <ClCompile Include="Engine\Rendering\TileMap.cpp" />
+    <ClCompile Include="Engine\Rendering\ConveyorMap.cpp" />
     <ClCompile Include="Engine\Scripting\ExportTileMap.cpp" />
+    <ClCompile Include="Engine\Scripting\ExportConveyorMap.cpp" />
     <ClCompile Include="Engine\Scripting\ExportUI.cpp" />
     <ClCompile Include="Engine\Scripting\ExportRenderer.cpp" />
     <ClCompile Include="Engine\Physics\CollisionManager.cpp" />
@@ -230,7 +232,9 @@
     <ClInclude Include="Engine\Scripting\ExportParticles.h" />
     <ClInclude Include="Engine\Scripting\ExportText.h" />
     <ClInclude Include="Engine\Rendering\TileMap.h" />
+    <ClInclude Include="Engine\Rendering\ConveyorMap.h" />
     <ClInclude Include="Engine\Scripting\ExportTileMap.h" />
+    <ClInclude Include="Engine\Scripting\ExportConveyorMap.h" />
     <ClInclude Include="Engine\Scripting\ExportUI.h" />
     <ClInclude Include="Engine\Scripting\ExportRenderer.h" />
     <ClInclude Include="Engine\Physics\CollisionManager.h" />

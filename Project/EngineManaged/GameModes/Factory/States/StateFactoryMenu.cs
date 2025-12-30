@@ -93,21 +93,21 @@ public class StateFactoryMenu : IGameState<FactoryGame>
         var tile = game.World[x, y];
 
         // Layer 0: Terrain
-        Native.TileMap_SetTile(_tileMap, x, y, 0, FactoryResources.GetTerrainTexture(tile.Type), 1, 1, 1, 1);
+        Native.TileMap_SetTile(_tileMap, x, y, 0, FactoryResources.GetTerrainTexture(tile.Type), 1, 1, 1, 1, 0);
 
         // Layer 1: Ore
         var oreTex = FactoryResources.GetOreTexture(tile.OreType);
         if (oreTex != IntPtr.Zero)
-            Native.TileMap_SetTile(_tileMap, x, y, 1, oreTex, 1, 1, 1, 1);
+            Native.TileMap_SetTile(_tileMap, x, y, 1, oreTex, 1, 1, 1, 1, 0);
         else
-            Native.TileMap_SetTile(_tileMap, x, y, 1, IntPtr.Zero, 0, 0, 0, 0);
+            Native.TileMap_SetTile(_tileMap, x, y, 1, IntPtr.Zero, 0, 0, 0, 0, 0);
 
         // Layer 2: Structure
         var structTex = FactoryResources.GetStructureTexture(tile.Structure);
         if (structTex != IntPtr.Zero)
-            Native.TileMap_SetTile(_tileMap, x, y, 2, structTex, 1, 1, 1, 1);
+            Native.TileMap_SetTile(_tileMap, x, y, 2, structTex, 1, 1, 1, 1, 0);
         else
-            Native.TileMap_SetTile(_tileMap, x, y, 2, IntPtr.Zero, 0, 0, 0, 0);
+            Native.TileMap_SetTile(_tileMap, x, y, 2, IntPtr.Zero, 0, 0, 0, 0, 0);
     }
 
     public void Exit(FactoryGame game)

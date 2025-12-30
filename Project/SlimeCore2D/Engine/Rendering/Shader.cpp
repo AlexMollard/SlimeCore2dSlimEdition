@@ -145,6 +145,8 @@ void Shader::Use() const
     
     // Bind Constant Buffer to VS slot 0
     context->VSSetConstantBuffers(0, 1, m_ConstantBuffer.GetAddressOf());
+    // Bind Constant Buffer to PS slot 0
+    context->PSSetConstantBuffers(0, 1, m_ConstantBuffer.GetAddressOf());
 }
 
 void Shader::Unbind() const
@@ -157,7 +159,14 @@ void Shader::Unbind() const
 // Uniform Setters
 void Shader::setBool(const std::string& name, bool value) const {}
 void Shader::setInt(const std::string& name, int value) const {}
-void Shader::setFloat(const std::string& name, float value) const {}
+void Shader::setFloat(const std::string& name, float value) const
+{
+    if (name == "u_Time")
+    {
+        m_CBufferData.Time = value;
+        UpdateConstantBuffer();
+    }
+}
 void Shader::setIntArray(const std::string& name, int* values, uint32_t count) const {}
 void Shader::setVec2(const std::string& name, const glm::vec2& value) const {}
 void Shader::setVec2(const std::string& name, float x, float y) const {}

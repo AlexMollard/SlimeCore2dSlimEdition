@@ -33,6 +33,9 @@ public sealed class FactoryTileOptions : TileOptions<FactoryTerrain>
     public FactoryOre OreType { get; set; } = FactoryOre.None;
     public bool IsMineable { get; set; }
     public FactoryStructure Structure { get; set; } = FactoryStructure.None;
+    public int Tier { get; set; } = 1;
+    public Direction Direction { get; set; } = Direction.North;
+    public int Bitmask { get; set; } = 0;
 }
 
 public class FactoryTile : Tile<FactoryTerrain, FactoryTileOptions>
@@ -40,6 +43,9 @@ public class FactoryTile : Tile<FactoryTerrain, FactoryTileOptions>
     public FactoryOre OreType { get; set; } = FactoryOre.None;
     public bool IsMineable { get; set; }
     public FactoryStructure Structure { get; set; } = FactoryStructure.None;
+    public int Tier { get; set; } = 1;
+    public Direction Direction { get; set; } = Direction.North;
+    public int Bitmask { get; set; } = 0;
 
     public FactoryTile()
     {
@@ -52,7 +58,10 @@ public class FactoryTile : Tile<FactoryTerrain, FactoryTileOptions>
             Type = Type,
             OreType = OreType,
             IsMineable = IsMineable,
-            Structure = Structure
+            Structure = Structure,
+            Tier = Tier,
+            Direction = Direction,
+            Bitmask = Bitmask
         };
 
         configure(opts);
@@ -61,6 +70,9 @@ public class FactoryTile : Tile<FactoryTerrain, FactoryTileOptions>
         OreType = opts.OreType;
         IsMineable = opts.IsMineable;
         Structure = opts.Structure;
+        Tier = opts.Tier;
+        Direction = opts.Direction;
+        Bitmask = opts.Bitmask;
     }
 
     public override Vec3 GetPalette(params object[] extraArgs)
@@ -95,6 +107,24 @@ public class FactoryTile : Tile<FactoryTerrain, FactoryTileOptions>
         if (Structure == FactoryStructure.ConveyorBelt)
         {
             col = new Vec3(0.3f, 0.3f, 0.3f); // Dark grey for conveyor
+            
+            // Debug visualization for direction
+            col += Direction switch
+            {
+                Direction.North => new Vec3(0.1f, 0, 0),
+                Direction.East => new Vec3(0, 0.1f, 0),
+                Direction.South => new Vec3(0, 0, 0.1f),
+                Direction.West => new Vec3(0.1f, 0.1f, 0),
+                _ => Vec3.Zero
+            };
+        }
+        else
+        {
+            // Debug visualization for terrain bitmask (edges are darker)
+            if (Bitmask != 15) // 15 = 1111 (all neighbors same)
+            {
+                col *= 0.9f;
+            }
         }
 
         return col;

@@ -11,9 +11,9 @@ TileMapChunk::TileMapChunk(int offsetX, int offsetY, int width, int height, floa
     : m_OffsetX(offsetX), m_OffsetY(offsetY), m_Width(width), m_Height(height), m_TileSize(tileSize), m_Dirty(true), m_IndexCount(0)
 {
     int count = width * height;
-    m_Layers[0].resize(count, { nullptr, {0,0,0,0}, false });
-    m_Layers[1].resize(count, { nullptr, {0,0,0,0}, false });
-    m_Layers[2].resize(count, { nullptr, {0,0,0,0}, false });
+    m_Layers[0].resize(count, { nullptr, {0,0,0,0}, 0.0f, false });
+    m_Layers[1].resize(count, { nullptr, {0,0,0,0}, 0.0f, false });
+    m_Layers[2].resize(count, { nullptr, {0,0,0,0}, 0.0f, false });
 }
 
 TileMapChunk::~TileMapChunk()
@@ -22,7 +22,7 @@ TileMapChunk::~TileMapChunk()
     m_IndexBuffer.Reset();
 }
 
-void TileMapChunk::SetTile(int x, int y, int layer, void* texturePtr, float r, float g, float b, float a)
+void TileMapChunk::SetTile(int x, int y, int layer, void* texturePtr, float r, float g, float b, float a, float rotation)
 {
     // x and y are local to the chunk
     if (x < 0 || x >= m_Width || y < 0 || y >= m_Height || layer < 0 || layer > 2)
@@ -31,6 +31,7 @@ void TileMapChunk::SetTile(int x, int y, int layer, void* texturePtr, float r, f
     int index = y * m_Width + x;
     m_Layers[layer][index].Texture = texturePtr;
     m_Layers[layer][index].Color = { r, g, b, a };
+    m_Layers[layer][index].Rotation = rotation;
     m_Layers[layer][index].Active = (a > 0.0f);
     m_Dirty = true;
 }
@@ -84,17 +85,41 @@ void TileMapChunk::UpdateMesh()
                 float xPos = (float)(m_OffsetX + x) * m_TileSize;
                 float yPos = (float)(m_OffsetY + y) * m_TileSize;
                 
+                float halfSize = m_TileSize * 0.5f;
+                float cx = xPos + halfSize;
+                float cy = yPos + halfSize;
+
+                glm::vec3 pos[4] = {
+                    { -halfSize, -halfSize, 0.0f },
+                    {  halfSize, -halfSize, 0.0f },
+                    {  halfSize,  halfSize, 0.0f },
+                    { -halfSize,  halfSize, 0.0f }
+                };
+
+                if (tile.Rotation != 0.0f)
+                {
+                    float c = cos(tile.Rotation);
+                    float s = sin(tile.Rotation);
+                    for (int i = 0; i < 4; i++)
+                    {
+                        float rx = pos[i].x * c - pos[i].y * s;
+                        float ry = pos[i].x * s + pos[i].y * c;
+                        pos[i].x = rx;
+                        pos[i].y = ry;
+                    }
+                }
+
                 TileVertex v[4];
-                v[0].Position = { xPos, yPos, 0.0f };
+                v[0].Position = { cx + pos[0].x, cy + pos[0].y, 0.0f };
                 v[0].TexCoord = { 0.0f, 0.0f };
                 
-                v[1].Position = { xPos + m_TileSize, yPos, 0.0f };
+                v[1].Position = { cx + pos[1].x, cy + pos[1].y, 0.0f };
                 v[1].TexCoord = { 1.0f, 0.0f };
                 
-                v[2].Position = { xPos + m_TileSize, yPos + m_TileSize, 0.0f };
+                v[2].Position = { cx + pos[2].x, cy + pos[2].y, 0.0f };
                 v[2].TexCoord = { 1.0f, 1.0f };
                 
-                v[3].Position = { xPos, yPos + m_TileSize, 0.0f };
+                v[3].Position = { cx + pos[3].x, cy + pos[3].y, 0.0f };
                 v[3].TexCoord = { 0.0f, 1.0f };
 
                 for (int i = 0; i < 4; i++)
@@ -230,7 +255,7 @@ TileMap::~TileMap()
     m_Chunks.clear();
 }
 
-void TileMap::SetTile(int x, int y, int layer, void* texturePtr, float r, float g, float b, float a)
+void TileMap::SetTile(int x, int y, int layer, void* texturePtr, float r, float g, float b, float a, float rotation)
 {
     if (x < 0 || x >= m_Width || y < 0 || y >= m_Height) return;
 
@@ -242,7 +267,7 @@ void TileMap::SetTile(int x, int y, int layer, void* texturePtr, float r, float 
     {
         int lx = x % m_ChunkWidth;
         int ly = y % m_ChunkHeight;
-        m_Chunks[chunkIndex]->SetTile(lx, ly, layer, texturePtr, r, g, b, a);
+        m_Chunks[chunkIndex]->SetTile(lx, ly, layer, texturePtr, r, g, b, a, rotation);
     }
 }
 
