@@ -29,9 +29,12 @@ public static class FactoryResources
     public static IntPtr TexItemCoal;
     public static IntPtr TexItemGoldOre;
     public static IntPtr TexItemStone;
-
+    //Fauna Textures
     public static IntPtr TexSheep { get; set; }
     public static IntPtr TexWolf { get; set; }
+    //Flora Textures
+    public static IntPtr TexTree01 { get; set; }
+
 
     public static IntPtr TexDebug;
 
@@ -72,7 +75,7 @@ public static class FactoryResources
         TexWolf = NativeMethods.Resources_LoadTexture("wolf", "Textures/Factory/Fauna/wolf.png");
 
 
-
+        TexTree01 = NativeMethods.Resources_LoadTexture("tree01", "Textures/Factory/Flora/tree01.png");
     }
 
     public static IntPtr GetTerrainTexture(SlimeCore.GameModes.Factory.World.FactoryTerrain type)

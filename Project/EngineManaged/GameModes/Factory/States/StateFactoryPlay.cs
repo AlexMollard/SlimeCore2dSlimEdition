@@ -113,6 +113,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         game.ActorManager?.Register(_player);
         Sheep.Populate(game, 500);
         Wolf.Populate(game, 100);
+        Tree.Populate(game, 600);
 
         CreateUI();
     }
