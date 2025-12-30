@@ -91,15 +91,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
             game.ConveyorSystem = new ConveyorSystem(game.World.Width(), game.World.Height(), 1.0f);
             game.BuildingSystem = new BuildingSystem(game.World, game.ConveyorSystem);
 
-            // Populate TileMap
-            //for (var x = 0; x < game.World.Width(); x++)
-            //{
-            //    for (var y = 0; y < game.World.Height(); y++)
-            //    {
-            //        game.World[x, y].UpdateTile(game);
-            //    }
-            //}
-            //Native.TileMap_UpdateMesh(game.TileMap);
+            // Flush full worldgen
             game.World.ManualTick(game, 0f);
         }
 
@@ -115,6 +107,13 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         Sheep.Populate(game, 500);
         Wolf.Populate(game, 100);
         Tree.Populate(game, 600);
+        var wolfPos = _cam;
+        wolfPos.X += 5.0f;
+        var sheepPos = _cam;
+        sheepPos.X -= 5.0f;
+
+        game.ActorManager?.Register(new Wolf(wolfPos));
+        game.ActorManager?.Register(new Sheep(sheepPos));
 
         CreateUI();
     }

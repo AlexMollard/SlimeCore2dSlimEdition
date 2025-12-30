@@ -1,12 +1,13 @@
 using EngineManaged.Numeric;
 using SlimeCore.Source.Common;
 using SlimeCore.Source.World.Grid;
+using SlimeCore.Source.World.Grid.Pathfinding;
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SlimeCore.GameModes.Factory.World;
 
-public class FactoryWorld : GridSystem<FactoryGame, FactoryTerrain, FactoryTileOptions, FactoryTile>
+public class FactoryWorld : GridSystem<FactoryGame, FactoryTerrain, FactoryTileOptions, FactoryTile>, IWorldGrid
 {
     [NotMapped]
     public float Zoom { get; set; } = 1.0f;
@@ -147,5 +148,19 @@ public class FactoryWorld : GridSystem<FactoryGame, FactoryTerrain, FactoryTileO
             return Grid[pos].Type == neighbor.Type;
         }
         return false;
+    }
+
+    public bool IsBlocked(Vec2i tile)
+    {
+        if (!InBounds(tile))
+        {
+            return true;
+        }
+        return Grid[tile].IsBlocked();
+    }
+
+    public bool IsLiquid(Vec2i tile)
+    {
+        return Grid[tile].IsLiquid();
     }
 }

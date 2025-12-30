@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace SlimeCore.Source.World.Grid;
 
@@ -237,5 +238,16 @@ public class GridSystem<TGameMode, TEnum, TileOptions, Tile>
     public void Register(int x, int y) => _actionQueue.Enqueue(new Vec2i(x, y));
 
     public void Register(Tile tile) => _actionQueue.Enqueue(tile.Position);
+
+    public bool InBounds(int x, int y) => InBounds(new Vec2i(x, y));
+
+    public bool InBounds(Vec2i position)
+    {
+        return
+            position.X >= 0 &&
+            position.Y >= 0 &&
+            position.X < Width() &&
+            position.Y < Height();
+    }
 
 }

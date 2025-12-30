@@ -47,16 +47,23 @@ public class ActorManager<TEnum, TGameMode>
         }
 
         int actBudget = ActBudget;
-        while (actBudget-- > 0 && _active.Count > 0)
+        while (_active.Count > 0)
         {
             var actor = _active.Dequeue();
-            if (actor.TakeAction(mode, deltaTime))
+            if (actBudget-- > 0)
             {
-                _next.Enqueue(actor, actor.Priority);
+                if (actor.TakeAction(mode, deltaTime))
+                {
+                    _next.Enqueue(actor, actor.Priority);
+                }
+                else
+                {
+                    Remove(actor);
+                }
             }
             else
             {
-                Remove(actor);
+                _next.Enqueue(actor, actor.Priority);
             }
         }
         // Swap queues
@@ -80,6 +87,9 @@ public class ActorManager<TEnum, TGameMode>
         _all.Remove(actor);
         _byType[actor.Kind].Remove(actor);
     }
+
+    public Actor<TEnum, TGameMode>[] ByType(TEnum type) 
+        => _byType.TryGetValue(type, out var set) ? set.ToArray() : [];
 
     public int Count(TEnum kind)
         => _byType.TryGetValue(kind, out var set) ? set.Count : 0;

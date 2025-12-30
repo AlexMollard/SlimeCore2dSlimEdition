@@ -2,13 +2,15 @@
 using EngineManaged.Scene;
 using SlimeCore.GameModes.Factory.World;
 using SlimeCore.Source.World.Actors;
+using SlimeCore.Source.World.Actors.Interfaces;
+using SlimeCore.Source.World.Grid.Pathfinding;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace SlimeCore.GameModes.Factory.Actors;
 
-public class Wolf : Actor<FactoryActors, FactoryGame>
+public class Wolf : Actor<FactoryActors, FactoryGame>, IThreat
 {
     public override FactoryActors Kind => FactoryActors.Animals;
     protected override float ActionInterval => 0.5f;
@@ -18,6 +20,8 @@ public class Wolf : Actor<FactoryActors, FactoryGame>
     public float Speed { get; set; } = 3.5f;
     public float Size { get; set; } = 0.5f;
 
+    public float Radius { get; } = 0.6f;
+
     private Vec2 _velocity;
     private Vec2 _targetDir;
     private float _decisionTimer;
@@ -25,12 +29,17 @@ public class Wolf : Actor<FactoryActors, FactoryGame>
     private float _bobTime;
     private float _hunger;
 
+    private readonly PathFollower<TileAStarPlanner> _pathFollower;
+    private Sheep? _target;
+
+
     public Wolf(Vec2 startPos)
     {
         Position = startPos;
         Entity = SceneFactory.CreateQuad(Position.X, Position.Y, Size, Size, 1.0f, 1.0f, 1.0f, layer: 9);
         var sprite = Entity.GetComponent<SpriteComponent>();
         sprite.TexturePtr = FactoryResources.TexWolf;
+        _pathFollower = new PathFollower<TileAStarPlanner>();
         //sprite.Color = (1.0f, 1.0f, 1.0f); // White player for now
     }
 
@@ -44,33 +53,30 @@ public class Wolf : Actor<FactoryActors, FactoryGame>
         {
             _pauseTimer -= deltaTime;
             _velocity *= 0.9f; // gentle settling
-            var position = Position.ToVec2Int();
         }
         else
         {
+            // Decide WHO to hunt (rarely)
             _decisionTimer -= deltaTime;
-
-            // Time to reconsider life choices, touch grass
             if (_decisionTimer <= 0f)
             {
-
                 _decisionTimer = mode.Rng.NextSingle() * 3f + 1f;
 
-                if (mode.Rng.NextSingle() < 0.35f)
+                if (_target == null || !_target.IsAlive)
                 {
-                    _pauseTimer = mode.Rng.NextSingle() * 2f;
-                    _targetDir = Vec2.Zero;
-                }
-                else
-                {
-                    _targetDir = new Vec2(
-                        mode.Rng.NextSingle() * 2f - 1f,
-                        mode.Rng.NextSingle() * 2f - 1f
-                    ).Normalized();
+                    _target = FindClosestSheep(mode);
                 }
             }
 
-            // Ease velocity toward intent
+            if (_target != null)
+            {
+                var nextDir = _pathFollower.Update(Position, _target.Position.ToVec2Int(), mode.World);
+                _targetDir = nextDir;
+            }
+            else
+            {
+                _targetDir = Vec2.Zero;
+            }
             _velocity = Vec2.Lerp(
                 _velocity,
                 _targetDir * Speed,
@@ -138,5 +144,28 @@ public class Wolf : Actor<FactoryActors, FactoryGame>
         }
     }
 
+    private Sheep? FindClosestSheep(FactoryGame mode)
+    {
+        Sheep? best = null;
+        float bestDist = float.MaxValue;
+
+        foreach (var actor in mode.ActorManager!.ByType(FactoryActors.Animals))
+        {
+            if (actor is Sheep sheep)
+            {
+                float d = (sheep.Position - Position).LengthSquared();
+                if (d < bestDist)
+                {
+                    bestDist = d;
+                    best = sheep;
+                }
+            }
+        }
+
+        return best;
+    }
+
+
+    
 }
 

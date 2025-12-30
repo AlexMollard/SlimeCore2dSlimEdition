@@ -8,7 +8,7 @@ public class FactorySettings
     public int WorldWidth { get; set; } = 500;
     public int WorldHeight { get; set; } = 500;
 
-    public int ActorBudget { get; set; } = 200;
+    public int ActorBudget { get; set; } = 300;
 
     public int WorldBudget { get; set; } = 100;
 

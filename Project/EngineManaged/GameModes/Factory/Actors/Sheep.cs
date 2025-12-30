@@ -2,6 +2,8 @@ using EngineManaged.Numeric;
 using EngineManaged.Scene;
 using SlimeCore.GameModes.Factory.World;
 using SlimeCore.Source.World.Actors;
+using SlimeCore.Source.World.Actors.Interfaces;
+using SlimeCore.Source.World.Grid.Pathfinding;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -17,6 +19,7 @@ public class Sheep : Actor<FactoryActors, FactoryGame>
 
     public float Speed { get; set; } = 3.5f;
     public float Size { get; set; } = 0.5f;
+    public bool IsAlive { get; set; } = true;
 
     private Vec2 _velocity;
     private Vec2 _targetDir;
@@ -24,6 +27,13 @@ public class Sheep : Actor<FactoryActors, FactoryGame>
     private float _pauseTimer;
     private float _bobTime;
     private float _hunger;
+
+    private readonly TileMemorySteering _memorySteering = new();
+    private const float FearRadius = 6f;
+    private PathFollower<BasicPlanner>? _grassPath;
+    private Vec2i? _grassTarget;
+
+
 
     public Sheep(Vec2 startPos)
     {
@@ -60,19 +70,53 @@ public class Sheep : Actor<FactoryActors, FactoryGame>
             {
 
                 _decisionTimer = mode.Rng.NextSingle() * 3f + 1f;
+                var fear = ComputeFear(mode);
 
-                if (mode.Rng.NextSingle() < 0.35f)
+                if (fear != Vec2.Zero)
+                {
+                    _targetDir = fear; // terror overrides whimsy
+                }
+                else if (mode.Rng.NextSingle() < 0.35f)
                 {
                     _pauseTimer = mode.Rng.NextSingle() * 2f;
                     _targetDir = Vec2.Zero;
                 }
-                else
+                else //Whimsical wandering
                 {
-                    _targetDir = new Vec2(
-                        mode.Rng.NextSingle() * 2f - 1f,
-                        mode.Rng.NextSingle() * 2f - 1f
-                    ).Normalized();
+                    if (_hunger < 50f && _grassTarget == null)
+                    {
+                        _grassTarget = FindGrass(mode);
+                        if (_grassTarget != null)
+                        {
+                            _grassPath ??= new PathFollower<BasicPlanner>();
+                        }
+                    }
+
+                    if (_grassTarget != null)
+                    {
+                        _targetDir = _grassPath!.Update(
+                            Position,
+                            _grassTarget.Value,
+                            mode.World
+                        );
+
+                        if (Position.ToVec2Int() == _grassTarget)
+                            _grassTarget = null;
+                    }
                 }
+            }
+            _targetDir = _memorySteering.ChooseDirection(
+                Position,
+                _targetDir,
+                mode.World,
+                deltaTime
+            );
+            if (_targetDir == Vec2.Zero && _velocity.Length() < 0.1f)
+            {
+                _targetDir = new Vec2(
+                    mode.Rng.NextSingle() * 2f - 1f,
+                    mode.Rng.NextSingle() * 2f - 1f
+                ).Normalized();
             }
 
             // Ease velocity toward intent
@@ -82,6 +126,7 @@ public class Sheep : Actor<FactoryActors, FactoryGame>
                 deltaTime * 2.5f
             );
         }
+
 
         // Apply movement with collision
         var move = _velocity * deltaTime;
@@ -126,6 +171,50 @@ public class Sheep : Actor<FactoryActors, FactoryGame>
     public override void Destroy()
     {
         Entity.Destroy();
+    }
+    private Vec2 ComputeFear(FactoryGame mode)
+    {
+        var fear = Vec2.Zero;
+
+        foreach (var actor in mode.ActorManager!.ByType(FactoryActors.Animals))
+        {
+            if (actor is IThreat threat)
+            {
+                var diff = Position - threat.Position;
+                float dist = diff.Length();
+
+                if (dist < FearRadius && dist > threat.Radius)
+                {
+                    fear += diff.Normalized() * (1f - dist / FearRadius);
+                }
+            }
+        }
+
+        return fear.Normalized();
+    }
+
+    private Vec2i? FindGrass(FactoryGame mode, int radius = 8)
+    {
+        var origin = Position.ToVec2Int();
+
+        for (int r = 1; r <= radius; r++)
+        for (int dx = -r; dx <= r; dx++)
+        for (int dy = -r; dy <= r; dy++)
+        {
+            var p = origin + new Vec2i(dx, dy);
+            if (!mode.World.InBounds(p))
+            {
+                continue;
+            }
+
+            if (mode.World[p].Type == FactoryTerrain.Grass &&
+                !mode.World[p].IsBlocked())
+            {
+                return p;
+            }
+        }
+
+        return null;
     }
 
 
