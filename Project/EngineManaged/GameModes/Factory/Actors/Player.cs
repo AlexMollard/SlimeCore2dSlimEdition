@@ -15,6 +15,7 @@ public class Player : Actor<FactoryActors, FactoryGame>, IControllable
 
     public Entity Entity { get; private set; }
     public float Speed { get; set; } = 5.0f;
+    public float SprintMultiplier { get; set; } = 2.0f;
     public float Size { get; set; } = 0.5f;
 
     public Player(Vec2 startPos)
@@ -60,7 +61,13 @@ public class Player : Actor<FactoryActors, FactoryGame>, IControllable
 
         if (move.Length() > 0)
         {
-            move = move.Normalized() * Speed * dt;
+            float currentSpeed = Speed;
+            if (Input.GetKeyDown(Keycode.LEFT_SHIFT) || Input.GetKeyDown(Keycode.RIGHT_SHIFT))
+            {
+                currentSpeed *= SprintMultiplier;
+            }
+
+            move = move.Normalized() * currentSpeed * dt;
             
             // Try X movement
             if (!FactoryPhysics.CheckCollision(game, Position + new Vec2(move.X, 0), Size))
