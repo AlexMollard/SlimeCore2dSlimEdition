@@ -1,4 +1,5 @@
 ﻿using EngineManaged.Numeric;
+using SlimeCore.Source.Common;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -14,28 +15,24 @@ public class BasicPlanner : IPathPlanner
         out List<Vec2i> path)
     {
         path = new List<Vec2i>();
+        var previousPositions = new HashSet<Vec2i>();
         var current = from;
 
         path.Add(current);
 
-        while (current != to)
+
+        while (current != to && path.Count < 1024)
         {
-            int dx = Math.Sign(to.X - current.X);
-            int dy = Math.Sign(to.Y - current.Y);
-
-            var next = new Vec2i(
-                current.X + dx,
-                current.Y + dy
-            );
-            bool blocked = world.IsBlocked(next);
-
-            if (!world.InBounds(next) || blocked)
+            var best = world.GetBestNeighbour(current, to, previousPositions);
+            if (best == null)
+            {
                 return false;
-
-            current = next;
+            }
+            current = best.Value;
+            previousPositions.Add(current);
             path.Add(current);
         }
-
+        Logger.Info($"PathGenerated {path.Count}");
         return true;
     }
 }

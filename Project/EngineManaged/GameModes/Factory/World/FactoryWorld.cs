@@ -3,7 +3,9 @@ using SlimeCore.Source.Common;
 using SlimeCore.Source.World.Grid;
 using SlimeCore.Source.World.Grid.Pathfinding;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
 
 namespace SlimeCore.GameModes.Factory.World;
 
@@ -183,4 +185,39 @@ public class FactoryWorld : GridSystem<FactoryGame, FactoryTerrain, FactoryTileO
 	{
 		return Grid[tile].IsLiquid();
 	}
+
+    public Vec2i? GetBestNeighbour(Vec2i location, Vec2i destination, HashSet<Vec2i> previousPositions)
+    {
+        Vec2i? best = null;
+        float bestWeight = float.MaxValue; //lowest wins
+        foreach (var dir in Directions)
+        {
+            var thisDir = location + dir;
+            if (IsBlocked(thisDir) || !InBounds(thisDir))
+            {
+                continue;
+            }
+            float weight = Vec2i.Heuristic(thisDir, destination);
+            if (IsLiquid(thisDir) && weight != 0f)
+            {
+                weight *= 2f; // Liquid is slower
+            }
+            if(previousPositions.Contains(thisDir))
+            {
+                weight += 1000f; // Discourage going back to previous positions
+            }
+
+            if (bestWeight > weight)
+            {
+                bestWeight = weight;
+                best = thisDir;
+            }
+        }
+        return best;
+    }
+
+    static readonly Vec2i[] Directions =
+    {
+        new(1,0), new(-1,0), new(0,1), new(0,-1)
+    };
 }
