@@ -59,6 +59,7 @@ public class Sheep : Actor<FactoryActors, FactoryGame>
             {
                 mode.World.Set(position, x => x.Type = FactoryTerrain.Dirt);
                 _hunger += 20f;
+                mode.World.UpdateNeighbors(mode, position);
             }
         }
         else
