@@ -35,6 +35,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
     private UIButton? _btnStorage;
     private UIButton? _btnFarm;
     private UIButton? _btnDelete;
+    private UIButton? _btnWall;
     private UIImage? _toolbarBg;
     private UIText? _tierLabel;
     private UIText? _rotationLabel;
@@ -154,7 +155,8 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         _btnMiner = CreateBtn("Miner", 1, () => { _selectedStructure = FactoryStructure.Miner; _deleteMode = false; });
         _btnStorage = CreateBtn("Storage", 2, () => { _selectedStructure = FactoryStructure.Storage; _deleteMode = false; });
         _btnFarm = CreateBtn("Farm", 3, () => { _selectedStructure = FactoryStructure.FarmPlot; _deleteMode = false; });
-        _btnDelete = CreateBtn("Delete", 4, () => { _deleteMode = true; });
+        _btnWall = CreateBtn("Wall", 4, () => { _selectedStructure = FactoryStructure.Wall; _deleteMode = false; });
+        _btnDelete = CreateBtn("Delete", 5, () => { _deleteMode = true; });
 
         // Labels
         var tLabel = UIText.Create("Tier: 1", 1, -17.0f, barY + 2.5f); // Left side of bar

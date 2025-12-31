@@ -30,6 +30,7 @@ public enum FactoryStructure
     Miner,
     Storage,
     FarmPlot,
+    Wall,
 }
 
 public sealed class FactoryTileOptions : TileOptions<FactoryTerrain>
