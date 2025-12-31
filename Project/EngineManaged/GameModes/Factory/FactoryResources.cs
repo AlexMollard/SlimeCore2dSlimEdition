@@ -24,6 +24,7 @@ public static class FactoryResources
     public static IntPtr TexStorageT2;
     public static IntPtr TexStorageT3;
     public static IntPtr TexFarmPlot;
+    public static IntPtr TexWall;
 
     public static IntPtr TexItemIronOre;
     public static IntPtr TexItemCopperOre;
@@ -68,6 +69,7 @@ public static class FactoryResources
         TexStorageT3 = NativeMethods.Resources_LoadTexture("storage_t3", "Textures/Factory/storage_t3.png");
 
         TexFarmPlot = NativeMethods.Resources_LoadTexture("farm_plot", "Textures/Factory/Structures/farmplot.png");
+        TexWall = NativeMethods.Resources_LoadTexture("wall", "Textures/Factory/Structures/wall.png");
 
         TexItemIronOre = NativeMethods.Resources_LoadTexture("item_iron_ore", "Textures/Factory/Items/iron_ore.png");
         TexItemCopperOre = NativeMethods.Resources_LoadTexture("item_copper_ore", "Textures/Factory/Items/copper_ore.png");
@@ -126,6 +128,7 @@ public static class FactoryResources
                 _ => TexStorageT1
             },
             SlimeCore.GameModes.Factory.World.FactoryStructure.FarmPlot => TexFarmPlot,
+            SlimeCore.GameModes.Factory.World.FactoryStructure.Wall => TexWall,
             _ => IntPtr.Zero
         };
     }
