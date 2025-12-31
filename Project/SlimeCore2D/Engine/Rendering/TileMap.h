@@ -21,7 +21,7 @@ public:
     TileMapChunk(int offsetX, int offsetY, int width, int height, float tileSize);
     ~TileMapChunk();
 
-    void SetTile(int x, int y, int layer, void* texturePtr, float r, float g, float b, float a, float rotation = 0.0f);
+    void SetTile(int x, int y, int layer, void* texturePtr, float u0, float v0, float u1, float v1, float r, float g, float b, float a, float rotation = 0.0f);
     void UpdateMesh();
     void Render(const glm::mat4& viewProj);
     bool IsVisible(const glm::mat4& viewProj);
@@ -34,6 +34,7 @@ private:
     struct TileInfo
     {
         void* Texture;
+        glm::vec4 TexRect; // u0, v0, u1, v1
         glm::vec4 Color;
         float Rotation;
         bool Active;
@@ -61,7 +62,7 @@ public:
     TileMap(int width, int height, float tileSize);
     ~TileMap();
 
-    void SetTile(int x, int y, int layer, void* texturePtr, float r, float g, float b, float a, float rotation = 0.0f);
+    void SetTile(int x, int y, int layer, void* texturePtr, float u0, float v0, float u1, float v1, float r, float g, float b, float a, float rotation = 0.0f);
     void UpdateMesh();
     void Render(const glm::mat4& viewProj);
 

@@ -50,6 +50,7 @@ public class FactoryTile : Tile<FactoryGame, FactoryTerrain, FactoryTileOptions>
     public int Tier { get; set; } = 1;
     public Direction Direction { get; set; } = Direction.North;
     public int Bitmask { get; set; }
+    public int ConveyorBitmask { get; set; }
     public int Progress { get; set; }
     /// <summary>
     /// For tile rendering optimization, has this tile been rendered at least once? Does it need a re-render?
@@ -185,19 +186,52 @@ public class FactoryTile : Tile<FactoryGame, FactoryTerrain, FactoryTileOptions>
         return false;
     }
 
+    public static void GetTerrainUVs(int bitmask, out float u0, out float v0, out float u1, out float v1)
+    {
+        int x = 1;
+        int y = 1;
+
+        switch (bitmask)
+        {
+            case 0: x = 1; y = 1; break; // None -> Center
+            case 1: x = 1; y = 2; break; // N -> Bottom Edge
+            case 2: x = 0; y = 1; break; // E -> Left Edge
+            case 3: x = 0; y = 2; break; // N|E -> BL Corner
+            case 4: x = 1; y = 0; break; // S -> Top Edge
+            case 5: x = 1; y = 1; break; // N|S -> Center (Vertical)
+            case 6: x = 0; y = 0; break; // S|E -> TL Corner
+            case 7: x = 0; y = 1; break; // N|S|E -> Left Edge
+            case 8: x = 2; y = 1; break; // W -> Right Edge
+            case 9: x = 2; y = 2; break; // N|W -> BR Corner
+            case 10: x = 1; y = 1; break; // W|E -> Center (Horizontal)
+            case 11: x = 1; y = 2; break; // N|W|E -> Bottom Edge
+            case 12: x = 2; y = 0; break; // S|W -> TR Corner
+            case 13: x = 2; y = 1; break; // N|S|W -> Right Edge
+            case 14: x = 1; y = 0; break; // S|W|E -> Top Edge
+            case 15: x = 1; y = 1; break; // All -> Center
+        }
+
+        float size = 1.0f / 3.0f;
+        u0 = x * size;
+        v0 = y * size;
+        u1 = u0 + size;
+        v1 = v0 + size;
+    }
+
     public void UpdateTile(FactoryGame game)
     {
         if (game.TileMap == IntPtr.Zero || game.World == null) return;
 
         // Layer 0: Terrain
-        Native.TileMap_SetTile(game.TileMap, PositionX, PositionY, 0, FactoryResources.GetTerrainTexture(Type), 1, 1, 1, 1, 0);
+        GetTerrainUVs(Bitmask, out float u0, out float v0, out float u1, out float v1);
+        Native.TileMap_SetTile(game.TileMap, PositionX, PositionY, 0, FactoryResources.GetTerrainTexture(Type), u0, v0, u1, v1, 1, 1, 1, 1, 0);
 
         // Layer 1: Ore
         nint oreTex = FactoryResources.GetOreTexture(OreType);
         if (oreTex != IntPtr.Zero)
-            Native.TileMap_SetTile(game.TileMap, PositionX, PositionY, 1, oreTex, 1, 1, 1, 1, 0);
+            Native.TileMap_SetTile(game.TileMap, PositionX, PositionY, 1, oreTex, 0, 0, 1, 1, 1, 1, 1, 1, 0);
         else
-            Native.TileMap_SetTile(game.TileMap, PositionX, PositionY, 1, IntPtr.Zero, 0, 0, 0, 0, 0);
+            Native.TileMap_SetTile(game.TileMap, PositionX, PositionY, 1, IntPtr.Zero, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
         // Layer 2: Structure
         nint structTex = FactoryResources.GetStructureTexture(Structure, Tier);
@@ -219,7 +253,7 @@ public class FactoryTile : Tile<FactoryGame, FactoryTerrain, FactoryTileOptions>
             game.BuildingSystem.RemoveBuilding(PositionX, PositionY); // Ensure no building
 
             // Don't render in TileMap
-            Native.TileMap_SetTile(game.TileMap, PositionX, PositionY, 2, IntPtr.Zero, 0, 0, 0, 0, 0);
+            Native.TileMap_SetTile(game.TileMap, PositionX, PositionY, 2, IntPtr.Zero, 0, 0, 0, 0, 0, 0, 0, 0, 0);
         }
         else if (Structure == FactoryStructure.Miner || Structure == FactoryStructure.Storage || Structure == FactoryStructure.FarmPlot)
         {
@@ -230,7 +264,7 @@ public class FactoryTile : Tile<FactoryGame, FactoryTerrain, FactoryTileOptions>
             if (structTex != IntPtr.Zero)
             {
                 // Use the texture
-                Native.TileMap_SetTile(game.TileMap, PositionX, PositionY, 2, structTex, 1, 1, 1, 1, rotation);
+                Native.TileMap_SetTile(game.TileMap, PositionX, PositionY, 2, structTex, 0, 0, 1, 1, 1, 1, 1, 1, rotation);
             }
             else
             {
@@ -239,10 +273,10 @@ public class FactoryTile : Tile<FactoryGame, FactoryTerrain, FactoryTileOptions>
 
                 if (Structure == FactoryStructure.Miner)
                 {
-                    Native.TileMap_SetTile(game.TileMap, PositionX, PositionY, 2, baseTex, 0.6f, 0.2f, 0.6f, 1.0f, 0);
+                    Native.TileMap_SetTile(game.TileMap, PositionX, PositionY, 2, baseTex, 0, 0, 1, 1, 0.6f, 0.2f, 0.6f, 1.0f, 0);
                 }
                 else
-                    Native.TileMap_SetTile(game.TileMap, PositionX, PositionY, 2, baseTex, 0.6f, 0.4f, 0.2f, 1.0f, 0);
+                    Native.TileMap_SetTile(game.TileMap, PositionX, PositionY, 2, baseTex, 0, 0, 1, 1, 0.6f, 0.4f, 0.2f, 1.0f, 0);
             }
         }
         else
@@ -252,9 +286,9 @@ public class FactoryTile : Tile<FactoryGame, FactoryTerrain, FactoryTileOptions>
             game.BuildingSystem.RemoveBuilding(PositionX, PositionY);
 
             if (structTex != IntPtr.Zero)
-                Native.TileMap_SetTile(game.TileMap, PositionX, PositionY, 2, structTex, 1, 1, 1, 1, rotation);
+                Native.TileMap_SetTile(game.TileMap, PositionX, PositionY, 2, structTex, 0, 0, 1, 1, 1, 1, 1, 1, rotation);
             else
-                Native.TileMap_SetTile(game.TileMap, PositionX, PositionY, 2, IntPtr.Zero, 0, 0, 0, 0, 0);
+                Native.TileMap_SetTile(game.TileMap, PositionX, PositionY, 2, IntPtr.Zero, 0, 0, 0, 0, 0, 0, 0, 0, 0);
         }
 
         game.World.ShouldRender = true;

@@ -83,6 +83,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
 
             //Generate terrain
             gen.Generate(game.World);
+            game.World.CalculateAllBitmasks();
 
             // Create TileMap
             game.TileMap = Native.TileMap_Create(game.World.Width(), game.World.Height(), 1.0f);

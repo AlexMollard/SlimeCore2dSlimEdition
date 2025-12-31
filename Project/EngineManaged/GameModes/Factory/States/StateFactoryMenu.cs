@@ -59,6 +59,7 @@ public class StateFactoryMenu : IGameState<FactoryGame>
         if (game.World != null)
         {
             gen.Generate(game.World);
+            game.World.CalculateAllBitmasks();
             _tileMap = Native.TileMap_Create(game.World.Width(), game.World.Height(), 1.0f);
             for (int x = 0; x < game.World.Width(); x++)
             {
@@ -181,21 +182,22 @@ public class StateFactoryMenu : IGameState<FactoryGame>
         var tile = game.World[x, y];
 
         // Layer 0: Terrain
-        Native.TileMap_SetTile(_tileMap, x, y, 0, FactoryResources.GetTerrainTexture(tile.Type), 1, 1, 1, 1, 0);
+        FactoryTile.GetTerrainUVs(tile.Bitmask, out float u0, out float v0, out float u1, out float v1);
+        Native.TileMap_SetTile(_tileMap, x, y, 0, FactoryResources.GetTerrainTexture(tile.Type), u0, v0, u1, v1, 1, 1, 1, 1, 0);
 
         // Layer 1: Ore
         nint oreTex = FactoryResources.GetOreTexture(tile.OreType);
         if (oreTex != IntPtr.Zero)
-            Native.TileMap_SetTile(_tileMap, x, y, 1, oreTex, 1, 1, 1, 1, 0);
+            Native.TileMap_SetTile(_tileMap, x, y, 1, oreTex, 0, 0, 1, 1, 1, 1, 1, 1, 0);
         else
-            Native.TileMap_SetTile(_tileMap, x, y, 1, IntPtr.Zero, 0, 0, 0, 0, 0);
+            Native.TileMap_SetTile(_tileMap, x, y, 1, IntPtr.Zero, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
         // Layer 2: Structure
         nint structTex = FactoryResources.GetStructureTexture(tile.Structure);
         if (structTex != IntPtr.Zero)
-            Native.TileMap_SetTile(_tileMap, x, y, 2, structTex, 1, 1, 1, 1, 0);
+            Native.TileMap_SetTile(_tileMap, x, y, 2, structTex, 0, 0, 1, 1, 1, 1, 1, 1, 0);
         else
-            Native.TileMap_SetTile(_tileMap, x, y, 2, IntPtr.Zero, 0, 0, 0, 0, 0);
+            Native.TileMap_SetTile(_tileMap, x, y, 2, IntPtr.Zero, 0, 0, 0, 0, 0, 0, 0, 0, 0);
     }
 
     public void Exit(FactoryGame game)

@@ -17,9 +17,9 @@ SLIME_EXPORT void __cdecl TileMap_Destroy(void* tileMap)
     if (tileMap) delete (TileMap*)tileMap;
 }
 
-SLIME_EXPORT void __cdecl TileMap_SetTile(void* tileMap, int x, int y, int layer, void* texturePtr, float r, float g, float b, float a, float rotation)
+SLIME_EXPORT void __cdecl TileMap_SetTile(void* tileMap, int x, int y, int layer, void* texturePtr, float u0, float v0, float u1, float v1, float r, float g, float b, float a, float rotation)
 {
-    if (tileMap) ((TileMap*)tileMap)->SetTile(x, y, layer, texturePtr, r, g, b, a, rotation);
+    if (tileMap) ((TileMap*)tileMap)->SetTile(x, y, layer, texturePtr, u0, v0, u1, v1, r, g, b, a, rotation);
 }
 
 SLIME_EXPORT void __cdecl TileMap_UpdateMesh(void* tileMap)

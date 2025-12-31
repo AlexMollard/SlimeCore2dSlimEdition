@@ -10,6 +10,7 @@ public static class FactoryResources
     public static IntPtr TexWater;
     public static IntPtr TexSand;
     public static IntPtr TexStone;
+    public static IntPtr TexDirt;
 
     public static IntPtr TexOreIron;
     public static IntPtr TexOreCopper;
@@ -51,6 +52,7 @@ public static class FactoryResources
         TexWater = NativeMethods.Resources_LoadTexture("water", "Textures/Factory/water.png");
         TexSand = NativeMethods.Resources_LoadTexture("sand", "Textures/Factory/sand.png");
         TexStone = NativeMethods.Resources_LoadTexture("stone", "Textures/Factory/stone.png");
+		TexDirt = NativeMethods.Resources_LoadTexture("dirt", "Textures/Factory/dirt.png");
 
         TexOreIron = NativeMethods.Resources_LoadTexture("ore_iron", "Textures/Factory/ore_iron.png");
         TexOreCopper = NativeMethods.Resources_LoadTexture("ore_copper", "Textures/Factory/ore_copper.png");
@@ -92,6 +94,7 @@ public static class FactoryResources
             SlimeCore.GameModes.Factory.World.FactoryTerrain.Water => TexWater,
             SlimeCore.GameModes.Factory.World.FactoryTerrain.Sand => TexSand,
             SlimeCore.GameModes.Factory.World.FactoryTerrain.Stone => TexStone,
+            SlimeCore.GameModes.Factory.World.FactoryTerrain.Dirt => TexDirt,
             _ => IntPtr.Zero
         };
     }
