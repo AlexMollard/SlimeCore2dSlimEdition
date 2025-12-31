@@ -90,7 +90,6 @@ public class Wolf : Actor<FactoryActors, FactoryGame>, IThreat, IMobileEntity
             else
             {
                 newVelocity.X = -Velocity.X * 0.5f; // Bounce
-                _targetDir.X = -_targetDir.X;
             }
 
             // Try Y movement
@@ -101,7 +100,6 @@ public class Wolf : Actor<FactoryActors, FactoryGame>, IThreat, IMobileEntity
             else
             {
                 newVelocity.Y = -Velocity.Y * 0.5f; // Bounce
-                _targetDir.Y = -_targetDir.Y;
             }
         }
         Velocity = newVelocity;
@@ -168,7 +166,15 @@ public class Wolf : Actor<FactoryActors, FactoryGame>, IThreat, IMobileEntity
             return;
         }
 
-        float proximity = _targetPos.Heuristic(_targetPos);
+        var currentTargetPosition = _target.Position.ToVec2Int();
+        if (_targetPos.Heuristic(currentTargetPosition) > 20)
+        {
+            _targetPos = currentTargetPosition;
+            Speed = 0.5f; //Wolfy realises sheep is far, slows down
+            return;
+        }
+
+        float proximity = _targetPos.Heuristic(Position.ToVec2Int());
 
         if (proximity > 100f)
         {
@@ -189,7 +195,7 @@ public class Wolf : Actor<FactoryActors, FactoryGame>, IThreat, IMobileEntity
             if (_target.Position.Heuristic(Position) > 1f)
             {
                 //Recalculate path, wolfy not close enough
-                _targetPos = _target.Position.ToVec2Int();
+                _targetPos = currentTargetPosition;
             }
         }
     }

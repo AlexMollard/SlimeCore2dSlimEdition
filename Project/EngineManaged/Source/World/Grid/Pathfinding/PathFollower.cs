@@ -30,10 +30,27 @@ where TPlanner : IPathPlanner
         var next = _path[_index];
         var nextCenter = next.ToVec2() + new Vec2(0.5f, 0.5f);
 
-        if ((nextCenter - position).LengthSquared() < 0.05f)
+        int best = _index;
+        float bestDist = float.MaxValue;
+
+        for (int i = _index; i < _path.Count; i++)
         {
-            _index++;
+            //Pick the closest point ahead on the path
+            var c = _path[i].ToVec2() + new Vec2(0.5f, 0.5f);
+            float d = (c - position).LengthSquared();
+
+            if (d < bestDist)
+            {
+                bestDist = d;
+                best = i;
+            }
+            else
+            {
+                break;
+            }
         }
+
+        _index = best + 1;
 
         if (_index >= _path.Count)
         {
