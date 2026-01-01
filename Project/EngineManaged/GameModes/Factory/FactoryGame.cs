@@ -40,6 +40,10 @@ public sealed class FactoryGame : GameMode<FactoryGame>, IGameMode, IDisposable
 
     public void InitializeGame()
     {
+        // Ensure resources are loaded before items
+        FactoryResources.Load();
+        SlimeCore.GameModes.Factory.Items.ItemRegistry.Initialize();
+
         World = new FactoryWorld(Settings.WorldWidth, Settings.WorldHeight, FactoryTerrain.Grass, Settings.InitialZoom, Settings.WorldBudget);
         ActorManager = new FactoryActorManager(Settings.ActorBudget);
         Rng = new Random(Settings.Seed);

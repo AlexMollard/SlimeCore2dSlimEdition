@@ -1,6 +1,8 @@
 using EngineManaged.Numeric;
+using SlimeCore.GameModes.Factory.Actors;
 using SlimeCore.Source.World.Grid;
 using System;
+using System.Collections.Generic;
 
 namespace SlimeCore.GameModes.Factory.World;
 
@@ -53,6 +55,9 @@ public class FactoryTile : Tile<FactoryGame, FactoryTerrain, FactoryTileOptions>
     public int Bitmask { get; set; }
     public int ConveyorBitmask { get; set; }
     public int Progress { get; set; }
+    
+    public List<DroppedItem> Items { get; } = new();
+
     /// <summary>
     /// For tile rendering optimization, has this tile been rendered at least once? Does it need a re-render?
     /// </summary>

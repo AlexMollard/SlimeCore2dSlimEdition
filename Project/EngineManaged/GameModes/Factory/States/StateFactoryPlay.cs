@@ -2,6 +2,7 @@ using EngineManaged.Numeric;
 using EngineManaged.Scene;
 using EngineManaged.UI;
 using SlimeCore.GameModes.Factory.Actors;
+using SlimeCore.GameModes.Factory.Items;
 using SlimeCore.GameModes.Factory.World;
 using SlimeCore.Source.Core;
 using SlimeCore.Source.Input;
@@ -40,6 +41,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
     private UIText? _tierLabel;
     private UIText? _rotationLabel;
     private UIText? _tooltipLabel;
+    private UIText? _inventoryLabel;
 
     public void Enter(FactoryGame game)
     {
@@ -50,7 +52,6 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
             _wasMouseDown = true;
         }
 
-        FactoryResources.Load();
         game.World?.Initialize(FactoryGame.MAX_VIEW_W, FactoryGame.MAX_VIEW_H);
 
         // Create Camera
@@ -91,7 +92,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
 
             //Create Systems
             game.ConveyorSystem = new ConveyorSystem(game.World.Width(), game.World.Height(), 1.0f);
-            game.BuildingSystem = new BuildingSystem(game.World, game.ConveyorSystem);
+            game.BuildingSystem = new BuildingSystem(game, game.World, game.ConveyorSystem);
 
             // Flush full worldgen
             game.World.ManualTick(game, 0f);
@@ -176,7 +177,15 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         tt.Color(1.0f, 1.0f, 1.0f);
         tt.IsVisible(false);
         tt.UseScreenSpace(false);
-        _tooltipLabel = tt;    }
+        _tooltipLabel = tt;
+
+        // Inventory Label
+        var invLabel = UIText.Create("Inventory:", 1, -19.0f, 10.0f); // Top Left
+        invLabel.Anchor(0.0f, 1.0f);
+        invLabel.Layer(52);
+        invLabel.Color(1.0f, 1.0f, 1.0f);
+        _inventoryLabel = invLabel;
+    }
 
     private void UpdateUI()
     {
@@ -206,6 +215,18 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
             string dirStr = _placementDirection.ToString();
              rotLbl.Text($"Rotate: [R] ({dirStr})");
         }
+
+        // Update Inventory Label
+        if (_inventoryLabel is { } invLbl && _player != null)
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("Inventory:");
+            foreach (var slot in _player.Inventory.Slots)
+            {
+                sb.AppendLine($"- {slot.Item.Name}: {slot.Count}");
+            }
+            invLbl.Text(sb.ToString());
+        }
     }
 
     public void Exit(FactoryGame game)
@@ -222,6 +243,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         if (_tierLabel is { } tl) tl.Destroy();
         if (_rotationLabel is { } rl) rl.Destroy();
         if (_tooltipLabel is { } tt) tt.Destroy();
+        if (_inventoryLabel is { } il) il.Destroy();
 
         UISystem.Clear();
         game.World?.Destroy();
@@ -292,6 +314,19 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         Render(game);
     }
 
+    private (string itemId, int count)? GetCost(FactoryStructure structure)
+    {
+        return structure switch
+        {
+            FactoryStructure.ConveyorBelt => ("iron_ore", 1),
+            FactoryStructure.Miner => ("stone", 10),
+            FactoryStructure.Storage => ("stone", 5),
+            FactoryStructure.FarmPlot => ("stone", 2),
+            FactoryStructure.Wall => ("stone", 1),
+            _ => null
+        };
+    }
+
     private void HandleMouse(FactoryGame game)
     {
         if (game.World == null) return;
@@ -357,6 +392,13 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
                     }
                     else if (_selectedStructure == FactoryStructure.ConveyorBelt && 
                             (tile.Structure == FactoryStructure.Miner || tile.Structure == FactoryStructure.Storage || tile.Structure == FactoryStructure.FarmPlot))
+                    {
+                        isValid = false;
+                    }
+                    
+                    // Check Affordability
+                    var cost = GetCost(_selectedStructure);
+                    if (cost.HasValue && _player != null && !_player.Inventory.HasItem(cost.Value.itemId, cost.Value.count))
                     {
                         isValid = false;
                     }
@@ -540,14 +582,44 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
                     }
 
                     // Allow overwriting or updating direction
-                    game.World.Set(gridX, gridY, o =>
-                    {
-                        o.Structure = _selectedStructure;
-                        o.Direction = newDir;
-                        o.Tier = _currentTier;
-                    });
                     
-                    game.World.UpdateNeighbors(game, new Vec2i(gridX, gridY));
+                    // Check Cost
+                    var cost = GetCost(_selectedStructure);
+                    bool canAfford = true;
+                    if (cost.HasValue && _player != null)
+                    {
+                        if (!_player.Inventory.HasItem(cost.Value.itemId, cost.Value.count))
+                        {
+                            canAfford = false;
+                        }
+                    }
+
+                    if (canAfford)
+                    {
+                        bool placed = false;
+                        game.World.Set(gridX, gridY, o =>
+                        {
+                            // Only charge if something actually changed (simplified check)
+                            if (o.Structure != _selectedStructure || o.Direction != newDir || o.Tier != _currentTier)
+                            {
+                                o.Structure = _selectedStructure;
+                                o.Direction = newDir;
+                                o.Tier = _currentTier;
+                                placed = true;
+                            }
+                        });
+                        
+                        if (placed)
+                        {
+                            game.World.UpdateNeighbors(game, new Vec2i(gridX, gridY));
+                            // Deduct cost
+                            if (cost.HasValue && _player != null)
+                            {
+                                _player.Inventory.RemoveItem(cost.Value.itemId, cost.Value.count);
+                            }
+                        }
+                    }
+                    
                     // Update last grid pos if we moved
                     if (gridX != _lastGridX || gridY != _lastGridY)
                     {

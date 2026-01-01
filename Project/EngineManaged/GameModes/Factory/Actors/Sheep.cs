@@ -1,5 +1,6 @@
 using EngineManaged.Numeric;
 using EngineManaged.Scene;
+using SlimeCore.GameModes.Factory.Items;
 using SlimeCore.GameModes.Factory.World;
 using SlimeCore.Source.World.Actors;
 using SlimeCore.Source.World.Actors.Interfaces;
@@ -46,6 +47,8 @@ public class Sheep : Actor<FactoryActors, FactoryGame>
 
     public override bool TakeAction(FactoryGame mode, float deltaTime)
     {
+        if (!IsAlive) return false;
+
         _bobTime += deltaTime;
         _hunger -= deltaTime * 2f; // get hungry over time
 
@@ -173,6 +176,23 @@ public class Sheep : Actor<FactoryActors, FactoryGame>
     {
         Entity.Destroy();
     }
+
+    public void Kill(FactoryGame mode)
+    {
+        if (!IsAlive) return;
+        IsAlive = false;
+        
+        // Drop Item
+        var item = ItemRegistry.Get("mutton");
+        if (item != null)
+        {
+            var dropped = new DroppedItem(Position, item, 1);
+            mode.ActorManager?.Register(dropped);
+        }
+
+        mode.ActorManager?.Remove(this);
+    }
+
     private Vec2 ComputeFear(FactoryGame mode)
     {
         var fear = Vec2.Zero;

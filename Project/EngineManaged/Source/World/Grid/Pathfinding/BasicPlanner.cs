@@ -32,7 +32,7 @@ public class BasicPlanner : IPathPlanner
             previousPositions.Add(current);
             path.Add(current);
         }
-        Logger.Info($"PathGenerated {path.Count}");
+        //Logger.Info($"PathGenerated {path.Count}");
         return true;
     }
 }

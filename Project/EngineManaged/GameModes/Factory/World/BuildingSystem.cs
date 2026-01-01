@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using EngineManaged.Numeric;
+using SlimeCore.GameModes.Factory.Actors;
+using SlimeCore.GameModes.Factory.Items;
 using SlimeCore.Source.Core;
 using SlimeCore.Source.World.Actors;
 
@@ -17,14 +19,17 @@ public class BuildingSystem : IDisposable
         public FactoryItemType InventoryItem;
         public Direction Direction;
         public int Tier;
+        public int LastOutputIndex;
     }
 
     private Dictionary<int, Building> _buildings = new();
     private FactoryWorld _world;
     private ConveyorSystem _conveyorSystem;
+    private FactoryGame _game; // Need reference to game for ActorManager
 
-    public BuildingSystem(FactoryWorld world, ConveyorSystem conveyorSystem)
+    public BuildingSystem(FactoryGame game, FactoryWorld world, ConveyorSystem conveyorSystem)
     {
+        _game = game;
         _world = world;
         _conveyorSystem = conveyorSystem;
     }
@@ -115,7 +120,10 @@ public class BuildingSystem : IDisposable
                     if (tile.OreType != FactoryOre.None)
                     {
                         var itemType = GetItemFromOre(tile.OreType);
-                        TryOutputToConveyor(b.X, b.Y, itemType);
+                        if (TryOutputToConveyor(b.X, b.Y, itemType, ref b.LastOutputIndex))
+                        {
+                            // Success
+                        }
                     }
                 }
             }
@@ -127,7 +135,7 @@ public class BuildingSystem : IDisposable
                     b.Timer = 0;
                     if (b.InventoryCount > 0)
                     {
-                        if (TryOutputToConveyor(b.X, b.Y, b.InventoryItem))
+                        if (TryOutputToConveyor(b.X, b.Y, b.InventoryItem, ref b.LastOutputIndex))
                         {
                             b.InventoryCount--;
                             if (b.InventoryCount == 0) b.InventoryItem = FactoryItemType.None;
@@ -144,7 +152,7 @@ public class BuildingSystem : IDisposable
                 if (b.Timer >= growingTime) 
                 {
                     b.Timer = 0;
-                    TryOutputToConveyor(b.X, b.Y, FactoryItemType.Vegetable);
+                    TryOutputToConveyor(b.X, b.Y, FactoryItemType.Vegetable, ref b.LastOutputIndex);
                 }
             }
             
@@ -152,24 +160,69 @@ public class BuildingSystem : IDisposable
         }
     }
 
-    private bool TryOutputToConveyor(int bx, int by, FactoryItemType itemType)
+    private bool TryOutputToConveyor(int bx, int by, FactoryItemType itemType, ref int lastOutputIndex)
     {
         var dirs = new[] { Direction.North, Direction.East, Direction.South, Direction.West };
-        foreach (var dir in dirs)
+        
+        for (int i = 1; i <= 4; i++)
         {
+            int idx = (lastOutputIndex + i) % 4;
+            var dir = dirs[idx];
+            
             var (nx, ny) = GetNeighbor(bx, by, dir);
             var conveyorDir = _conveyorSystem.GetConveyorDirection(nx, ny);
             
-            // Only output if conveyor is pointing AWAY from building (same as neighbor direction)
-            if (conveyorDir.HasValue && conveyorDir.Value == dir)
+            // Output to any adjacent conveyor, unless it points directly at us (head-on)
+            if (conveyorDir.HasValue)
             {
-                if (_conveyorSystem.TryAddItem(nx, ny, itemType))
+                if (conveyorDir.Value == dir.Opposite())
                 {
+                    continue;
+                }
+
+                // Spawn DroppedItem
+                var itemId = GetItemId(itemType);
+                var itemDef = ItemRegistry.Get(itemId);
+                if (itemDef != null)
+                {
+                    // Calculate spawn position at center of building
+                    var spawnPos = new Vec2(bx + 0.5f, by + 0.5f);
+                    
+                    // Calculate velocity towards the conveyor
+                    float speed = 4.0f; // Increased ejection speed
+                    float dx = 0, dy = 0;
+                    switch(dir) {
+                        case Direction.North: dy = 1; break;
+                        case Direction.East: dx = 1; break;
+                        case Direction.South: dy = -1; break;
+                        case Direction.West: dx = -1; break;
+                    }
+                    var velocity = new Vec2(dx, dy) * speed;
+
+                    var dropped = new DroppedItem(spawnPos, itemDef, 1);
+                    dropped.Velocity = velocity;
+                    _game.ActorManager?.Register(dropped);
+                    
+                    lastOutputIndex = idx;
                     return true;
                 }
             }
         }
         return false;
+    }
+
+    private string GetItemId(FactoryItemType type)
+    {
+        return type switch
+        {
+            FactoryItemType.IronOre => "iron_ore",
+            FactoryItemType.CopperOre => "copper_ore",
+            FactoryItemType.Coal => "coal",
+            FactoryItemType.GoldOre => "gold_ore",
+            FactoryItemType.Stone => "stone",
+            FactoryItemType.Vegetable => "vegetable",
+            _ => "stone"
+        };
     }
 
     private FactoryItemType GetItemFromOre(FactoryOre ore)
@@ -196,3 +249,4 @@ public class BuildingSystem : IDisposable
         };
     }
 }
+

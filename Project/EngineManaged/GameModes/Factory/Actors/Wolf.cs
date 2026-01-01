@@ -114,7 +114,7 @@ public class Wolf : Actor<FactoryActors, FactoryGame>, IThreat, IMobileEntity
         var transform = Entity.GetComponent<TransformComponent>();
         transform.Position = (Position.X, Position.Y + bob);
 
-        Hunt();
+        Hunt(mode);
         return true;
     }
 
@@ -159,7 +159,7 @@ public class Wolf : Actor<FactoryActors, FactoryGame>, IThreat, IMobileEntity
         return best;
     }
 
-    private void Hunt()
+    private void Hunt(FactoryGame mode)
     {
         if (_targetPos == null || _target == null)
         {
@@ -196,6 +196,11 @@ public class Wolf : Actor<FactoryActors, FactoryGame>, IThreat, IMobileEntity
             {
                 //Recalculate path, wolfy not close enough
                 _targetPos = currentTargetPosition;
+            }
+            else
+            {
+                _target.Kill(mode);
+                _target = null;
             }
         }
     }

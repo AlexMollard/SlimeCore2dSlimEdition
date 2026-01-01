@@ -50,7 +50,9 @@ public class ActorManager<TEnum, TGameMode>
         while (_active.Count > 0)
         {
             var actor = _active.Dequeue();
-            if (actBudget-- > 0)
+            // Always run high priority actors (Priority 0 like Player)
+            // Or if we have budget
+            if (actor.Priority == 0 || actBudget-- > 0)
             {
                 if (actor.TakeAction(mode, deltaTime))
                 {

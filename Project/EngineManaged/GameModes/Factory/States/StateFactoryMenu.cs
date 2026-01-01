@@ -42,8 +42,6 @@ public class StateFactoryMenu : IGameState<FactoryGame>
 
     public void Enter(FactoryGame game)
     {
-        FactoryResources.Load();
-        
         // Initialize World for background
         game.World?.Initialize(FactoryGame.MAX_VIEW_W, FactoryGame.MAX_VIEW_H);
         

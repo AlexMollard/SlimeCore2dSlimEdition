@@ -1,9 +1,11 @@
 using EngineManaged.Numeric;
 using EngineManaged.Scene;
+using SlimeCore.GameModes.Factory.Items;
 using SlimeCore.GameModes.Factory.World;
 using SlimeCore.Source.Input;
 using SlimeCore.Source.World.Actors;
 using System;
+using System.Linq;
 
 namespace SlimeCore.GameModes.Factory.Actors;
 
@@ -18,6 +20,9 @@ public class Player : Actor<FactoryActors, FactoryGame>, IControllable
     public float SprintMultiplier { get; set; } = 2.0f;
     public float Size { get; set; } = 0.5f;
 
+    public Inventory Inventory { get; } = new();
+    private float _dropCooldown = 0.0f;
+
     public Player(Vec2 startPos)
     {
         Position = startPos;
@@ -25,6 +30,13 @@ public class Player : Actor<FactoryActors, FactoryGame>, IControllable
         var sprite = Entity.GetComponent<SpriteComponent>();
         sprite.TexturePtr = FactoryResources.TexDebug;
         sprite.Color = (1.0f, 1.0f, 1.0f); // White player for now
+        
+        // Starting items
+        var stone = ItemRegistry.Get("stone");
+        if (stone != null) Inventory.AddItem(stone, 50);
+        
+        var iron = ItemRegistry.Get("iron_ore");
+        if (iron != null) Inventory.AddItem(iron, 20);
     }
 
     public void Update(float dt)
@@ -40,15 +52,53 @@ public class Player : Actor<FactoryActors, FactoryGame>, IControllable
     public override bool TakeAction(FactoryGame mode, float deltaTime)
     {
         HandleMovement(mode, deltaTime);
+        HandleInteraction(mode, deltaTime);
         
         // Use shared physics for conveyor logic
         var pos = Position;
-        FactoryPhysics.ApplyConveyorMovement(mode, ref pos, deltaTime, Size);
+        FactoryPhysics.ApplyConveyorMovement(mode, ref pos, deltaTime, Size, false);
         Position = pos;
 
         var transform = Entity.GetComponent<TransformComponent>();
         transform.Position = (Position.X, Position.Y);
         return true;
+    }
+
+    private void HandleInteraction(FactoryGame mode, float dt)
+    {
+        // Pickup items
+        var items = mode.ActorManager.ByType(FactoryActors.DroppedItem);
+        foreach (var actor in items)
+        {
+            if (actor is DroppedItem itemActor)
+            {
+                float dist = (itemActor.Position - Position).Length();
+                if (dist < Size + itemActor.Size)
+                {
+                    if (Inventory.AddItem(itemActor.Item, itemActor.Count))
+                    {
+                        mode.ActorManager.Remove(itemActor);
+                    }
+                }
+            }
+        }
+
+        // Drop items (Q key)
+        if (_dropCooldown > 0) _dropCooldown -= dt;
+        
+        if (Input.GetKeyDown(Keycode.Q) && _dropCooldown <= 0)
+        {
+            if (Inventory.Slots.Count > 0)
+            {
+                var slot = Inventory.Slots[0];
+                // Drop 1 item
+                var dropped = new DroppedItem(Position + new Vec2(0, -1.0f), slot.Item, 1); // Drop slightly below
+                mode.ActorManager.Register(dropped);
+                
+                Inventory.RemoveItem(slot.Item.Id, 1);
+                _dropCooldown = 0.2f;
+            }
+        }
     }
 
     private void HandleMovement(FactoryGame game, float dt)
