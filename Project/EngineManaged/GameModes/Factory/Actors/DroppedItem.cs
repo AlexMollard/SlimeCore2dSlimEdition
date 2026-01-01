@@ -20,6 +20,7 @@ public class DroppedItem : Actor<FactoryActors, FactoryGame>
     public int Count { get; set; }
     public float Size { get; set; } = 0.25f;
     public Vec2 Velocity { get; set; }
+    public float EjectionTimer { get; set; }
 
     // Bobbing animation
     private float _bobTimer;
@@ -131,21 +132,48 @@ public class DroppedItem : Actor<FactoryActors, FactoryGame>
         if (Velocity.LengthSquared() < 0.0001f) Velocity = Vec2.Zero;
 
         // Check if we are on a building that accepts items (like Storage)
-        if (mode.BuildingSystem != null)
+        if (EjectionTimer > 0)
         {
-            // Map ItemDefinition ID back to FactoryItemType (Temporary hack until BuildingSystem uses ItemDefinition)
-            var type = GetFactoryItemType(Item.Id);
-            if (type != FactoryItemType.None)
+            EjectionTimer -= deltaTime;
+        }
+        else if (mode.BuildingSystem != null && mode.World.InBounds(gx, gy))
+        {
+            var tile = mode.World[gx, gy];
+            // If we are on a non-conveyor structure (like Storage), move towards center to be accepted
+            if (tile.Structure != FactoryStructure.None && tile.Structure != FactoryStructure.ConveyorBelt)
             {
-                // Check if we are close enough to the center of the tile to be "inserted"
-                float dx = Position.X - (gx + 0.5f);
-                float dy = Position.Y - (gy + 0.5f);
-                if (dx*dx + dy*dy < 0.1f) // Close to center
+                // Map ItemDefinition ID back to FactoryItemType (Temporary hack until BuildingSystem uses ItemDefinition)
+                var type = GetFactoryItemType(Item.Id);
+                if (type != FactoryItemType.None)
                 {
-                    if (mode.BuildingSystem.TryAcceptItem(gx, gy, type))
+                    float cx = gx + 0.5f;
+                    float cy = gy + 0.5f;
+                    var toCenter = new Vec2(cx - Position.X, cy - Position.Y);
+                    float distSq = toCenter.LengthSquared();
+
+                    // If close enough, try to insert
+                    if (distSq < 0.05f) 
                     {
-                        mode.ActorManager?.Remove(this);
-                        return false; // Stop processing
+                        if (mode.BuildingSystem.TryAcceptItem(gx, gy, type))
+                        {
+                            mode.ActorManager?.Remove(this);
+                            return false; // Stop processing
+                        }
+                    }
+                    else
+                    {
+                        // Move towards center (suction)
+                        float speed = 2.0f;
+                        var move = toCenter.Normalized() * speed * deltaTime;
+                        
+                        // Don't overshoot
+                        if (move.LengthSquared() > distSq) move = toCenter;
+
+                        var targetPos = Position + move;
+                        if (!IsBlockedByItems(mode, targetPos))
+                        {
+                            Position = targetPos;
+                        }
                     }
                 }
             }

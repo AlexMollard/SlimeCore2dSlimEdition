@@ -201,6 +201,7 @@ public class BuildingSystem : IDisposable
 
                     var dropped = new DroppedItem(spawnPos, itemDef, 1);
                     dropped.Velocity = velocity;
+                    dropped.EjectionTimer = 0.5f; // Prevent immediate re-insertion
                     _game.ActorManager?.Register(dropped);
                     
                     lastOutputIndex = idx;
