@@ -9,6 +9,10 @@ public interface IWorldGrid
 {
     public bool IsBlocked(Vec2i tile);
     public bool IsLiquid(Vec2i tile);
+
+    /// <summary>
+    /// Is this position in the world bounds
+    /// </summary>
     public bool InBounds(Vec2i tile);
 
     public Vec2i? GetBestNeighbour(Vec2i location, Vec2i destination, HashSet<Vec2i> previousPositions);

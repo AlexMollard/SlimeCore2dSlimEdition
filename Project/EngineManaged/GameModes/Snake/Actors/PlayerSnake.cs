@@ -87,6 +87,11 @@ public class PlayerSnake : Actor<SnakeActors, SnakeGame>, IControllable
         compassSprite.IsVisible = true;
     }
 
+    public override bool Tick(SnakeGame mode, float deltaTime)
+    {
+        return true;
+    }
+
     public override void Destroy()
     {
         Head.Destroy();

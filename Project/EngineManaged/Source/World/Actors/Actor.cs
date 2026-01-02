@@ -2,6 +2,7 @@
 using SlimeCore.Source.Core;
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Runtime.Intrinsics.X86;
 
 namespace SlimeCore.Source.World.Actors;
 /// <summary>
@@ -36,6 +37,8 @@ public abstract class Actor<TEnum, TGameMode>
     /// <returns>Whether another action should be taken by this entity</returns>
     public abstract bool TakeAction(TGameMode mode, float deltaTime);
 
+    public abstract bool Tick(TGameMode mode, float deltaTime);
+
     public abstract void Destroy();
 
     protected static int ToPriority(TEnum value)
@@ -43,5 +46,5 @@ public abstract class Actor<TEnum, TGameMode>
 
     protected abstract float ActionInterval { get; }
 
-    public int Priority => ToPriority(Kind);
+    public virtual int Priority => ToPriority(Kind);
 }

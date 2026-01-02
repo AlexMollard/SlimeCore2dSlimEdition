@@ -12,6 +12,8 @@ namespace SlimeCore.GameModes.Factory.Actors;
 
 public class Wolf : Actor<FactoryActors, FactoryGame>, IThreat, IMobileEntity
 {
+    private FactoryActors Prioritykind { get; set; } = FactoryActors.Animals;
+    public override int Priority => ToPriority(Prioritykind);
     public override FactoryActors Kind => FactoryActors.Animals;
     protected override float ActionInterval => 0.5f;
 
@@ -115,6 +117,20 @@ public class Wolf : Actor<FactoryActors, FactoryGame>, IThreat, IMobileEntity
         transform.Position = (Position.X, Position.Y + bob);
 
         Hunt(mode);
+        return true;
+    }
+
+    public override bool Tick(FactoryGame mode, float deltaTime)
+    {
+        //Wolf has no requisite behaviour on Tick
+        if (mode.InView(Position))
+        {
+            Prioritykind = FactoryActors.OnScreenEntity;
+        }
+        else
+        {
+            Prioritykind = FactoryActors.Animals;
+        }
         return true;
     }
 

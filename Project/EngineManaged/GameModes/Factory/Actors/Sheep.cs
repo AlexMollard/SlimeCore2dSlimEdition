@@ -13,6 +13,8 @@ namespace SlimeCore.GameModes.Factory.Actors;
 
 public class Sheep : Actor<FactoryActors, FactoryGame>
 {
+    private FactoryActors Prioritykind { get; set; } = FactoryActors.Animals;
+    public override int Priority => ToPriority(Prioritykind);
     public override FactoryActors Kind => FactoryActors.Animals;
     protected override float ActionInterval => 0.5f;
 
@@ -169,6 +171,20 @@ public class Sheep : Actor<FactoryActors, FactoryGame>
         var transform = Entity.GetComponent<TransformComponent>();
         transform.Position = (Position.X, Position.Y + bob);
 
+        return true;
+    }
+
+    public override bool Tick(FactoryGame mode, float deltaTime)
+    {
+        //Sheep has no requisite behaviour on Tick
+        if (mode.InView(Position))
+        {
+            Prioritykind = FactoryActors.OnScreenEntity;
+        }
+        else
+        {
+            Prioritykind = FactoryActors.Animals;
+        }
         return true;
     }
 

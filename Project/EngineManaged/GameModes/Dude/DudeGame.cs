@@ -49,7 +49,7 @@ public class DudeGame : GameMode<DudeGame>, IGameMode, IDisposable
     internal Vec2 DudePos;
     internal Vec2 DudeVel;
     internal Entity? Bg;
-    internal Entity? Camera;
+    internal Entity? CameraEntity;
     internal Entity? DarkOverlay;
     internal Entity? CardBgBackdrop;
 
@@ -123,6 +123,11 @@ public class DudeGame : GameMode<DudeGame>, IGameMode, IDisposable
         return e;
     }
 
+    public override bool InView(Vec2 position)
+    {
+        throw new NotImplementedException();
+    }
+
     public override void Init()
     {
         // 1. Initialize Content Registry
@@ -153,10 +158,10 @@ public class DudeGame : GameMode<DudeGame>, IGameMode, IDisposable
         ParticleSys = new ParticleSystem(10000);
 
         // 3. Create Entities
-        Camera = Entity.Create();
-        Camera.AddComponent<TransformComponent>();
-        Camera.AddComponent<CameraComponent>();
-        var cam = Camera.GetComponent<CameraComponent>();
+        CameraEntity = Entity.Create();
+        CameraEntity.AddComponent<TransformComponent>();
+        CameraEntity.AddComponent<CameraComponent>();
+        var cam = CameraEntity.GetComponent<CameraComponent>();
         cam.IsPrimary = true;
         cam.Zoom = 1.0f;
         cam.Size = 20.0f; // Zoom out to see the whole arena
@@ -268,7 +273,7 @@ public class DudeGame : GameMode<DudeGame>, IGameMode, IDisposable
         if (_currentState != null) _currentState.Exit(this);
 
         Bg?.Destroy();
-        Camera?.Destroy();
+        CameraEntity?.Destroy();
         DarkOverlay?.Destroy();
         CardBgBackdrop?.Destroy();
         Dude?.Destroy();
