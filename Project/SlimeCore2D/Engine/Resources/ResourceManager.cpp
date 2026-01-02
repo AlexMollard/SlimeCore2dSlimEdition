@@ -4,6 +4,7 @@
 #include "Rendering/Text.h"
 #include "Rendering/Texture.h"
 #include "Core/Logger.h"
+#include "Core/Memory.h"
 
 #if defined(_WIN32)
 #	include <windows.h>
@@ -109,7 +110,6 @@ ResourceManager::ResourceManager()
 
 ResourceManager::~ResourceManager()
 {
-	Clear();
 }
 
 ResourceManager& ResourceManager::GetInstance()

@@ -44,6 +44,40 @@ public static class FactoryResources
 
     private static System.Collections.Generic.Dictionary<string, IntPtr> _textureCache = new();
 
+    public static void Unload()
+    {
+        _textureCache.Clear();
+        TexGrass = IntPtr.Zero;
+        TexConcrete = IntPtr.Zero;
+        TexWater = IntPtr.Zero;
+        TexSand = IntPtr.Zero;
+        TexStone = IntPtr.Zero;
+        TexDirt = IntPtr.Zero;
+        TexOreIron = IntPtr.Zero;
+        TexOreCopper = IntPtr.Zero;
+        TexOreCoal = IntPtr.Zero;
+        TexOreGold = IntPtr.Zero;
+        TexConveyor = IntPtr.Zero;
+        TexMinerT1 = IntPtr.Zero;
+        TexMinerT2 = IntPtr.Zero;
+        TexMinerT3 = IntPtr.Zero;
+        TexStorageT1 = IntPtr.Zero;
+        TexStorageT2 = IntPtr.Zero;
+        TexStorageT3 = IntPtr.Zero;
+        TexFarmPlot = IntPtr.Zero;
+        TexWall = IntPtr.Zero;
+        TexItemIronOre = IntPtr.Zero;
+        TexItemCopperOre = IntPtr.Zero;
+        TexItemCoal = IntPtr.Zero;
+        TexItemGoldOre = IntPtr.Zero;
+        TexItemStone = IntPtr.Zero;
+        TexItemVegetable = IntPtr.Zero;
+        TexSheep = IntPtr.Zero;
+        TexWolf = IntPtr.Zero;
+        TexTree01 = IntPtr.Zero;
+        TexDebug = IntPtr.Zero;
+    }
+
     public static IntPtr GetOrCreateTexture(string name, string path)
     {
         if (_textureCache.TryGetValue(name, out nint ptr))
