@@ -1,4 +1,5 @@
 ﻿using EngineManaged.Numeric;
+using MessagePack;
 using SlimeCore.Source.Common;
 using SlimeCore.Source.Core;
 using System;
@@ -11,35 +12,48 @@ using System.Runtime.InteropServices;
 
 namespace SlimeCore.Source.World.Grid;
 
-[Table("map_reference")]
+[MessagePackObject]
 public class GridSystem<TGameMode, TEnum, TileOptions, Tile>
     where TGameMode : IGameMode
     where TEnum : Enum
     where TileOptions : TileOptions<TEnum>, new()
-    where Tile : Tile<TGameMode, TEnum, TileOptions>, new()
+    where Tile : Tile<TGameMode, TEnum, TileOptions>, ITile<TGameMode>, new()
 {
     /// <summary>
     /// The unique identifier for this instance of a grid system.
     /// </summary>
+    [Key(0)]
     public Guid Id { get; init; } = Guid.NewGuid();
     /// <summary>
     /// Configurable action budget per tick
     /// </summary>
+    [IgnoreMember]
     public int TickBudget { get; set; }
-
+    [Key(1)]
     public string Name { get; set; } = "Default";
-    [NotMapped]
+
+    [IgnoreMember]
     private int? _width;
-    [NotMapped]
+    [IgnoreMember]
     private int? _height;
-    [NotMapped]
+
+    [IgnoreMember]
     private object _gridLock = new();
 
-    [NotMapped]
+    [Key(2)]
     public ConcurrentDictionary<Vec2i, Tile> Grid { get; set; }
 
-    [NotMapped]
+    [IgnoreMember]
     protected Queue<Vec2i> _actionQueue = new();
+
+    /// <summary>
+    /// Only Used for MessagePack Deserialization
+    /// </summary>
+    [Obsolete("This is only allowed for messagepack deserialisation")]
+    public GridSystem()
+    {
+        Grid = new ConcurrentDictionary<Vec2i, Tile>();
+    }
 
     /// <summary>
     /// 
@@ -249,5 +263,4 @@ public class GridSystem<TGameMode, TEnum, TileOptions, Tile>
             position.X < Width() &&
             position.Y < Height();
     }
-
 }

@@ -18,14 +18,14 @@ public class GeneratorBehavior : IBuildingBehavior
 
         if (props != null)
         {
-            if (props.TryGetValue("Interval", out var intervalObj))
+            if (props.TryGetValue("Interval", out object? intervalObj))
             {
                  if (intervalObj is JsonElement je) _interval = (float)je.GetDouble();
                  else if (intervalObj is double d) _interval = (float)d;
                  else if (intervalObj is float f) _interval = f;
             }
 
-            if (props.TryGetValue("OutputItem", out var itemObj))
+            if (props.TryGetValue("OutputItem", out object? itemObj))
             {
                  if (itemObj is JsonElement je) _outputItemId = je.GetString() ?? "stone";
                  else if (itemObj is string s) _outputItemId = s;

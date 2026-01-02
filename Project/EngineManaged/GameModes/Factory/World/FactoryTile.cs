@@ -1,4 +1,5 @@
 using EngineManaged.Numeric;
+using MessagePack;
 using SlimeCore.GameModes.Factory.Actors;
 using SlimeCore.GameModes.Factory.Buildings;
 using SlimeCore.Source.World.Grid;
@@ -34,22 +35,30 @@ public sealed class FactoryTileOptions : TileOptions<FactoryTerrain>
     public Direction Direction { get; set; } = Direction.North;
     public int Bitmask { get; set; }
 }
-
-public class FactoryTile : Tile<FactoryGame, FactoryTerrain, FactoryTileOptions>
+[MessagePackObject]
+public class FactoryTile : Tile<FactoryGame, FactoryTerrain, FactoryTileOptions>, ITile<FactoryGame>
 {
+    [Key(5)]
     public FactoryOre OreType { get; set; } = FactoryOre.None;
+    [Key(6)]
     public bool IsMineable { get; set; }
+    [Key(7)]
     public string? BuildingId { get; set; }
+    [Key(8)]
     public Direction Direction { get; set; } = Direction.North;
+    [Key(9)]
     public int Bitmask { get; set; }
+    [Key(10)]
     public int ConveyorBitmask { get; set; }
+    [Key(11)]
     public int Progress { get; set; }
-    
+    [IgnoreMember] //These get saved into the actor system instead
     public List<DroppedItem> Items { get; } = new();
 
     /// <summary>
     /// For tile rendering optimization, has this tile been rendered at least once? Does it need a re-render?
     /// </summary>
+    [IgnoreMember]
     public bool Rendered { get; private set; }
 
     public FactoryTile()
@@ -93,7 +102,7 @@ public class FactoryTile : Tile<FactoryGame, FactoryTerrain, FactoryTileOptions>
         Bitmask = opts.Bitmask;
     }
 
-    public override Vec3 GetPalette(params object[] extraArgs)
+    public Vec3 GetPalette(params object[] extraArgs)
     {
         // Base color based on terrain
         var col = Type switch
@@ -152,7 +161,7 @@ public class FactoryTile : Tile<FactoryGame, FactoryTerrain, FactoryTileOptions>
         return col;
     }
 
-    public override void Tick(FactoryGame mode, float deltaTime)
+    public void Tick(FactoryGame mode, float deltaTime)
     {
         if (Type == FactoryTerrain.Dirt)
         {
@@ -165,7 +174,7 @@ public class FactoryTile : Tile<FactoryGame, FactoryTerrain, FactoryTileOptions>
         }
     }
 
-    public override bool TakeAction(FactoryGame mode, float deltaTime)
+    public bool TakeAction(FactoryGame mode, float deltaTime)
     {
         if (!Rendered)
         {

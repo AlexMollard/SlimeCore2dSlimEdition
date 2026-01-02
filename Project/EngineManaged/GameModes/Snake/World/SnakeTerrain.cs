@@ -1,4 +1,5 @@
 using EngineManaged.Numeric;
+using MessagePack;
 using SlimeCore.Source.World.Grid;
 using System;
 
@@ -14,16 +15,17 @@ public enum SnakeTerrain : int
     Ice,
     Speed
 }
-
-public class SnakeTile : Tile<SnakeGame, SnakeTerrain, SnakeTileOptions>
+public class SnakeTile : Tile<SnakeGame, SnakeTerrain, SnakeTileOptions>, ITile<SnakeGame>
 {
     /// <summary>
     /// Is this a solid tile that cannot be traversed?
     /// </summary>
+    [Key(5)]
     public bool Blocked { get; set; }
     /// <summary>
     /// Is this tile containing food for the snake?
     /// </summary>
+    [Key(6)]
     public bool Food { get; set; }
 
     public SnakeTile()
@@ -50,7 +52,7 @@ public class SnakeTile : Tile<SnakeGame, SnakeTerrain, SnakeTileOptions>
         Blocked = opts.Blocked;
         Food = opts.Food;
     }
-    public override Vec3 GetPalette(params object[] extraArgs)
+    public Vec3 GetPalette(params object[] extraArgs)
     {
         bool isAlt = (PositionX + PositionY) % 2 == 0;
         return Type switch
@@ -65,12 +67,12 @@ public class SnakeTile : Tile<SnakeGame, SnakeTerrain, SnakeTileOptions>
         };
     }
 
-    public override void Tick(SnakeGame mode, float deltaTime)
+    public void Tick(SnakeGame mode, float deltaTime)
     {
         return;
     }
 
-    public override bool TakeAction(SnakeGame mode, float deltaTime)
+    public bool TakeAction(SnakeGame mode, float deltaTime)
     {
         return false;
     }

@@ -1,8 +1,9 @@
-using EngineManaged.Numeric;
+﻿using EngineManaged.Numeric;
 using EngineManaged.UI;
 using SlimeCore.GameModes.Factory.Actors;
 using SlimeCore.GameModes.Factory.Buildings;
 using SlimeCore.GameModes.Factory.Items;
+using SlimeCore.Source.Common;
 using SlimeCore.Source.Core;
 using SlimeCore.Source.Input;
 using SlimeCore.Source.World.Actors;
@@ -14,12 +15,21 @@ namespace SlimeCore.GameModes.Factory.UI;
 
 public class FactoryGameUI : IDisposable
 {
+    // Options
+    public bool OptionMenuOpen { get; set; }
+    public bool IsSaveRequested { get; set; }
+    private float _optionMenuAnimT;
+    private UIScrollPanel? _optionMenu;
+    private UIButton? _btnOptionToggle;
+
+
     // State
     public string? SelectedBuildingId { get; private set; }
     public bool DeleteMode { get; set; }
     public int CurrentTier { get; private set; } = 1;
     
     private string? _selectedCategory;
+
     
     // Menu Animation
     public bool MenuOpen { get; set; }
@@ -64,6 +74,44 @@ public class FactoryGameUI : IDisposable
     {
         UISystem.Clear();
 
+        _btnOptionToggle = UIButton.Create(
+            "Options",
+            18f, 13f,
+            8f, 3f,
+            0.2f, 0.25f, 0.3f,
+            51, 1, false);
+
+        _btnOptionToggle.Label.Color(1.0f, 0.6f, 0.0f); // Orange Text
+        _btnOptionToggle.Clicked += () => {
+            OptionMenuOpen = !OptionMenuOpen;
+            // Toggle button color
+            _btnOptionToggle.SetBaseColor(OptionMenuOpen ? 0.3f : 0.2f, OptionMenuOpen ? 0.35f : 0.25f, OptionMenuOpen ? 0.4f : 0.3f);
+            Logger.Info($"Settings Option menu to {OptionMenuOpen}");
+        };
+
+        _optionMenu = UIScrollPanel.Create(18f, 36f, 10f, 18f, 50, false);
+        _optionMenu.Background.Color(0.1f, 0.1f, 0.15f); // Dark Blue-ish background
+        _optionMenu.SetBorder(0.2f, 0.4f, 0.5f, 0.6f); // Light Blue-Grey Border
+        _optionMenu.SetVisible(false); // Start hidden
+        var btnSave = UIButton.Create(
+            "SAVE GAME",
+            0f, 6f,        // local to panel
+            8f, 2.5f,
+            0.25f, 0.3f, 0.35f,
+            51, 1, false);
+
+        btnSave.Label.Color(0.9f, 0.9f, 0.9f);
+        btnSave.Clicked += () =>
+        {
+            Logger.Info("Saving game...");
+            IsSaveRequested = true;
+        };
+
+        _optionMenu.AddChild(btnSave, 0f, 4f);
+
+
+
+        #region menu 
         // Toggle Button
         float toggleX = -18.0f; // Bottom left (Adjusted inwards)
         float toggleY = -13.0f;
@@ -75,6 +123,7 @@ public class FactoryGameUI : IDisposable
         _btnBuildToggle.Clicked += () => {
             MenuOpen = !MenuOpen;
             // Toggle button color
+            Logger.Info($"Settings Build menu to {MenuOpen}");
             _btnBuildToggle.SetBaseColor(MenuOpen ? 0.3f : 0.2f, MenuOpen ? 0.35f : 0.25f, MenuOpen ? 0.4f : 0.3f);
             _buildMenu.EnableButtons(MenuOpen);
         };
@@ -183,7 +232,9 @@ public class FactoryGameUI : IDisposable
         ttBody.UseScreenSpace(false);
         ttBody.Anchor(0.5f, 0.5f);
         _tooltipBody = ttBody;
+        #endregion menu
 
+        #region inventory
         // Inventory Toggle Button
         float invToggleX = 18.0f; // Bottom Right
         float invToggleY = -13.0f;
@@ -208,6 +259,8 @@ public class FactoryGameUI : IDisposable
         _inventoryMenu.Background.Color(0.15f, 0.1f, 0.1f); // Dark Red-ish background
         _inventoryMenu.SetBorder(0.2f, 0.4f, 0.2f, 0.6f); // Orange-Grey Border, matching thickness
         _inventoryMenu.SetVisible(false); // Start hidden
+
+        #endregion inventory
 
         RebuildInventoryUI();
     }
@@ -339,6 +392,52 @@ public class FactoryGameUI : IDisposable
 
     public void Update(float dt)
     {
+
+        float targetOptionAnim = OptionMenuOpen ? 1.0f : 0.0f;
+        if (Math.Abs(_optionMenuAnimT - targetOptionAnim) > 0.001f)
+        {
+            float dir = targetOptionAnim > _optionMenuAnimT ? 1.0f : -1.0f;
+            _optionMenuAnimT += dir * MenuAnimSpeed * dt;
+            _optionMenuAnimT = Math.Clamp(_optionMenuAnimT, 0.0f, 1.0f);
+
+            if (_optionMenu != null)
+            {
+                // Layout Constants (Must match CreateUI)
+                float toggleY = -13.0f;
+                float toggleH = 3.0f;
+                float panelH = 18.0f;
+
+                // Target Y (Open)
+                float openY = toggleY + (toggleH / 2.0f) + (panelH / 2.0f) + 0.5f;
+                // Start Y (Closed)
+                float closedY = toggleY;
+
+                // Smoothstep
+                float t = _optionMenuAnimT;
+                float smoothT = t * t * (3.0f - 2.0f * t);
+
+                float currentY = closedY + (openY - closedY) * smoothT;
+
+                _optionMenu.SetPosition(_optionMenu.X, currentY);
+                _optionMenu.SetAlpha(smoothT);
+                if (_optionMenuAnimT > 0.01f)
+                {
+                    if (!_optionMenu.IsVisible)
+                    {
+                        _optionMenu.SetVisible(true);
+                    }
+                }
+                else
+                {
+                    if (_optionMenu.IsVisible)
+                    {
+                        _optionMenu.SetVisible(false);
+                    }
+                }
+
+            }
+        }
+        #region Menu
         // Menu Animation
         float targetAnim = MenuOpen ? 1.0f : 0.0f;
         if (Math.Abs(_menuAnimT - targetAnim) > 0.001f)
@@ -401,7 +500,9 @@ public class FactoryGameUI : IDisposable
                 _btnTier3?.SetAlpha(smoothT);
             }
         }
+        #endregion Menu
 
+        #region Inventory
         // Inventory Animation
         float targetInvAnim = InventoryOpen ? 1.0f : 0.0f;
         if (Math.Abs(_inventoryAnimT - targetInvAnim) > 0.001f)
@@ -442,7 +543,7 @@ public class FactoryGameUI : IDisposable
                 }
             }
         }
-        
+        #endregion Inventory
         UISystem.Update();
         UpdateUI();
     }

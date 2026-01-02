@@ -1,4 +1,5 @@
 using EngineManaged.Numeric;
+using MessagePack;
 using SlimeCore.Source.Common;
 using SlimeCore.Source.World.Grid;
 using SlimeCore.Source.World.Grid.Pathfinding;
@@ -11,10 +12,14 @@ namespace SlimeCore.GameModes.Factory.World;
 
 public class FactoryWorld : GridSystem<FactoryGame, FactoryTerrain, FactoryTileOptions, FactoryTile>, IWorldGrid
 {
-	[NotMapped]
+	[IgnoreMember]
 	public float Zoom { get; set; } = 1.0f;
-
+	[IgnoreMember]
 	public bool ShouldRender { get; set; }
+
+    public FactoryWorld()
+    {
+    }
 
 	public FactoryWorld(int worldWidth,
 		int worldHeight,

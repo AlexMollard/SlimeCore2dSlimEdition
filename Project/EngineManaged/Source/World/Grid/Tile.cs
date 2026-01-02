@@ -1,22 +1,28 @@
 ﻿using EngineManaged.Numeric;
+using MessagePack;
 using SlimeCore.Source.Core;
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SlimeCore.Source.World.Grid;
 
-public abstract class Tile<TGameMode, TEnum, TOptions>
+[MessagePackObject]
+public class Tile<TGameMode, TEnum, TOptions>
     where TGameMode : IGameMode
     where TEnum : Enum
     where TOptions : TileOptions<TEnum>, new()
 {
+    [Key(0)]
     public Guid Id { get; init; } = Guid.NewGuid();
+    [Key(1)]
     public int PositionX { get; set; }
+    [Key(2)]
     public int PositionY { get; set; }
-
+    [Key(3)]
     public TEnum Type { get; set; } = default!;
 
     [NotMapped]
+    [IgnoreMember]
     public Vec2i Position => new(PositionX, PositionY);
 
     public virtual void ApplyOptions(Action<TOptions> configure)
@@ -28,28 +34,7 @@ public abstract class Tile<TGameMode, TEnum, TOptions>
         configure(opts);
         Type = opts.Type;
     }
-    /// <summary>
-    /// Converts the terrain type to a color palette.
-    /// </summary>
-    /// <param name="terrain">The enum to parse</param>
-    /// <param name="extraArgs">Additional args like Delta Time etc</param>
-    /// <returns></returns>
-    public abstract Vec3 GetPalette(params object[] extraArgs);
-    /// <summary>
-    /// Any background logic for the tile. e.g. spreading fire, growing crops, etc.
-    /// Random Required actions
-    /// </summary>
-    /// <param name="mode"></param>
-    /// <returns></returns>
-    public abstract void Tick(TGameMode mode, float deltaTime);
-
-    /// <summary>
-    /// Any Forefront logic for the tile. e.g. renders, chain reactions, player interactions, etc.
-    /// Targeted Required actions
-    /// </summary>
-    /// <param name="mode"></param>
-    /// <returns>Does the tile need to continue to take actions</returns>
-    public abstract bool TakeAction(TGameMode mode, float deltaTime);
+    
 }
 
 public class TileOptions<TEnum>
