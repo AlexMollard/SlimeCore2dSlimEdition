@@ -93,7 +93,7 @@ public class FactoryTile : Tile<FactoryGame, FactoryTerrain, FactoryTileOptions>
             Structure = opts.Structure;
         }
 
-        if ((Structure == FactoryStructure.ConveyorBelt || Structure == FactoryStructure.FarmPlot) && Direction != opts.Direction)
+        if ((Structure == FactoryStructure.ConveyorBelt || Structure == FactoryStructure.FarmPlot || Structure == FactoryStructure.Wall) && Direction != opts.Direction)
         {
             Rendered = false;
             Direction = opts.Direction;
@@ -242,13 +242,13 @@ public class FactoryTile : Tile<FactoryGame, FactoryTerrain, FactoryTileOptions>
         // Layer 2: Structure
         nint structTex = FactoryResources.GetStructureTexture(Structure, Tier);
         float rotation = 0.0f;
-        if (Structure == FactoryStructure.FarmPlot)
+        if (Structure == FactoryStructure.Wall)
         {
             switch (Direction)
             {
-                case Direction.East: rotation = 1.5708f; break;
-                case Direction.North: rotation = 3.14159f; break;
-                case Direction.West: rotation = -1.5708f; break;
+                case Direction.East: rotation = -1.5708f; break;
+                case Direction.South: rotation = 3.14159f; break;
+                case Direction.West: rotation = 1.5708f; break;
             }
         }
 
