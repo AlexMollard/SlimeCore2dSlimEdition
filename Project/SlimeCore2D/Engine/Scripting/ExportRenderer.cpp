@@ -3,6 +3,9 @@
 #include "Rendering/Texture.h"
 #include "Scene/Scene.h"
 #include "Core/Input.h"
+
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_FORCE_LEFT_HANDED
 #include <gtc/matrix_transform.hpp>
 
 SLIME_EXPORT void __cdecl Renderer_DrawBatch(BatchQuad* quads, int count)
@@ -50,11 +53,12 @@ SLIME_EXPORT void __cdecl Renderer_BeginScenePrimary()
             float bottom = -orthoSize * zoom * 0.5f;
             float top = orthoSize * zoom * 0.5f;
             
-            glm::mat4 proj = glm::ortho(left, right, bottom, top, -1.0f, 1.0f);
+            // Match Camera.cpp projection (LH, Zero-to-One depth, Near=10, Far=-10)
+            glm::mat4 proj = glm::orthoLH_ZO(left, right, bottom, top, 10.0f, -10.0f);
             
             // View
             glm::mat4 transform = glm::translate(glm::mat4(1.0f), tc.Position) * 
-                                  glm::rotate(glm::mat4(1.0f), tc.Rotation, glm::vec3(0, 0, 1));
+                                  glm::rotate(glm::mat4(1.0f), glm::radians(tc.Rotation), glm::vec3(0, 0, 1));
             glm::mat4 view = glm::inverse(transform);
             
             glm::mat4 viewProj = proj * view;

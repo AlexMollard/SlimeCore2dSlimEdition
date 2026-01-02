@@ -23,6 +23,10 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
     private int _lastGridX = -1;
     private int _lastGridY = -1;
     private bool _wasMouseDown;
+    private bool _wasRightMouseDown;
+    private Vec2 _rightClickStart;
+    private bool _isRightClickDragging;
+    private ulong _selectionBoxEntity;
     private int _currentTier = 1;
     private int _lastTier;
 
@@ -87,6 +91,15 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         Native.Entity_SetColor(_cursorDirectionEntity, 1.0f, 1.0f, 0.0f); // Yellow
         Native.Entity_SetSize(_cursorDirectionEntity, 0.2f, 0.2f);
         Native.Entity_SetLayer(_cursorDirectionEntity, 101); // Above cursor
+
+        // Create Selection Box
+        _selectionBoxEntity = Native.Entity_Create();
+        Native.Entity_AddComponent_Transform(_selectionBoxEntity);
+        Native.Entity_AddComponent_Sprite(_selectionBoxEntity);
+        Native.Entity_SetColor(_selectionBoxEntity, 1.0f, 0.0f, 0.0f); // Red
+        Native.Entity_SetAlpha(_selectionBoxEntity, 0.3f);
+        Native.Entity_SetLayer(_selectionBoxEntity, 102); // Top
+        Native.Entity_SetRender(_selectionBoxEntity, false);
 
         // Generate World
         var gen = new FactoryWorldGenerator(game.Rng?.Next() ?? 0);
@@ -658,86 +671,98 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
             // Ghost Visuals
             if (inBounds)
             {
-                if (_deleteMode)
+                if (_selectedStructure != FactoryStructure.None)
                 {
-                    Native.Entity_SetColor(_cursorEntity, 1.0f, 0.0f, 0.0f); // Red for delete
-                    Native.Entity_SetAlpha(_cursorEntity, 0.5f);
-                    Native.Entity_SetTexturePtr(_cursorEntity, IntPtr.Zero); // No texture, just color overlay
-                }
-                else
-                {
-                    // Check validity
-                    bool isValid = true;
-                    var tile = game.World[gridX, gridY];
-                    if (_selectedStructure == FactoryStructure.Miner && tile.OreType == FactoryOre.None)
+                    if (_deleteMode)
                     {
-                        isValid = false;
-                    }
-                    else if (_selectedStructure == FactoryStructure.ConveyorBelt && 
-                            (tile.Structure == FactoryStructure.Miner || tile.Structure == FactoryStructure.Storage || tile.Structure == FactoryStructure.FarmPlot))
-                    {
-                        isValid = false;
-                    }
-                    
-                    // Check Affordability
-                    var cost = GetCost(_selectedStructure);
-                    if (cost.HasValue && _player != null && !_player.Inventory.HasItem(cost.Value.itemId, cost.Value.count))
-                    {
-                        isValid = false;
-                    }
-
-                    // Set texture based on selected structure
-                    nint tex = FactoryResources.GetStructureTexture(_selectedStructure, _currentTier);
-                    
-                    // Reset size
-                    Native.Entity_SetSize(_cursorEntity, 1.0f, 1.0f);
-
-                    if (_selectedStructure == FactoryStructure.ConveyorBelt)
-                    {
-                        // Procedural Conveyor Ghost (Default)
-                        Native.Entity_SetTexturePtr(_cursorEntity, IntPtr.Zero);
-                        Native.Entity_SetSize(_cursorEntity, 0.4f, 0.9f); // Vertical strip to indicate direction
-                        
-                        if (isValid)
-                            Native.Entity_SetColor(_cursorEntity, 0.2f, 0.2f, 0.2f); // Dark Grey
-                        else
-                            Native.Entity_SetColor(_cursorEntity, 1.0f, 0.0f, 0.0f); // Red invalid
-                    }
-                    else if (tex != IntPtr.Zero)
-                    {
-                        Native.Entity_SetTexturePtr(_cursorEntity, tex);
-                        if (isValid)
-                            Native.Entity_SetColor(_cursorEntity, 1.0f, 1.0f, 1.0f); // Reset color
-                        else
-                            Native.Entity_SetColor(_cursorEntity, 1.0f, 0.0f, 0.0f); // Red invalid
+                        Native.Entity_SetColor(_cursorEntity, 1.0f, 0.0f, 0.0f); // Red for delete
+                        Native.Entity_SetAlpha(_cursorEntity, 0.5f);
+                        Native.Entity_SetTexturePtr(_cursorEntity, IntPtr.Zero); // No texture, just color overlay
                     }
                     else
                     {
-                        // Fallback for structures without texture (Miner/Storage)
-                        Native.Entity_SetTexturePtr(_cursorEntity, IntPtr.Zero);
-                        
-                        if (!isValid)
+                        // Check validity
+                        bool isValid = true;
+                        var tile = game.World[gridX, gridY];
+                        if (_selectedStructure == FactoryStructure.Miner && tile.OreType == FactoryOre.None)
                         {
-                             Native.Entity_SetColor(_cursorEntity, 1.0f, 0.0f, 0.0f);
+                            isValid = false;
                         }
-                        else if (_selectedStructure == FactoryStructure.Miner)
-                            Native.Entity_SetColor(_cursorEntity, 0.6f, 0.2f, 0.6f);
-                        else if (_selectedStructure == FactoryStructure.Storage)
-                            Native.Entity_SetColor(_cursorEntity, 0.6f, 0.4f, 0.2f);
-                        else
-                            Native.Entity_SetColor(_cursorEntity, 1.0f, 1.0f, 0.0f); // Default yellow
-                    }
+                        else if (_selectedStructure == FactoryStructure.ConveyorBelt && 
+                                (tile.Structure == FactoryStructure.Miner || tile.Structure == FactoryStructure.Storage || tile.Structure == FactoryStructure.FarmPlot))
+                        {
+                            isValid = false;
+                        }
+                        
+                        // Check Affordability
+                        var cost = GetCost(_selectedStructure);
+                        if (cost.HasValue && _player != null && !_player.Inventory.HasItem(cost.Value.itemId, cost.Value.count))
+                        {
+                            isValid = false;
+                        }
 
-                    // Rotation
-                    float rot = 0.0f;
-                    switch (_placementDirection)
-                    {
-                        case Direction.East: rot = -90.0f; break;
-                        case Direction.South: rot = 180.0f; break;
-                        case Direction.West: rot = 90.0f; break;
+                        // Set texture based on selected structure
+                        nint tex = FactoryResources.GetStructureTexture(_selectedStructure, _currentTier);
+                        
+                        // Reset size
+                        Native.Entity_SetSize(_cursorEntity, 1.0f, 1.0f);
+
+                        if (_selectedStructure == FactoryStructure.ConveyorBelt)
+                        {
+                            // Procedural Conveyor Ghost (Default)
+                            Native.Entity_SetTexturePtr(_cursorEntity, IntPtr.Zero);
+                            Native.Entity_SetSize(_cursorEntity, 0.4f, 0.9f); // Vertical strip to indicate direction
+                            
+                            if (isValid)
+                                Native.Entity_SetColor(_cursorEntity, 0.2f, 0.2f, 0.2f); // Dark Grey
+                            else
+                                Native.Entity_SetColor(_cursorEntity, 1.0f, 0.0f, 0.0f); // Red invalid
+                        }
+                        else if (tex != IntPtr.Zero)
+                        {
+                            Native.Entity_SetTexturePtr(_cursorEntity, tex);
+                            if (isValid)
+                                Native.Entity_SetColor(_cursorEntity, 1.0f, 1.0f, 1.0f); // Reset color
+                            else
+                                Native.Entity_SetColor(_cursorEntity, 1.0f, 0.0f, 0.0f); // Red invalid
+                        }
+                        else
+                        {
+                            // Fallback for structures without texture (Miner/Storage)
+                            Native.Entity_SetTexturePtr(_cursorEntity, IntPtr.Zero);
+                            
+                            if (!isValid)
+                            {
+                                Native.Entity_SetColor(_cursorEntity, 1.0f, 0.0f, 0.0f);
+                            }
+                            else if (_selectedStructure == FactoryStructure.Miner)
+                                Native.Entity_SetColor(_cursorEntity, 0.6f, 0.2f, 0.6f);
+                            else if (_selectedStructure == FactoryStructure.Storage)
+                                Native.Entity_SetColor(_cursorEntity, 0.6f, 0.4f, 0.2f);
+                            else
+                                Native.Entity_SetColor(_cursorEntity, 1.0f, 1.0f, 0.0f); // Default yellow
+                        }
+
+                        // Rotation
+                        float rot = 0.0f;
+                        switch (_placementDirection)
+                        {
+                            case Direction.East: rot = -90.0f; break;
+                            case Direction.South: rot = 180.0f; break;
+                            case Direction.West: rot = 90.0f; break;
+                        }
+                        Native.Entity_SetRotation(_cursorEntity, rot);
+                        Native.Entity_SetAlpha(_cursorEntity, 0.6f); // Ghost transparency
                     }
-                    Native.Entity_SetRotation(_cursorEntity, rot);
-                    Native.Entity_SetAlpha(_cursorEntity, 0.6f); // Ghost transparency
+                }
+                else
+                {
+                    // Default Cursor (Yellow Highlight)
+                    Native.Entity_SetTexturePtr(_cursorEntity, IntPtr.Zero);
+                    Native.Entity_SetColor(_cursorEntity, 1.0f, 1.0f, 0.0f);
+                    Native.Entity_SetAlpha(_cursorEntity, 0.4f);
+                    Native.Entity_SetSize(_cursorEntity, 1.0f, 1.0f);
+                    Native.Entity_SetRotation(_cursorEntity, 0.0f);
                 }
             }
 
@@ -777,7 +802,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         }
         
         // Don't place tiles if mouse is over UI or if the click started on UI
-        if (isMouseDown && !UISystem.IsMouseOverUI && !_inputBlockedByUI)
+        if (isMouseDown && !UISystem.IsMouseOverUI && !_inputBlockedByUI && _selectedStructure != FactoryStructure.None)
         {
             if (!_wasMouseDown)
             {
@@ -866,10 +891,15 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
 
                     // Allow overwriting or updating direction
                     
+                    // Check if this is just a rotation (same structure, same tier)
+                    bool isRotation = tile.Structure == _selectedStructure && tile.Tier == _currentTier;
+
                     // Check Cost
                     var cost = GetCost(_selectedStructure);
                     bool canAfford = true;
-                    if (cost.HasValue && _player != null)
+                    
+                    // Only check cost if it's NOT just a rotation
+                    if (!isRotation && cost.HasValue && _player != null)
                     {
                         if (!_player.Inventory.HasItem(cost.Value.itemId, cost.Value.count))
                         {
@@ -895,8 +925,8 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
                         if (placed)
                         {
                             game.World.UpdateNeighbors(game, new Vec2i(gridX, gridY));
-                            // Deduct cost
-                            if (cost.HasValue && _player != null)
+                            // Deduct cost only if not rotation
+                            if (!isRotation && cost.HasValue && _player != null)
                             {
                                 _player.Inventory.RemoveItem(cost.Value.itemId, cost.Value.count);
                             }
@@ -915,23 +945,115 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         
         _wasMouseDown = isMouseDown;
 
-        // Right click to remove (Legacy, now we have Delete button, but keep it for convenience)
-        if (Input.IsMouseDown(Input.MouseButton.Right))
+        // Right Click Logic
+        bool isRightMouseDown = Input.IsMouseDown(Input.MouseButton.Right);
+        
+        if (isRightMouseDown)
         {
-            if (gridX >= 0 && gridX < game.World.Width() && gridY >= 0 && gridY < game.World.Height())
+            if (!_wasRightMouseDown)
             {
-                var tile = game.World[gridX, gridY];
-                if (tile.Structure != FactoryStructure.None)
+                // Just pressed
+                _rightClickStart = new Vec2(mx, my);
+                _isRightClickDragging = false;
+            }
+            else
+            {
+                // Held
+                float dist = (new Vec2(mx, my) - _rightClickStart).Length();
+                if (dist > 0.5f) // Threshold
                 {
-                    game.World.Set(gridX, gridY, o =>
-                    {
-                        o.Structure = FactoryStructure.None;
-                    });
+                    _isRightClickDragging = true;
+                }
+
+                if (_isRightClickDragging)
+                {
+                    // Draw Selection Box
+                    float minX = Math.Min(_rightClickStart.X, mx);
+                    float maxX = Math.Max(_rightClickStart.X, mx);
+                    float minY = Math.Min(_rightClickStart.Y, my);
+                    float maxY = Math.Max(_rightClickStart.Y, my);
                     
-                    game.World.UpdateNeighbors(game, new Vec2i(gridX, gridY));
+                    float w = maxX - minX;
+                    float h = maxY - minY;
+                    float cx = minX + w / 2.0f;
+                    float cy = minY + h / 2.0f;
+                    
+                    if (_selectionBoxEntity != 0)
+                    {
+                        Native.Entity_SetPosition(_selectionBoxEntity, cx, cy);
+                        Native.Entity_SetSize(_selectionBoxEntity, w, h);
+                        Native.Entity_SetRender(_selectionBoxEntity, true);
+                    }
                 }
             }
         }
+        else
+        {
+            // Released
+            if (_wasRightMouseDown)
+            {
+                if (_isRightClickDragging)
+                {
+                    // Perform Delete in Area
+                    float minX = Math.Min(_rightClickStart.X, mx);
+                    float maxX = Math.Max(_rightClickStart.X, mx);
+                    float minY = Math.Min(_rightClickStart.Y, my);
+                    float maxY = Math.Max(_rightClickStart.Y, my);
+                    
+                    int startX = (int)Math.Floor(minX);
+                    int endX = (int)Math.Floor(maxX);
+                    int startY = (int)Math.Floor(minY);
+                    int endY = (int)Math.Floor(maxY);
+                    
+                    // Clamp to world bounds
+                    startX = Math.Clamp(startX, 0, game.World.Width() - 1);
+                    endX = Math.Clamp(endX, 0, game.World.Width() - 1);
+                    startY = Math.Clamp(startY, 0, game.World.Height() - 1);
+                    endY = Math.Clamp(endY, 0, game.World.Height() - 1);
+                    
+                    for (int x = startX; x <= endX; x++)
+                    {
+                        for (int y = startY; y <= endY; y++)
+                        {
+                            var tile = game.World[x, y];
+                            if (tile.Structure != FactoryStructure.None)
+                            {
+                                // Refund
+                                var cost = GetCost(tile.Structure);
+                                if (cost.HasValue && _player != null)
+                                {
+                                    var itemDef = ItemRegistry.Get(cost.Value.itemId);
+                                    if (itemDef != null)
+                                    {
+                                        _player.Inventory.AddItem(itemDef, cost.Value.count);
+                                    }
+                                }
+                                
+                                // Remove
+                                game.World.Set(x, y, o => o.Structure = FactoryStructure.None);
+                                game.World.UpdateNeighbors(game, new Vec2i(x, y));
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    // Single Click: Deselect
+                    _selectedStructure = FactoryStructure.None;
+                    _deleteMode = false;
+                }
+                
+                // Hide Selection Box
+                if (_selectionBoxEntity != 0)
+                {
+                    Native.Entity_SetRender(_selectionBoxEntity, false);
+                }
+                
+                _isRightClickDragging = false;
+            }
+        }
+        
+        _wasRightMouseDown = isRightMouseDown;
     }
 
     private void Render(FactoryGame game)
@@ -979,6 +1101,12 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         {
             Native.Entity_Destroy(_cursorDirectionEntity);
             _cursorDirectionEntity = 0;
+        }
+
+        if (_selectionBoxEntity != 0)
+        {
+            Native.Entity_Destroy(_selectionBoxEntity);
+            _selectionBoxEntity = 0;
         }
     }
 
