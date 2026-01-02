@@ -356,7 +356,8 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
                     tt.Text($"{item}: {count}");
                     // Convert world mouse pos to UI pos (relative to camera center)
                     // Since UI camera is at (0,0), we just subtract the main camera position
-                    tt.Position = (mx - _cam.X, my - _cam.Y);
+                    // We also need to account for the camera zoom, as UI is not zoomed
+                    tt.Position = ((mx - _cam.X) * game.World.Zoom, (my - _cam.Y) * game.World.Zoom);
                     showTooltip = true;
                 }
             }

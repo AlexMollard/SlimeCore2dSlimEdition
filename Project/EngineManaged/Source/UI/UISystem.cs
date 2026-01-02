@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using EngineManaged.Scene;
 
 namespace EngineManaged.UI;
 
@@ -33,6 +34,21 @@ public static class UISystem
         var (mxScreen, myScreen) = Input.GetMouseScreenPos();
         bool down = Input.IsMouseDown(Input.MouseButton.Left);
 
+        // Find primary camera size
+        float uiHeight = 30.0f; // Default fallback
+        foreach (var entity in Scene.Scene.Enumerate())
+        {
+            if (entity.HasComponent<CameraComponent>())
+            {
+                var cam = entity.GetComponent<CameraComponent>();
+                if (cam.IsPrimary)
+                {
+                    uiHeight = cam.Size;
+                    break;
+                }
+            }
+        }
+
         int hoverIndex = -1;
         int highestLayer = int.MinValue;
 
@@ -59,18 +75,6 @@ public static class UISystem
                 // Button is in UI World Units (Center origin, Y-up)
                 // Input.GetMousePos returns Main World Units (Camera dependent) -> WRONG for UI
                 // We need Screen Pixels -> UI World Units
-                
-                // Note: We assume standard UI Height of 18.0f for now, matching Game2D default.
-                // If FactoryGame uses a different camera size for UI, we might need to parameterize this.
-                // However, Game2D.cpp passes m_camera->GetOrthographicSize() to RenderUI.
-                // FactoryGame sets camera size to 30.0f (VIEW_H).
-                // So we should probably use 30.0f if we are in FactoryGame?
-                // Or better, we should check if we can get the current camera size.
-                // For now, let's try 30.0f since that's what FactoryGame uses.
-                // But wait, StateFactoryMenu uses 18.0f? No, it sets VIEW_H = 30.0f.
-                
-                // TODO: Get this from the active camera or game settings
-                float uiHeight = 30.0f; 
                 
                 var (uix, uiy) = UIInputHelper.ScreenToUIWorld(mxScreen, myScreen, uiHeight);
                 mx = uix;
@@ -122,7 +126,6 @@ public static class UISystem
                     }
                     else
                     {
-                        float uiHeight = 30.0f;
                         var (uix, uiy) = UIInputHelper.ScreenToUIWorld(mxScreen, myScreen, uiHeight);
                         mx = uix;
                         my = uiy;
@@ -152,7 +155,6 @@ public static class UISystem
             }
             else
             {
-                float uiHeight = 30.0f; // TODO: Parameterize
                 var (uix, uiy) = UIInputHelper.ScreenToUIWorld(mxScreen, myScreen, uiHeight);
                 mx = uix;
                 my = uiy;
