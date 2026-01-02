@@ -2,6 +2,7 @@ using EngineManaged.Numeric;
 using SlimeCore.GameModes.Factory.Actors;
 using SlimeCore.GameModes.Factory.States;
 using SlimeCore.GameModes.Factory.World;
+using SlimeCore.Source.Common;
 using SlimeCore.Source.Core;
 using System;
 using System.Diagnostics.CodeAnalysis;
@@ -41,13 +42,26 @@ public sealed class FactoryGame : GameMode<FactoryGame>, IGameMode, IDisposable
 
     public void InitializeGame()
     {
+        UnsafeNativeMethods.Memory_PushContext("FactoryGame::InitializeGame");
         // Ensure resources are loaded before items
+        UnsafeNativeMethods.Memory_PushContext("FactoryResources::Load");
         FactoryResources.Load();
-        SlimeCore.GameModes.Factory.Items.ItemRegistry.Initialize();
+        UnsafeNativeMethods.Memory_PopContext();
 
+        UnsafeNativeMethods.Memory_PushContext("ItemRegistry::Initialize");
+        SlimeCore.GameModes.Factory.Items.ItemRegistry.Initialize();
+        UnsafeNativeMethods.Memory_PopContext();
+
+        UnsafeNativeMethods.Memory_PushContext("FactoryWorld::New");
         World = new FactoryWorld(Settings.WorldWidth, Settings.WorldHeight, FactoryTerrain.Grass, Settings.InitialZoom, Settings.WorldBudget);
+        UnsafeNativeMethods.Memory_PopContext();
+
+        UnsafeNativeMethods.Memory_PushContext("ActorManager::New");
         ActorManager = new FactoryActorManager(Settings.ActorBudget);
+        UnsafeNativeMethods.Memory_PopContext();
+
         Rng = new Random(Settings.Seed);
+        UnsafeNativeMethods.Memory_PopContext();
     }
 
     public override bool InView(Vec2 position)
@@ -73,11 +87,20 @@ public sealed class FactoryGame : GameMode<FactoryGame>, IGameMode, IDisposable
 
     public override void Shutdown()
     {
+        Logger.Info("FactoryGame.Shutdown called");
         World?.Destroy();
+        ActorManager?.Destroy();
+        FactoryResources.Unload();
+        
         if (TileMap != IntPtr.Zero)
         {
+			Logger.Info($"Destroying TileMap: {TileMap}");
             Native.TileMap_Destroy(TileMap);
             TileMap = IntPtr.Zero;
+        }
+        else
+        {
+			Logger.Warn("TileMap was Zero in Shutdown, when??????");
         }
     }
 

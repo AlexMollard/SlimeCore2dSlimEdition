@@ -34,6 +34,21 @@ Scene::~Scene()
 	if (s_ActiveScene == this)
 		s_ActiveScene = nullptr;
 	
+	// Cleanup all active entities properly to ensure physics bodies are released
+	for (auto entity : m_ActiveEntities)
+	{
+		if (m_Registry.HasComponent<RigidBodyComponent>(entity))
+		{
+			auto& rb = m_Registry.GetComponent<RigidBodyComponent>(entity);
+			if (rb.RuntimeBody && m_PhysicsScene)
+			{
+				m_PhysicsScene->removeActor((RigidBody*)rb.RuntimeBody);
+				delete (RigidBody*)rb.RuntimeBody;
+				rb.RuntimeBody = nullptr;
+			}
+		}
+	}
+
 	if (m_PhysicsScene)
 	{
 		delete m_PhysicsScene;

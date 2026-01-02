@@ -27,6 +27,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
 
     public void Enter(FactoryGame game)
     {
+        UnsafeNativeMethods.Memory_PushContext("StateFactoryPlay::Enter");
         game.World?.Initialize(FactoryGame.MAX_VIEW_W, FactoryGame.MAX_VIEW_H);
 
         // Create Camera
@@ -42,17 +43,22 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         var gen = new FactoryWorldGenerator(game.Rng?.Next() ?? 0);
         if (game.World != null)
         {
-
+            UnsafeNativeMethods.Memory_PushContext("WorldGen");
             //Generate terrain
             gen.Generate(game.World);
             game.World.CalculateAllBitmasks();
+            UnsafeNativeMethods.Memory_PopContext();
 
             // Create TileMap
+            UnsafeNativeMethods.Memory_PushContext("TileMap::Create");
             game.TileMap = Native.TileMap_Create(game.World.Width(), game.World.Height(), 1.0f);
+            UnsafeNativeMethods.Memory_PopContext();
 
             //Create Systems
+            UnsafeNativeMethods.Memory_PushContext("Systems::Create");
             game.ConveyorSystem = new ConveyorSystem(game.World.Width(), game.World.Height(), 1.0f);
             game.BuildingSystem = new BuildingSystem(game, game.World, game.ConveyorSystem);
+            UnsafeNativeMethods.Memory_PopContext();
 
             // Flush full worldgen
             game.World.ManualTick(game, 0f);
@@ -65,6 +71,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         }
 
         // Create player at center
+        UnsafeNativeMethods.Memory_PushContext("Actors::Populate");
         _player = new Player(game.Camera);
         game.ActorManager?.Register(_player);
         Sheep.Populate(game, 500);
@@ -77,8 +84,10 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
 
         game.ActorManager?.Register(new Wolf(wolfPos));
         game.ActorManager?.Register(new Sheep(sheepPos));
+        UnsafeNativeMethods.Memory_PopContext();
 
         _ui.Initialize(_player);
+        UnsafeNativeMethods.Memory_PopContext();
     }
 
     public void Exit(FactoryGame game)

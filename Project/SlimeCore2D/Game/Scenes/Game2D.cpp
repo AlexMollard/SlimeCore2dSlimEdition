@@ -4,6 +4,7 @@
 #include "Scripting/DotNetHost.h"
 #include "gtc/matrix_transform.hpp"
 #include "Core/Window.h"
+#include "Core/Memory.h"
 
 Game2D::Game2D()
 {

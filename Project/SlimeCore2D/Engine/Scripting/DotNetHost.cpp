@@ -189,6 +189,15 @@ bool DotNetHost::Init()
 		return false;
 	}
 
+	// Get ScriptRuntime_ForceGC
+	rc = load_assembly_and_get_function_pointer(managedDllPath.c_str(), L"SlimeCore.GameHost, EngineManaged", L"ForceGC", UNMANAGEDCALLERSONLY_METHOD, nullptr, (void**) &m_forceGC);
+
+	if (rc != 0 || !m_forceGC)
+	{
+		LogRc("load_assembly_and_get_function_pointer ForceGC", rc);
+		return false;
+	}
+
 	return true;
 }
 
@@ -199,6 +208,7 @@ void DotNetHost::Shutdown()
 	m_init = nullptr;
 	m_update = nullptr;
 	m_draw = nullptr;
+	m_forceGC = nullptr;
 }
 
 void DotNetHost::CallInit()
@@ -217,4 +227,10 @@ void DotNetHost::CallDraw()
 {
 	if (m_draw)
 		m_draw();
+}
+
+void DotNetHost::CallForceGC()
+{
+	if (m_forceGC)
+		m_forceGC();
 }

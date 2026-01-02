@@ -2,9 +2,12 @@
 #include "Game2D.h"
 #include "Scripting/DotNetHost.h"
 #include "Core/Logger.h"
+#include "Core/Memory.h"
+#include "Resources/ResourceManager.h"
 
 int main()
 {
+	MemoryAllocator::Init();
 	Logger::Init();
 	Logger::Info("Engine Initializing...");
 
@@ -37,6 +40,12 @@ int main()
 	delete app;
 	delete game;
 
+	dotnet.CallForceGC();
 	dotnet.Shutdown();
+
+	// Call the resource manager clean up
+	ResourceManager::GetInstance().Clear();
+	MemoryAllocator::PrintLeaks();
+	
 	return 0;
 }
