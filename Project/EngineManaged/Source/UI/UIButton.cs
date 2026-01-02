@@ -9,6 +9,7 @@ public class UIButton
     public readonly UIText Label;
 
     public bool Enabled { get; set; } = true;
+    public bool IsVisible { get; private set; } = true;
     public int Layer { get; private set; }
     public bool UseScreenSpace { get; private set; }
     private float _buttonWidth;
@@ -70,6 +71,7 @@ public class UIButton
 
     public void SetVisible(bool visible)
     {
+        IsVisible = visible;
         Background.IsVisible(visible);
         Label.IsVisible(visible);
     }

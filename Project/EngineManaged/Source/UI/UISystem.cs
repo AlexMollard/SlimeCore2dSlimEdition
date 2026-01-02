@@ -7,6 +7,7 @@ public static class UISystem
 {
     private static readonly List<UIButton> _buttons = new();
     private static readonly List<UISlider> _sliders = new();
+    private static readonly List<UIScrollPanel> _scrollPanels = new();
     private static bool _prevMouseDown;
 
     public static bool IsMouseOverUI { get; private set; }
@@ -17,6 +18,9 @@ public static class UISystem
     public static void Register(UISlider slider) => _sliders.Add(slider);
     public static void Unregister(UISlider slider) => _sliders.Remove(slider);
 
+    public static void Register(UIScrollPanel panel) => _scrollPanels.Add(panel);
+    public static void Unregister(UIScrollPanel panel) => _scrollPanels.Remove(panel);
+
     /// <summary>
     /// Clears all buttons. Call this when switching Game Modes!
     /// </summary>
@@ -26,6 +30,7 @@ public static class UISystem
         // for(int i=0; i<_buttons.Count; i++) _buttons[i].Destroy();
         _buttons.Clear();
         _sliders.Clear();
+        _scrollPanels.Clear();
     }
 
     public static void Update()
@@ -58,7 +63,7 @@ public static class UISystem
             var b = _buttons[i];
             b.IsHovered = false; // Reset frame
 
-            if (!b.Enabled) continue;
+            if (!b.Enabled || !b.IsVisible) continue;
 
             // Use appropriate coordinate system based on button's screen-space setting
             float mx, my;
@@ -182,6 +187,13 @@ public static class UISystem
                     s.UpdateFromMouse(mx);
                 }
             }
+        }
+
+        // 5. Update Scroll Panels
+        for (int i = 0; i < _scrollPanels.Count; i++)
+        {
+            _scrollPanels[i].Update();
+            if (_scrollPanels[i].IsHovered) IsMouseOverUI = true;
         }
 
         _prevMouseDown = down;

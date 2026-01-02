@@ -29,15 +29,17 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
     private Direction _placementDirection = Direction.North;
     private bool _deleteMode;
     private bool _inputBlockedByUI;
+    private bool _zoomInHeld;
+    private bool _zoomOutHeld;
 
     // UI Elements
+    private UIScrollPanel? _buildMenu;
+    private UIButton? _btnBuildToggle;
     private UIButton? _btnConveyor;
     private UIButton? _btnMiner;
     private UIButton? _btnStorage;
     private UIButton? _btnFarm;
-    private UIButton? _btnDelete;
     private UIButton? _btnWall;
-    private UIImage? _toolbarBg;
     private UIText? _tierLabel;
     private UIText? _rotationLabel;
     private UIText? _tooltipLabel;
@@ -125,30 +127,52 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
     {
         UISystem.Clear();
 
-        // Toolbar Background
-        float barW = 45.0f;
-        float barH = 4.0f;
-        float barY = -13.0f;
+        // Toggle Button
+        float toggleX = -22.0f; // Bottom left
+        float toggleY = -13.0f;
+        float toggleW = 8.0f;
+        float toggleH = 3.0f;
         
-        var bg = UIImage.Create(0, barY, barW, barH);
-        bg.Color(0.1f, 0.1f, 0.1f);
-        bg.Anchor(0.5f, 0.5f);
-        bg.Layer(50);
-        _toolbarBg = bg;
+        _btnBuildToggle = UIButton.Create("Build", toggleX, toggleY, toggleW, toggleH, 0.3f, 0.3f, 0.3f, 51, 1, false);
+        _btnBuildToggle.Label.Color(0.9f, 0.9f, 0.9f);
+        _btnBuildToggle.Clicked += () => {
+            if (_buildMenu != null)
+            {
+                bool vis = !_buildMenu.IsVisible;
+                _buildMenu.SetVisible(vis);
+                _btnBuildToggle.SetBaseColor(vis ? 0.4f : 0.3f, vis ? 0.4f : 0.3f, vis ? 0.5f : 0.3f);
+            }
+        };
 
+        // Build Menu Scroll Panel
+        float panelW = 10.0f;
+        float panelH = 18.0f;
+        float panelX = toggleX; 
+        // Position panel above the button
+        float panelY = toggleY + (toggleH / 2.0f) + (panelH / 2.0f) + 0.5f;
+        
+        _buildMenu = UIScrollPanel.Create(panelX, panelY, panelW, panelH, 50, false);
+        _buildMenu.SetVisible(false); // Start hidden
+        
         // Buttons
         float btnW = 8.0f;
         float btnH = 3.0f;
         float gap = 0.5f;
-        float startX = -((btnW * 5 + gap * 4) / 2.0f) + btnW / 2.0f; // Centered
+        float startY = (panelH / 2.0f) - (btnH / 2.0f) - gap;
         
         // Helper to create styled button
         UIButton CreateBtn(string text, int index, Action onClick)
         {
-            float x = startX + index * (btnW + gap);
-            var btn = UIButton.Create(text, x, barY, btnW, btnH, 0.3f, 0.3f, 0.3f, 51, 1, false); // Use World Space
+            // Relative position inside the panel
+            float x = 0; 
+            float y = startY - index * (btnH + gap);
+            
+            // Create button at (0,0) initially, panel will position it
+            var btn = UIButton.Create(text, 0, 0, btnW, btnH, 0.3f, 0.3f, 0.3f, 51, 1, false); 
             btn.Label.Color(0.9f, 0.9f, 0.9f);
             btn.Clicked += onClick;
+            
+            _buildMenu.AddChild(btn, x, y);
             return btn;
         }
 
@@ -157,16 +181,18 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         _btnStorage = CreateBtn("Storage", 2, () => { _selectedStructure = FactoryStructure.Storage; _deleteMode = false; });
         _btnFarm = CreateBtn("Farm", 3, () => { _selectedStructure = FactoryStructure.FarmPlot; _deleteMode = false; });
         _btnWall = CreateBtn("Wall", 4, () => { _selectedStructure = FactoryStructure.Wall; _deleteMode = false; });
-        _btnDelete = CreateBtn("Delete", 5, () => { _deleteMode = true; });
+
+        // Set content height for scrolling
+        _buildMenu.ContentHeight = 5 * (btnH + gap) + gap * 2;
 
         // Labels
-        var tLabel = UIText.Create("Tier: 1", 1, -17.0f, barY + 2.5f); // Left side of bar
+        var tLabel = UIText.Create("Tier: 1", 1, -17.0f, -13.0f); 
         tLabel.Anchor(0.0f, 0.5f);
         tLabel.Layer(52);
         tLabel.Color(1.0f, 0.8f, 0.2f);
         _tierLabel = tLabel;
 
-        var rLabel = UIText.Create("Rotate: [R]", 1, 17.0f, barY + 2.5f); // Right side of bar
+        var rLabel = UIText.Create("Rotate: [R]", 1, 17.0f, -13.0f); 
         rLabel.Anchor(1.0f, 0.5f);
         rLabel.Layer(52);
         rLabel.Color(0.8f, 0.8f, 0.8f);
@@ -201,7 +227,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         SetBtnState(_btnMiner, !_deleteMode && _selectedStructure == FactoryStructure.Miner);
         SetBtnState(_btnStorage, !_deleteMode && _selectedStructure == FactoryStructure.Storage);
         SetBtnState(_btnFarm, !_deleteMode && _selectedStructure == FactoryStructure.FarmPlot);
-        SetBtnState(_btnDelete, _deleteMode);
+        SetBtnState(_btnWall, !_deleteMode && _selectedStructure == FactoryStructure.Wall);
 
         // Update Tier Label
         if (_tierLabel is { } tierLbl)
@@ -238,8 +264,9 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         _btnMiner?.Destroy();
         _btnStorage?.Destroy();
         _btnFarm?.Destroy();
-        _btnDelete?.Destroy();
-        if (_toolbarBg is { } bg) bg.Destroy();
+        _btnWall?.Destroy();
+        _buildMenu?.Destroy();
+        _btnBuildToggle?.Destroy();
         if (_tierLabel is { } tl) tl.Destroy();
         if (_rotationLabel is { } rl) rl.Destroy();
         if (_tooltipLabel is { } tt) tt.Destroy();
@@ -291,6 +318,20 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         {
             _placementDirection = (Direction)(((int)_placementDirection + 1) % 4);
         }
+
+        // Scroll Rotation
+        float scroll = Input.GetScroll();
+        if (scroll != 0 && !UISystem.IsMouseOverUI)
+        {
+            if (scroll > 0)
+                _placementDirection = (Direction)(((int)_placementDirection + 1) % 4);
+            else
+            {
+                int d = (int)_placementDirection - 1;
+                if (d < 0) d = 3;
+                _placementDirection = (Direction)d;
+            }
+        }
         
         // Camera follows player
         if (_player != null)
@@ -331,11 +372,21 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
     {
         if (game.World == null) return;
 
-        // Zoom
-        float scroll = Input.GetScroll();
-        if (scroll != 0)
+        // Zoom Control (Keyboard)
+        if (Input.GetKeyDown(Keycode.EQUAL) || Input.GetKeyDown(Keycode.KP_ADD)) _zoomInHeld = true;
+        if (Input.GetKeyReleased(Keycode.EQUAL) || Input.GetKeyReleased(Keycode.KP_ADD)) _zoomInHeld = false;
+
+        if (Input.GetKeyDown(Keycode.MINUS) || Input.GetKeyDown(Keycode.KP_SUBTRACT)) _zoomOutHeld = true;
+        if (Input.GetKeyReleased(Keycode.MINUS) || Input.GetKeyReleased(Keycode.KP_SUBTRACT)) _zoomOutHeld = false;
+
+        if (_zoomInHeld)
         {
-            game.World.Zoom += scroll * 0.05f;
+            game.World.Zoom += 0.05f; // Adjust speed as needed
+            game.World.Zoom = Math.Clamp(game.World.Zoom, 0.05f, 5.0f);
+        }
+        if (_zoomOutHeld)
+        {
+            game.World.Zoom -= 0.05f;
             game.World.Zoom = Math.Clamp(game.World.Zoom, 0.05f, 5.0f);
         }
 
