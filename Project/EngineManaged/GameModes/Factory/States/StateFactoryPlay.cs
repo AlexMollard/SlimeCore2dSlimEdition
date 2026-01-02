@@ -18,7 +18,6 @@ namespace SlimeCore.GameModes.Factory.States;
 
 public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
 {
-    private Vec2 _cam;
     private Player? _player;
     private float _time;
     private ulong _cameraEntity;
@@ -139,7 +138,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
             Native.Entity_SetCameraZoom(_cameraEntity, 1.0f / game.World.Zoom);
         }
 
-        _interaction.Update(game, dt, _ui, _player, _cam);
+        _interaction.Update(game, dt, _ui, _player, game.Camera);
         game.World?.Tick(game, dt);
     }
 
