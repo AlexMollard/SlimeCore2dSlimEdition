@@ -64,6 +64,11 @@ public class Player : Actor<FactoryActors, FactoryGame>, IControllable
         return true;
     }
 
+    public override bool Tick(FactoryGame mode, float deltaTime)
+    {
+        return true;
+    }
+
     private void HandleInteraction(FactoryGame mode, float dt)
     {
         // Pickup items

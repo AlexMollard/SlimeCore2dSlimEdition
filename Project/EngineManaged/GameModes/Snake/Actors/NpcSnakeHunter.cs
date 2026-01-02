@@ -211,6 +211,11 @@ public class NpcSnakeHunter : Actor<SnakeActors, SnakeGame>
         return true;
     }
 
+    public override bool Tick(SnakeGame mode, float deltaTime)
+    {
+        return true;
+    }
+
     public override void Destroy()
     {
         if (Entity == null)

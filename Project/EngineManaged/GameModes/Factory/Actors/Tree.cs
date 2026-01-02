@@ -28,6 +28,12 @@ public class Tree : Actor<FactoryActors, FactoryGame>
 
     public override bool TakeAction(FactoryGame mode, float deltaTime)
     {
+        
+        return true;
+    }
+
+    public override bool Tick(FactoryGame mode, float deltaTime)
+    {
         if (Growth > 10f)
         {
             return false;

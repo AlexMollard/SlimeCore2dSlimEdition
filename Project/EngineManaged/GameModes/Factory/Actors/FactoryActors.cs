@@ -8,9 +8,10 @@ namespace SlimeCore.GameModes.Factory.Actors;
 public enum FactoryActors
 {
     Player = 0,
-    DroppedItem = 1, // High priority to ensure smooth movement
+    OnScreenEntity = 1, //Reserved for entities currently on screen/Always on screen
     Animals = 2,
-    Plants = 3,
+    DroppedItem = 3,
+    Plants = 4,
 }
 
 public class FactoryActorManager : ActorManager<FactoryActors, FactoryGame>

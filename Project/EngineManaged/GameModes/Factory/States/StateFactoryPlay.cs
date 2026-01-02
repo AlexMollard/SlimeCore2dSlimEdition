@@ -62,18 +62,18 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         // Center camera on world
         if (game.World != null)
         {
-            _cam = new Vec2(game.World.Width() / 2.0f, game.World.Height() / 2.0f);
+            game.Camera = new Vec2(game.World.Width() / 2.0f, game.World.Height() / 2.0f);
         }
 
         // Create player at center
-        _player = new Player(_cam);
+        _player = new Player(game.Camera);
         game.ActorManager?.Register(_player);
         Sheep.Populate(game, 500);
         Wolf.Populate(game, 100);
         Tree.Populate(game, 600);
-        var wolfPos = _cam;
+        var wolfPos = game.Camera;
         wolfPos.X += 5.0f;
-        var sheepPos = _cam;
+        var sheepPos = game.Camera;
         sheepPos.X -= 5.0f;
 
         game.ActorManager?.Register(new Wolf(wolfPos));
@@ -129,13 +129,13 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         // Camera follows player
         if (_player != null)
         {
-            _cam = Vec2.Lerp(_cam, _player.Position, dt * 5.0f);
+            game.Camera = Vec2.Lerp(game.Camera, _player.Position, dt * 5.0f);
         }
 
         // Update Camera Entity
         if (_cameraEntity != 0)
         {
-            Native.Entity_SetPosition(_cameraEntity, _cam.X, _cam.Y);
+            Native.Entity_SetPosition(_cameraEntity, game.Camera.X, game.Camera.Y);
             Native.Entity_SetCameraZoom(_cameraEntity, 1.0f / game.World.Zoom);
         }
 

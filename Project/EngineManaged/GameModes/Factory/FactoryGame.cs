@@ -1,3 +1,4 @@
+using EngineManaged.Numeric;
 using SlimeCore.GameModes.Factory.Actors;
 using SlimeCore.GameModes.Factory.States;
 using SlimeCore.GameModes.Factory.World;
@@ -48,6 +49,22 @@ public sealed class FactoryGame : GameMode<FactoryGame>, IGameMode, IDisposable
         ActorManager = new FactoryActorManager(Settings.ActorBudget);
         Rng = new Random(Settings.Seed);
     }
+
+    public override bool InView(Vec2 position)
+    {
+        float half = MAX_VIEW_W * 0.5f;
+        float left = Camera.X - half;
+        float right = Camera.X + half;
+        float bottom = Camera.Y - half;
+        float top = Camera.Y + half;
+
+        return
+            position.X >= left && 
+            position.X <= right &&
+            position.Y >= bottom && 
+            position.Y <= top;
+    }
+
 
     public override void Init()
     {

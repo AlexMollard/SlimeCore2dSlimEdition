@@ -450,9 +450,9 @@ public class StatePlaying : IGameState<DudeGame>
         if (game.ShakeAmount > 0) { game.ShakeAmount -= dt * 2.0f; if (game.ShakeAmount < 0) game.ShakeAmount = 0; }
 
         // Apply shake to Camera
-        if (game.Camera.IsAlive)
+        if (game.CameraEntity.IsAlive)
         {
-            var t = game.Camera.GetComponent<TransformComponent>();
+            var t = game.CameraEntity.GetComponent<TransformComponent>();
             if (game.ShakeAmount > 0)
             {
                 float shakeX = (float)(game.Rng.NextDouble() - 0.5) * game.ShakeAmount;

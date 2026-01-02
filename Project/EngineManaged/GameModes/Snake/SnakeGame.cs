@@ -65,6 +65,11 @@ public sealed class SnakeGame : GameMode<SnakeGame>, IGameMode, IDisposable
 
     public IntPtr TexEnemy;
 
+    public override bool InView(Vec2 position)
+    {
+        return true;
+    }
+
     public override void Init()
     {
         ChangeState(new StateSnakeMenu());

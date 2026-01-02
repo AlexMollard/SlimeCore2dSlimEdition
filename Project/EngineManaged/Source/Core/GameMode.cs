@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EngineManaged.Numeric;
+using System;
 
 namespace SlimeCore.Source.Core;
 /// <summary>
@@ -8,6 +9,12 @@ namespace SlimeCore.Source.Core;
 public abstract class GameMode<TGameMode> : IGameMode
     where TGameMode : GameMode<TGameMode>
 {
+    public Vec2 Camera;
+    /// <summary>
+    /// Is this position within the current view?
+    /// </summary>
+    public abstract bool InView(Vec2 position);
+
     protected IGameState<TGameMode>? _currentState;
 
     public void ChangeState(IGameState<TGameMode> newState)

@@ -117,9 +117,9 @@ public class StateGameOver : IGameState<DudeGame>
         game.ShakeAmount = MathF.Max(0, game.ShakeAmount - dt);
 
         // Shake Camera
-        if (game.Camera.IsAlive)
+        if (game.CameraEntity.IsAlive)
         {
-            var t = game.Camera.GetComponent<TransformComponent>();
+            var t = game.CameraEntity.GetComponent<TransformComponent>();
             if (game.ShakeAmount > 0)
             {
                 float shakeX = (float)(game.Rng.NextDouble() - 0.5) * game.ShakeAmount;

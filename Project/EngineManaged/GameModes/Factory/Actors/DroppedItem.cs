@@ -11,6 +11,8 @@ namespace SlimeCore.GameModes.Factory.Actors;
 
 public class DroppedItem : Actor<FactoryActors, FactoryGame>
 {
+    private FactoryActors Prioritykind { get; set; } = FactoryActors.DroppedItem;
+    public override int Priority => ToPriority(Prioritykind);
     public override FactoryActors Kind => FactoryActors.DroppedItem;
 
     protected override float ActionInterval => 0.0f; // Run every frame
@@ -199,6 +201,19 @@ public class DroppedItem : Actor<FactoryActors, FactoryGame>
         var transform = Entity.GetComponent<TransformComponent>();
         transform.Position = (Position.X, Position.Y + bobOffset);
 
+        return true;
+    }
+
+    public override bool Tick(FactoryGame mode, float deltaTime)
+    {
+        if (mode.InView(Position))
+        {
+            Prioritykind = FactoryActors.OnScreenEntity;
+        }
+        else
+        {
+            Prioritykind = FactoryActors.DroppedItem;
+        }
         return true;
     }
 
