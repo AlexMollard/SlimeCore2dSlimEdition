@@ -235,7 +235,7 @@ void Scene::RenderUI(float uiHeight)
 
 			if (element.Image)
 			{
-				Renderer2D::DrawQuad(finalPos, size, element.Image, 1.0f, element.Color);
+				Renderer2D::DrawQuad(finalPos, { size.x, -size.y }, element.Image, 1.0f, element.Color);
 			}
 			else
 			{
