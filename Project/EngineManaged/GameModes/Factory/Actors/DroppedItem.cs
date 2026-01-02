@@ -108,9 +108,9 @@ public class DroppedItem : Actor<FactoryActors, FactoryGame>
             if (mode.World != null && tx >= 0 && tx < mode.World.Width() && ty >= 0 && ty < mode.World.Height())
             {
                 var t = mode.World[tx, ty];
-                if (t.Structure == FactoryStructure.ConveyorBelt)
+                if (t.BuildingId == "conveyor")
                 {
-                    // Logger.Trace($"Item stuck on belt at {tx},{ty}. Tier: {t.Tier}, Dir: {t.Direction}. Pos: {Position.X:F2},{Position.Y:F2}");
+                    // Logger.Trace($"Item stuck on belt at {tx},{ty}. Dir: {t.Direction}. Pos: {Position.X:F2},{Position.Y:F2}");
                 }
             }
         }
@@ -124,7 +124,7 @@ public class DroppedItem : Actor<FactoryActors, FactoryGame>
         bool onConveyor = false;
         if (mode.World.InBounds(gx, gy))
         {
-            if (mode.World[gx, gy].Structure == FactoryStructure.ConveyorBelt)
+            if (mode.World[gx, gy].BuildingId == "conveyor")
             {
                 onConveyor = true;
             }
@@ -154,40 +154,39 @@ public class DroppedItem : Actor<FactoryActors, FactoryGame>
         {
             var tile = mode.World[gx, gy];
             // If we are on a non-conveyor structure (like Storage), move towards center to be accepted
-            if (tile.Structure != FactoryStructure.None && tile.Structure != FactoryStructure.ConveyorBelt)
+            bool isBuilding = !string.IsNullOrEmpty(tile.BuildingId);
+            if (isBuilding && tile.BuildingId != "conveyor")
             {
-                // Map ItemDefinition ID back to FactoryItemType (Temporary hack until BuildingSystem uses ItemDefinition)
-                var type = GetFactoryItemType(Item.Id);
-                if (type != FactoryItemType.None)
+                // Use Item.Id directly
+                string itemId = Item.Id;
+                
+                float cx = gx + 0.5f;
+                float cy = gy + 0.5f;
+                var toCenter = new Vec2(cx - Position.X, cy - Position.Y);
+                float distSq = toCenter.LengthSquared();
+
+                // If close enough, try to insert
+                if (distSq < 0.05f) 
                 {
-                    float cx = gx + 0.5f;
-                    float cy = gy + 0.5f;
-                    var toCenter = new Vec2(cx - Position.X, cy - Position.Y);
-                    float distSq = toCenter.LengthSquared();
-
-                    // If close enough, try to insert
-                    if (distSq < 0.05f) 
+                    if (mode.BuildingSystem.TryAcceptItem(gx, gy, itemId))
                     {
-                        if (mode.BuildingSystem.TryAcceptItem(gx, gy, type))
-                        {
-                            mode.ActorManager?.Remove(this);
-                            return false; // Stop processing
-                        }
+                        mode.ActorManager?.Remove(this);
+                        return false; // Stop processing
                     }
-                    else
-                    {
-                        // Move towards center (suction)
-                        float speed = 2.0f;
-                        var move = toCenter.Normalized() * speed * deltaTime;
-                        
-                        // Don't overshoot
-                        if (move.LengthSquared() > distSq) move = toCenter;
+                }
+                else
+                {
+                    // Move towards center (suction)
+                    float speed = 2.0f;
+                    var move = toCenter.Normalized() * speed * deltaTime;
+                    
+                    // Don't overshoot
+                    if (move.LengthSquared() > distSq) move = toCenter;
 
-                        var targetPos = Position + move;
-                        if (!IsBlockedByItems(mode, targetPos, move.Normalized()))
-                        {
-                            Position = targetPos;
-                        }
+                    var targetPos = Position + move;
+                    if (!IsBlockedByItems(mode, targetPos, move.Normalized()))
+                    {
+                        Position = targetPos;
                     }
                 }
             }
@@ -289,20 +288,6 @@ public class DroppedItem : Actor<FactoryActors, FactoryGame>
             }
         }
         return false;
-    }
-
-    static public FactoryItemType GetFactoryItemType(string id)
-    {
-        return id switch
-        {
-            "iron_ore" => FactoryItemType.IronOre,
-            "copper_ore" => FactoryItemType.CopperOre,
-            "coal" => FactoryItemType.Coal,
-            "gold_ore" => FactoryItemType.GoldOre,
-            "stone" => FactoryItemType.Stone,
-            "vegetable" => FactoryItemType.Vegetable,
-            _ => FactoryItemType.None
-        };
     }
 
     public override void Destroy()

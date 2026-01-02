@@ -39,12 +39,26 @@ public class StorageBehavior : IBuildingBehavior
         if (_timer >= _outputRate)
         {
             _timer = 0;
-            if (instance.InventoryCount > 0 && !string.IsNullOrEmpty(instance.InventoryItemId))
+            
+            string? itemToOutput = null;
+            foreach (var kvp in instance.Inventory)
             {
-                if (BuildingUtils.TryOutputToConveyor(game, instance, instance.InventoryItemId))
+                if (kvp.Value > 0)
                 {
-                    instance.InventoryCount--;
-                    if (instance.InventoryCount == 0) instance.InventoryItemId = "";
+                    itemToOutput = kvp.Key;
+                    break;
+                }
+            }
+
+            if (itemToOutput != null)
+            {
+                if (BuildingUtils.TryOutputToConveyor(game, instance, itemToOutput))
+                {
+                    instance.Inventory[itemToOutput]--;
+                    if (instance.Inventory[itemToOutput] <= 0)
+                    {
+                        instance.Inventory.Remove(itemToOutput);
+                    }
                 }
             }
         }
@@ -52,4 +66,22 @@ public class StorageBehavior : IBuildingBehavior
 
     public void OnPlace(BuildingInstance instance, FactoryGame game) {}
     public void OnRemove(BuildingInstance instance, FactoryGame game) {}
+
+    public bool TryAcceptItem(BuildingInstance instance, string itemId, FactoryGame game)
+    {
+        // Check capacity (total items)
+        int totalItems = 0;
+        foreach (var kvp in instance.Inventory) totalItems += kvp.Value;
+
+        if (totalItems < _capacity)
+        {
+            if (!instance.Inventory.ContainsKey(itemId))
+            {
+                instance.Inventory[itemId] = 0;
+            }
+            instance.Inventory[itemId]++;
+            return true;
+        }
+        return false;
+    }
 }

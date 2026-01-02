@@ -40,5 +40,23 @@
     "Name": "Mutton",
     "Description": "Dropped by sheep.",
     "IconPath": "Textures/Factory/Items/vegetable.png"
+  },
+  {
+    "Id": "iron_ingot",
+    "Name": "Iron Ingot",
+    "Description": "Smelted iron.",
+    "IconPath": "Textures/Factory/Items/iron_ingot.png"
+  },
+  {
+    "Id": "copper_ingot",
+    "Name": "Copper Ingot",
+    "Description": "Smelted copper.",
+    "IconPath": "Textures/Factory/Items/copper_ingot.png"
+  },
+  {
+    "Id": "gold_ingot",
+    "Name": "Gold Ingot",
+    "Description": "Smelted gold.",
+    "IconPath": "Textures/Factory/Items/gold_ingot.png"
   }
 ]

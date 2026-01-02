@@ -98,7 +98,7 @@ public class FactoryWorld : GridSystem<FactoryGame, FactoryTerrain, FactoryTileO
 		tile.Bitmask = mask;
 
 		// Update Conveyor Logic if applicable
-		if (tile.Structure == FactoryStructure.ConveyorBelt)
+		if (tile.BuildingId == "conveyor")
 		{
 			UpdateConveyorShape(tile, pos);
 		}
@@ -132,7 +132,7 @@ public class FactoryWorld : GridSystem<FactoryGame, FactoryTerrain, FactoryTileO
 		var neighborPos = pos + dir.GetOffset();
 		if (Grid.TryGetValue(neighborPos, out var neighbor))
 		{
-			if (neighbor.Structure == FactoryStructure.ConveyorBelt)
+			if (neighbor.BuildingId == "conveyor")
 			{
 				// Check if neighbor points to us
 				// If neighbor is North, it must point South

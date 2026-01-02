@@ -36,4 +36,5 @@ public class FarmBehavior : IBuildingBehavior
 
     public void OnPlace(BuildingInstance instance, FactoryGame game) {}
     public void OnRemove(BuildingInstance instance, FactoryGame game) {}
+    public bool TryAcceptItem(BuildingInstance instance, string itemId, FactoryGame game) => false;
 }

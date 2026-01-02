@@ -130,5 +130,19 @@
         "Properties": { "Interval": 2.0, "OutputItem": "stone" } 
       }
     ]
+  },
+  {
+    "Id": "furnace",
+    "Name": "Furnace",
+    "Category": "Production",
+    "Tier": 1,
+    "TexturePath": "Textures/Factory/furnace.png",
+    "Cost": { "stone": 20 },
+    "Components": [
+      { 
+        "Type": "Furnace",
+        "Properties": { "ProcessTime": 2.0 }
+      }
+    ]
   }
 ]

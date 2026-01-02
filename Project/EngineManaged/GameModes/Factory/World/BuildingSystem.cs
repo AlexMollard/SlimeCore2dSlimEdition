@@ -59,6 +59,7 @@ public class BuildingSystem : IDisposable
             {
                 case "Miner": behavior = new MinerBehavior(comp.Properties); break;
                 case "Storage": behavior = new StorageBehavior(comp.Properties); break;
+                case "Furnace": behavior = new FurnaceBehavior(comp.Properties); break;
                 case "Farm": behavior = new FarmBehavior(comp.Properties); break;
                 case "Generator": behavior = new GeneratorBehavior(comp.Properties); break;
             }
@@ -71,22 +72,6 @@ public class BuildingSystem : IDisposable
         }
 
         _buildings[idx] = instance;
-    }
-
-    public void PlaceBuilding(int x, int y, FactoryStructure type, Direction dir, int tier = 1)
-    {
-        string id = type switch {
-            FactoryStructure.Miner => $"miner_t{tier}",
-            FactoryStructure.Storage => $"storage_t{tier}",
-            FactoryStructure.FarmPlot => "farm_plot",
-            FactoryStructure.Wall => "wall",
-            _ => ""
-        };
-        
-        if (!string.IsNullOrEmpty(id))
-        {
-            PlaceBuilding(x, y, id, dir);
-        }
     }
 
     public void RemoveBuilding(int x, int y)
@@ -102,12 +87,6 @@ public class BuildingSystem : IDisposable
         }
     }
 
-    public bool TryAcceptItem(int x, int y, FactoryItemType item)
-    {
-        string itemId = GetItemId(item);
-        return TryAcceptItem(x, y, itemId);
-    }
-
     public bool TryAcceptItem(int x, int y, string itemId)
     {
         int idx = y * _world.Width() + x;
@@ -115,10 +94,8 @@ public class BuildingSystem : IDisposable
         {
             foreach(var behavior in b.Behaviors)
             {
-                if (behavior is StorageBehavior)
+                if (behavior.TryAcceptItem(b, itemId, _game))
                 {
-                    b.InventoryCount++;
-                    b.InventoryItemId = itemId;
                     return true;
                 }
             }
@@ -126,15 +103,14 @@ public class BuildingSystem : IDisposable
         return false;
     }
 
-    public (int count, FactoryItemType item) GetBuildingInventory(int x, int y)
+    public Dictionary<string, int> GetBuildingInventory(int x, int y)
     {
         int idx = y * _world.Width() + x;
         if (_buildings.TryGetValue(idx, out var b))
         {
-            // TODO: Map string ID back to enum if needed for UI
-            return (b.InventoryCount, FactoryItemType.None);
+            return b.Inventory;
         }
-        return (0, FactoryItemType.None);
+        return new Dictionary<string, int>();
     }
 
     public void Update(float dt)
@@ -151,20 +127,6 @@ public class BuildingSystem : IDisposable
                 }
             }
         }
-    }
-
-    private string GetItemId(FactoryItemType type)
-    {
-        return type switch
-        {
-            FactoryItemType.IronOre => "iron_ore",
-            FactoryItemType.CopperOre => "copper_ore",
-            FactoryItemType.Coal => "coal",
-            FactoryItemType.GoldOre => "gold_ore",
-            FactoryItemType.Stone => "stone",
-            FactoryItemType.Vegetable => "vegetable",
-            _ => "stone"
-        };
     }
 }
 

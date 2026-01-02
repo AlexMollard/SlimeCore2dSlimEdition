@@ -13,10 +13,18 @@ public class MinerBehavior : IBuildingBehavior
     private float _speed;
     private int _tier;
 
+    private Dictionary<string, string> _oreMapping = new();
+
     public MinerBehavior(Dictionary<string, object>? props)
     {
         _speed = 1.0f;
         _tier = 1;
+
+        // Default Mapping
+        _oreMapping["Iron"] = "iron_ore";
+        _oreMapping["Copper"] = "copper_ore";
+        _oreMapping["Coal"] = "coal";
+        _oreMapping["Gold"] = "gold_ore";
 
         if (props != null)
         {
@@ -32,6 +40,17 @@ public class MinerBehavior : IBuildingBehavior
                  if (tierObj is JsonElement je) _tier = je.GetInt32();
                  else if (tierObj is int i) _tier = i;
                  else if (tierObj is long l) _tier = (int)l;
+            }
+
+            if (props.TryGetValue("OreMapping", out var mapObj))
+            {
+                if (mapObj is JsonElement je && je.ValueKind == JsonValueKind.Object)
+                {
+                    foreach (var prop in je.EnumerateObject())
+                    {
+                        _oreMapping[prop.Name] = prop.Value.GetString() ?? "";
+                    }
+                }
             }
         }
     }
@@ -58,16 +77,11 @@ public class MinerBehavior : IBuildingBehavior
 
     public void OnPlace(BuildingInstance instance, FactoryGame game) {}
     public void OnRemove(BuildingInstance instance, FactoryGame game) {}
+    public bool TryAcceptItem(BuildingInstance instance, string itemId, FactoryGame game) => false;
 
     private string? GetItemIdFromOre(FactoryOre ore)
     {
-        return ore switch
-        {
-            FactoryOre.Iron => "iron_ore",
-            FactoryOre.Copper => "copper_ore",
-            FactoryOre.Coal => "coal",
-            FactoryOre.Gold => "gold_ore",
-            _ => null
-        };
+        string key = ore.ToString();
+        return _oreMapping.TryGetValue(key, out var id) ? id : null;
     }
 }

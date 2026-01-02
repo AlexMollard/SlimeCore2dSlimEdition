@@ -14,9 +14,7 @@ public class BuildingInstance
     public List<IBuildingBehavior> Behaviors { get; set; } = new();
     
     // Shared state for behaviors (e.g. inventory)
-    public int InventoryCount { get; set; }
-    public FactoryItemType InventoryItem { get; set; } // Should probably be string ItemId now
-    public string InventoryItemId { get; set; }
+    public Dictionary<string, int> Inventory { get; set; } = new();
     public int LastOutputIndex { get; set; }
 
     public BuildingInstance(BuildingDefinition def, int x, int y, Direction dir)

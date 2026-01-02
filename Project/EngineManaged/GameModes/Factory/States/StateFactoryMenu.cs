@@ -3,10 +3,13 @@ using EngineManaged.Scene;
 using EngineManaged.UI;
 using SlimeCore.GameModes.Factory;
 using SlimeCore.GameModes.Factory.Actors;
+using SlimeCore.GameModes.Factory.Buildings;
+using SlimeCore.GameModes.Factory.Items;
 using SlimeCore.GameModes.Factory.World;
 using SlimeCore.Source.Core;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace SlimeCore.GameModes.Factory.States;
 
@@ -191,7 +194,16 @@ public class StateFactoryMenu : IGameState<FactoryGame>
             Native.TileMap_SetTile(_tileMap, x, y, 1, IntPtr.Zero, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
         // Layer 2: Structure
-        nint structTex = FactoryResources.GetStructureTexture(tile.Structure);
+        nint structTex = IntPtr.Zero;
+        if (!string.IsNullOrEmpty(tile.BuildingId))
+        {
+            var def = BuildingRegistry.Get(tile.BuildingId);
+            if (def != null)
+            {
+                structTex = def.Texture;
+            }
+        }
+
         if (structTex != IntPtr.Zero)
             Native.TileMap_SetTile(_tileMap, x, y, 2, structTex, 0, 0, 1, 1, 1, 1, 1, 1, 0);
         else
@@ -294,12 +306,16 @@ public class StateFactoryMenu : IGameState<FactoryGame>
     private void SpawnDecorations(FactoryGame game)
     {
         if (game.World == null) return;
+        var allItems = ItemRegistry.GetAll().ToList();
+        if (allItems.Count == 0) return;
+
         for (int i = 0; i < 50; i++)
         {
             int x = _rng.Next(0, game.World.Width());
             int y = _rng.Next(0, game.World.Height());
-            var itemType = (FactoryItemType)_rng.Next(0, 5); // 0 to 4
-            nint tex = FactoryResources.GetItemTexture(itemType);
+            
+            var item = allItems[_rng.Next(allItems.Count)];
+            nint tex = item.IconTexture;
             
             if (tex != IntPtr.Zero)
             {

@@ -46,7 +46,7 @@ public static class FactoryResources
 
     public static IntPtr GetOrCreateTexture(string name, string path)
     {
-        if (_textureCache.TryGetValue(name, out var ptr))
+        if (_textureCache.TryGetValue(name, out nint ptr))
         {
             return ptr;
         }
@@ -123,43 +123,6 @@ public static class FactoryResources
             SlimeCore.GameModes.Factory.World.FactoryOre.Copper => TexOreCopper,
             SlimeCore.GameModes.Factory.World.FactoryOre.Coal => TexOreCoal,
             SlimeCore.GameModes.Factory.World.FactoryOre.Gold => TexOreGold,
-            _ => IntPtr.Zero
-        };
-    }
-
-    public static IntPtr GetStructureTexture(SlimeCore.GameModes.Factory.World.FactoryStructure structure, int tier = 1)
-    {
-        return structure switch
-        {
-            SlimeCore.GameModes.Factory.World.FactoryStructure.ConveyorBelt => TexConveyor,
-            SlimeCore.GameModes.Factory.World.FactoryStructure.Miner => tier switch 
-            {
-                2 => TexMinerT2,
-                3 => TexMinerT3,
-                _ => TexMinerT1
-            },
-            SlimeCore.GameModes.Factory.World.FactoryStructure.Storage => tier switch
-            {
-                2 => TexStorageT2,
-                3 => TexStorageT3,
-                _ => TexStorageT1
-            },
-            SlimeCore.GameModes.Factory.World.FactoryStructure.FarmPlot => TexFarmPlot,
-            SlimeCore.GameModes.Factory.World.FactoryStructure.Wall => TexWall,
-            _ => IntPtr.Zero
-        };
-    }
-
-    public static IntPtr GetItemTexture(SlimeCore.GameModes.Factory.World.FactoryItemType item)
-    {
-        return item switch
-        {
-            SlimeCore.GameModes.Factory.World.FactoryItemType.IronOre => TexItemIronOre,
-            SlimeCore.GameModes.Factory.World.FactoryItemType.CopperOre => TexItemCopperOre,
-            SlimeCore.GameModes.Factory.World.FactoryItemType.Coal => TexItemCoal,
-            SlimeCore.GameModes.Factory.World.FactoryItemType.GoldOre => TexItemGoldOre,
-            SlimeCore.GameModes.Factory.World.FactoryItemType.Stone => TexItemStone,
-            SlimeCore.GameModes.Factory.World.FactoryItemType.Vegetable => TexItemVegetable,
             _ => IntPtr.Zero
         };
     }

@@ -17,10 +17,13 @@ public static class FactoryPhysics
         if (gx >= 0 && gx < game.World.Width() && gy >= 0 && gy < game.World.Height())
         {
             var tile = game.World[gx, gy];
-            if (tile.Structure == FactoryStructure.ConveyorBelt)
+            if (tile.BuildingId == "conveyor")
             {
                 float baseSpeed = 2.0f;
-                float conveyorSpeed = baseSpeed * Math.Max(1, tile.Tier); // Ensure at least tier 1 speed
+                // TODO: Get tier from BuildingRegistry if needed, for now assume tier 1 or store in tile
+                // Since we removed Tier from tile, we might need to look it up or assume 1.
+                // For now, let's assume 1.
+                float conveyorSpeed = baseSpeed; 
                 
                 var velocity = GetConveyorVelocity(tile, position.X - gx, position.Y - gy);
                 
@@ -215,8 +218,8 @@ public static class FactoryPhysics
         if (gx < 0 || gx >= game.World.Width() || gy < 0 || gy >= game.World.Height()) return true; // World bounds
         
         var tile = game.World[gx, gy];
-        // Miners and Storage are solid. Conveyors and None are not.
-        if (tile.Structure == FactoryStructure.Miner || tile.Structure == FactoryStructure.Storage)
+        // All buildings except conveyors are solid
+        if (!string.IsNullOrEmpty(tile.BuildingId) && tile.BuildingId != "conveyor")
         {
             return true;
         }
