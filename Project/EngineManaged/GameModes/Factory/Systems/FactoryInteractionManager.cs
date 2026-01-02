@@ -282,7 +282,7 @@ public class FactoryInteractionManager : IDisposable
         }
         
         // Don't place tiles if mouse is over UI or if the click started on UI
-        if (isMouseDown && !ui.IsMouseOverUI && !_inputBlockedByUI && !string.IsNullOrEmpty(ui.SelectedBuildingId))
+        if (isMouseDown && !ui.IsMouseOverUI && !_inputBlockedByUI)
         {
             if (!_wasMouseDown)
             {
@@ -294,6 +294,35 @@ public class FactoryInteractionManager : IDisposable
             if (gridX >= 0 && gridX < game.World.Width() && gridY >= 0 && gridY < game.World.Height())
             {
                 var tile = game.World[gridX, gridY];
+
+                bool isControlDown = Input.GetKeyDown(Keycode.LEFT_CONTROL) || Input.GetKeyDown(Keycode.RIGHT_CONTROL);
+                if (isControlDown)
+                {
+                    if (game.BuildingSystem != null)
+                    {
+                        var inventory = game.BuildingSystem.GetBuildingInventory(gridX, gridY);
+                        if (inventory != null && inventory.Count > 0)
+                        {
+                            foreach (var keyValuePair in inventory)
+                            {
+                                string itemId = keyValuePair.Key;
+                                int itemCount = keyValuePair.Value;
+                                var itemDef = ItemRegistry.Get(itemId);
+                                if (itemDef != null)
+                                {
+                                    player.Inventory.AddItem(itemDef, itemCount);
+                                    inventory.Remove(itemId);
+                                }
+                            }
+                        }
+                    }
+                    return;
+                }
+
+                if (string.IsNullOrEmpty(ui.SelectedBuildingId))
+                {
+                    return;
+                }
                 
                 if (ui.DeleteMode)
                 {
