@@ -42,6 +42,20 @@ public static class FactoryResources
 
     public static IntPtr TexDebug;
 
+    private static System.Collections.Generic.Dictionary<string, IntPtr> _textureCache = new();
+
+    public static IntPtr GetOrCreateTexture(string name, string path)
+    {
+        if (_textureCache.TryGetValue(name, out var ptr))
+        {
+            return ptr;
+        }
+        
+        ptr = NativeMethods.Resources_LoadTexture(name, path);
+        _textureCache[name] = ptr;
+        return ptr;
+    }
+
 	public static void Load()
     {
 		TexDebug = NativeMethods.Resources_LoadTexture("debug", "Textures/debug.png");

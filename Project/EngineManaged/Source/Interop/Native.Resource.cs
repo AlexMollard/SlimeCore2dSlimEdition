@@ -35,4 +35,16 @@ internal static partial class NativeMethods
     /// </summary>
     [DllImport(LibraryName, CallingConvention = CallConvention)]
     internal static extern IntPtr Resources_LoadFont([MarshalAs(UnmanagedType.LPUTF8Str)] string name, [MarshalAs(UnmanagedType.LPUTF8Str)] string path, int fontSize);
+
+    // -------------------------------------------------------------------------
+    // TEXT DATA
+    // -------------------------------------------------------------------------
+
+    /// <summary>
+    /// Loads a text file via the ResourceManager.
+    /// Returns a pointer to a null-terminated UTF-8 string (const char*), or IntPtr.Zero if failed.
+    /// The string memory is managed by the engine and should NOT be freed by C#.
+    /// </summary>
+    [DllImport(LibraryName, CallingConvention = CallConvention)]
+    internal static extern IntPtr Resources_LoadText([MarshalAs(UnmanagedType.LPUTF8Str)] string name, [MarshalAs(UnmanagedType.LPUTF8Str)] string path);
 }

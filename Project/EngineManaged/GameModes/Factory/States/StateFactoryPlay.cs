@@ -2,6 +2,7 @@ using EngineManaged.Numeric;
 using EngineManaged.Scene;
 using EngineManaged.UI;
 using SlimeCore.GameModes.Factory.Actors;
+using SlimeCore.GameModes.Factory.Buildings;
 using SlimeCore.GameModes.Factory.Items;
 using SlimeCore.GameModes.Factory.World;
 using SlimeCore.Source.Core;
@@ -9,6 +10,7 @@ using SlimeCore.Source.Input;
 using SlimeCore.Source.World.Actors;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace SlimeCore.GameModes.Factory.States;
 
@@ -28,10 +30,10 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
     private Vec2 _rightClickStart;
     private bool _isRightClickDragging;
     private ulong _selectionBoxEntity;
-    private int _currentTier = 1;
-    private int _lastTier;
 
-    private FactoryStructure _selectedStructure = FactoryStructure.ConveyorBelt;
+    private string? _selectedBuildingId;
+    private string? _selectedCategory;
+    private int _currentTier = 1;
     private Direction _placementDirection = Direction.North;
     private bool _deleteMode;
     private bool _inputBlockedByUI;
@@ -52,15 +54,12 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
     // UI Elements
     private UIScrollPanel? _buildMenu;
     private UIButton? _btnBuildToggle;
-    private UIButton? _btnConveyor;
-    private UIButton? _btnMiner;
-    private UIButton? _btnStorage;
-    private UIButton? _btnFarm;
-    private UIButton? _btnWall;
     private UIButton? _btnTier1;
     private UIButton? _btnTier2;
     private UIButton? _btnTier3;
-    // private UIText? _rotationLabel; // Removed
+    
+    private Dictionary<UIButton, string> _buildingButtons = new();
+    
     private UIText? _tooltipTitle;
     private UIText? _tooltipBody;
     private UIImage? _tooltipBg;
@@ -191,19 +190,20 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         float gap = 0.5f;
         int cols = 2;
         
-        // Calculate start position (top-left of content area)
-        // Content is centered in panel.
-        // Let's just use relative coordinates from top-left of panel content area.
-        // UIScrollPanel centers content vertically based on ContentHeight? No, it uses relative Y.
-        // Let's start from top.
         float startY = (panelH / 2.0f) - (btnSize / 2.0f) - gap;
         float startX = -(panelW / 2.0f) + (btnSize / 2.0f) + gap; // Left side
 
-        // Helper to create styled button
-        UIButton CreateBtn(string text, FactoryStructure structure, int index, Action onClick)
+        var buildings = BuildingRegistry.GetAll().ToList();
+        // Group by Category
+        var categories = buildings.Select(b => b.Category ?? b.Id).Distinct().ToList();
+        
+        _buildingButtons.Clear();
+
+        for (int i = 0; i < categories.Count; i++)
         {
-            int row = index / cols;
-            int col = index % cols;
+            var cat = categories[i];
+            int row = i / cols;
+            int col = i % cols;
 
             // Relative position inside the panel
             float x = startX + col * (btnSize + gap); 
@@ -212,24 +212,24 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
             // Create button at (0,0) initially, panel will position it
             var btn = UIButton.Create("", 0, 0, btnSize, btnSize, 0.3f, 0.3f, 0.3f, 51, 1, false); 
             btn.IconCentered = true;
-            btn.Clicked += onClick;
+            btn.Clicked += () => { 
+                _selectedCategory = cat;
+                UpdateSelectedBuilding();
+                _deleteMode = false; 
+            };
 
-            // Set texture
-            IntPtr tex = FactoryResources.GetStructureTexture(structure, 1);
-            if (tex != IntPtr.Zero)
+            // Set texture (use Tier 1 or first available)
+            var def = buildings.FirstOrDefault(b => (b.Category ?? b.Id) == cat && b.Tier == 1) 
+                      ?? buildings.FirstOrDefault(b => (b.Category ?? b.Id) == cat);
+            
+            if (def != null && def.Texture != IntPtr.Zero)
             {
-                btn.SetIcon(tex);
+                btn.SetIcon(def.Texture);
             }
             
             _buildMenu.AddChild(btn, x, y);
-            return btn;
+            _buildingButtons[btn] = cat;
         }
-
-        _btnConveyor = CreateBtn("Conveyor", FactoryStructure.ConveyorBelt, 0, () => { _selectedStructure = FactoryStructure.ConveyorBelt; _deleteMode = false; });
-        _btnMiner = CreateBtn("Miner", FactoryStructure.Miner, 1, () => { _selectedStructure = FactoryStructure.Miner; _deleteMode = false; });
-        _btnStorage = CreateBtn("Storage", FactoryStructure.Storage, 2, () => { _selectedStructure = FactoryStructure.Storage; _deleteMode = false; });
-        _btnFarm = CreateBtn("Farm", FactoryStructure.FarmPlot, 3, () => { _selectedStructure = FactoryStructure.FarmPlot; _deleteMode = false; });
-        _btnWall = CreateBtn("Wall", FactoryStructure.Wall, 4, () => { _selectedStructure = FactoryStructure.Wall; _deleteMode = false; });
 
         // Tier Buttons
         float tierBtnSize = 2.0f;
@@ -238,7 +238,10 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         {
             var btn = UIButton.Create(text, 0, 0, tierBtnSize, tierBtnSize, 0.2f, 0.25f, 0.3f, 51, 1, false);
             btn.Label.Color(1.0f, 1.0f, 1.0f);
-            btn.Clicked += () => { _currentTier = tier; };
+            btn.Clicked += () => { 
+                _currentTier = tier; 
+                UpdateSelectedBuilding();
+            };
             btn.SetVisible(false);
             return btn;
         }
@@ -248,7 +251,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         _btnTier3 = CreateTierBtn("3", 3);
 
         // Set content height for scrolling
-        int totalRows = (5 + cols - 1) / cols;
+        int totalRows = (categories.Count + cols - 1) / cols;
         _buildMenu.ContentHeight = totalRows * (btnSize + gap) + gap * 2;
 
         // Tooltip
@@ -275,13 +278,6 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         ttBody.Anchor(0.5f, 0.5f);
         _tooltipBody = ttBody;
 
-        // Inventory Label - Removed
-        // var invLabel = UIText.Create("Inventory:", 1, -19.0f, 10.0f); // Top Left
-        // invLabel.Anchor(0.0f, 1.0f);
-        // invLabel.Layer(52);
-        // invLabel.Color(1.0f, 1.0f, 1.0f);
-        // _inventoryLabel = invLabel;
-
         // Inventory Toggle Button
         float invToggleX = 18.0f; // Bottom Right
         float invToggleY = -13.0f;
@@ -307,6 +303,39 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         _inventoryMenu.SetVisible(false); // Start hidden
 
         RebuildInventoryUI();
+    }
+
+    private void UpdateSelectedBuilding()
+    {
+        if (string.IsNullOrEmpty(_selectedCategory))
+        {
+            _selectedBuildingId = null;
+            return;
+        }
+
+        var buildings = BuildingRegistry.GetAll();
+        // Try to find exact match
+        var match = buildings.FirstOrDefault(b => (b.Category ?? b.Id) == _selectedCategory && b.Tier == _currentTier);
+        
+        if (match != null)
+        {
+            _selectedBuildingId = match.Id;
+        }
+        else
+        {
+            // Fallback to Tier 1 or any available
+            match = buildings.FirstOrDefault(b => (b.Category ?? b.Id) == _selectedCategory && b.Tier == 1)
+                    ?? buildings.FirstOrDefault(b => (b.Category ?? b.Id) == _selectedCategory);
+            
+            if (match != null)
+            {
+                _selectedBuildingId = match.Id;
+            }
+            else
+            {
+                _selectedBuildingId = null;
+            }
+        }
     }
 
     private void RebuildInventoryUI()
@@ -355,20 +384,27 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
     private void UpdateUI()
     {
         // Update Button Highlights
-        void SetBtnState(UIButton? btn, bool active)
+        foreach (var kvp in _buildingButtons)
         {
-            if (btn == null) return;
+            var btn = kvp.Key;
+            var cat = kvp.Value;
+            bool active = !_deleteMode && _selectedCategory == cat;
+            
             if (active) btn.SetBaseColor(0.5f, 0.5f, 0.6f);
             else btn.SetBaseColor(0.3f, 0.3f, 0.3f);
+
+            // Update Icon based on current tier
+            var buildings = BuildingRegistry.GetAll();
+            var def = buildings.FirstOrDefault(b => (b.Category ?? b.Id) == cat && b.Tier == _currentTier)
+                      ?? buildings.FirstOrDefault(b => (b.Category ?? b.Id) == cat);
+            
+            if (def != null && def.Texture != IntPtr.Zero)
+            {
+                btn.SetIcon(def.Texture);
+            }
         }
 
-        SetBtnState(_btnConveyor, !_deleteMode && _selectedStructure == FactoryStructure.ConveyorBelt);
-        SetBtnState(_btnMiner, !_deleteMode && _selectedStructure == FactoryStructure.Miner);
-        SetBtnState(_btnStorage, !_deleteMode && _selectedStructure == FactoryStructure.Storage);
-        SetBtnState(_btnFarm, !_deleteMode && _selectedStructure == FactoryStructure.FarmPlot);
-        SetBtnState(_btnWall, !_deleteMode && _selectedStructure == FactoryStructure.Wall);
-
-        // Update Tier Buttons Highlight
+        // Update Tier Buttons
         void SetTierBtnState(UIButton? btn, int tier)
         {
             if (btn == null) return;
@@ -379,28 +415,6 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         SetTierBtnState(_btnTier1, 1);
         SetTierBtnState(_btnTier2, 2);
         SetTierBtnState(_btnTier3, 3);
-
-        // Update Icons if Tier Changed
-        if (_currentTier != _lastTier)
-        {
-            void UpdateBtnIcon(UIButton? btn, FactoryStructure structure)
-            {
-                if (btn == null) return;
-                IntPtr tex = FactoryResources.GetStructureTexture(structure, _currentTier);
-                if (tex != IntPtr.Zero)
-                {
-                    btn.SetIcon(tex);
-                }
-            }
-
-            UpdateBtnIcon(_btnConveyor, FactoryStructure.ConveyorBelt);
-            UpdateBtnIcon(_btnMiner, FactoryStructure.Miner);
-            UpdateBtnIcon(_btnStorage, FactoryStructure.Storage);
-            UpdateBtnIcon(_btnFarm, FactoryStructure.FarmPlot);
-            UpdateBtnIcon(_btnWall, FactoryStructure.Wall);
-            
-            _lastTier = _currentTier;
-        }
     }
 
     public void Exit(FactoryGame game)
@@ -408,16 +422,17 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         Dispose();
         
         // Destroy UI Elements
-        _btnConveyor?.Destroy();
-        _btnMiner?.Destroy();
-        _btnStorage?.Destroy();
-        _btnFarm?.Destroy();
-        _btnWall?.Destroy();
+        foreach (var btn in _buildingButtons.Keys)
+        {
+            btn.Destroy();
+        }
+        _buildingButtons.Clear();
+        
+        _buildMenu?.Destroy();
+        _btnBuildToggle?.Destroy();
         _btnTier1?.Destroy();
         _btnTier2?.Destroy();
         _btnTier3?.Destroy();
-        _buildMenu?.Destroy();
-        _btnBuildToggle?.Destroy();
         _inventoryMenu?.Destroy();
         _btnInventoryToggle?.Destroy();
         if (_tooltipTitle is { } ttt) ttt.Destroy();
@@ -570,9 +585,9 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         game.ConveyorSystem?.Update(dt, game.BuildingSystem);
         
         // Input for Tier Selection
-        if (Input.GetKeyReleased(Keycode.KEY_1)) _currentTier = 1;
-        if (Input.GetKeyReleased(Keycode.KEY_2)) _currentTier = 2;
-        if (Input.GetKeyReleased(Keycode.KEY_3)) _currentTier = 3;
+        if (Input.GetKeyReleased(Keycode.KEY_1)) { _currentTier = 1; UpdateSelectedBuilding(); }
+        if (Input.GetKeyReleased(Keycode.KEY_2)) { _currentTier = 2; UpdateSelectedBuilding(); }
+        if (Input.GetKeyReleased(Keycode.KEY_3)) { _currentTier = 3; UpdateSelectedBuilding(); }
 
         // Rotation
         if (Input.GetKeyReleased(Keycode.R))
@@ -616,19 +631,6 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         Render(game);
     }
 
-    private (string itemId, int count)? GetCost(FactoryStructure structure)
-    {
-        return structure switch
-        {
-            FactoryStructure.ConveyorBelt => ("iron_ore", 1),
-            FactoryStructure.Miner => ("stone", 10),
-            FactoryStructure.Storage => ("stone", 5),
-            FactoryStructure.FarmPlot => ("stone", 2),
-            FactoryStructure.Wall => ("stone", 1),
-            _ => null
-        };
-    }
-
     private void HandleMouse(FactoryGame game)
     {
         if (game.World == null) return;
@@ -665,22 +667,31 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
             // Check UI Hover first
             if (_buildMenu != null && _buildMenu.IsVisible)
             {
-                void CheckBtn(UIButton? btn, string name, FactoryStructure structure)
+                foreach (var kvp in _buildingButtons)
                 {
-                    if (btn != null && btn.IsHovered)
+                    var btn = kvp.Key;
+                    var cat = kvp.Value;
+                    if (btn.IsHovered)
                     {
-                        titleText = name;
-                        var cost = GetCost(structure);
-                        bodyText = cost.HasValue ? $"Cost: {cost.Value.count} {cost.Value.itemId}" : "Free";
-                        showTooltip = true;
+                        var buildings = BuildingRegistry.GetAll();
+                        var def = buildings.FirstOrDefault(b => (b.Category ?? b.Id) == cat && b.Tier == _currentTier)
+                                  ?? buildings.FirstOrDefault(b => (b.Category ?? b.Id) == cat);
+
+                        if (def != null)
+                        {
+                            titleText = def.Name;
+                            if (def.Cost.Count > 0)
+                            {
+                                bodyText = "Cost: " + string.Join(", ", def.Cost.Select(c => $"{c.Value} {c.Key}"));
+                            }
+                            else
+                            {
+                                bodyText = "Free";
+                            }
+                            showTooltip = true;
+                        }
                     }
                 }
-
-                CheckBtn(_btnConveyor, "Conveyor Belt", FactoryStructure.ConveyorBelt);
-                CheckBtn(_btnMiner, "Miner", FactoryStructure.Miner);
-                CheckBtn(_btnStorage, "Storage", FactoryStructure.Storage);
-                CheckBtn(_btnFarm, "Farm Plot", FactoryStructure.FarmPlot);
-                CheckBtn(_btnWall, "Wall", FactoryStructure.Wall);
             }
             
             // Check Inventory Hover
@@ -713,6 +724,16 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
                      titleText = "Miner";
                      bodyText = $"Mining: {tile.OreType}";
                      showTooltip = true;
+                }
+                else if (!string.IsNullOrEmpty(tile.BuildingId))
+                {
+                    var def = BuildingRegistry.Get(tile.BuildingId);
+                    if (def != null)
+                    {
+                        titleText = def.Name;
+                        // Maybe show status?
+                        showTooltip = true;
+                    }
                 }
             }
 
@@ -815,7 +836,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
             // Ghost Visuals
             if (inBounds)
             {
-                if (_selectedStructure != FactoryStructure.None)
+                if (!string.IsNullOrEmpty(_selectedBuildingId))
                 {
                     if (_deleteMode)
                     {
@@ -825,33 +846,45 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
                     }
                     else
                     {
+                        var def = BuildingRegistry.Get(_selectedBuildingId);
+                        
                         // Check validity
                         bool isValid = true;
                         var tile = game.World[gridX, gridY];
-                        if (_selectedStructure == FactoryStructure.Miner && tile.OreType == FactoryOre.None)
+                        
+                        // Miner check
+                        if (def != null && def.Components.Any(c => c.Type == "Miner") && tile.OreType == FactoryOre.None)
                         {
                             isValid = false;
                         }
-                        else if (_selectedStructure == FactoryStructure.ConveyorBelt && 
-                                (tile.Structure == FactoryStructure.Miner || tile.Structure == FactoryStructure.Storage || tile.Structure == FactoryStructure.FarmPlot))
+                        
+                        // Conveyor check (don't overwrite buildings)
+                        if (_selectedBuildingId == "conveyor" && 
+                                (tile.Structure == FactoryStructure.Miner || tile.Structure == FactoryStructure.Storage || tile.Structure == FactoryStructure.FarmPlot || !string.IsNullOrEmpty(tile.BuildingId)))
                         {
                             isValid = false;
                         }
                         
                         // Check Affordability
-                        var cost = GetCost(_selectedStructure);
-                        if (cost.HasValue && _player != null && !_player.Inventory.HasItem(cost.Value.itemId, cost.Value.count))
+                        if (def != null && _player != null)
                         {
-                            isValid = false;
+                            foreach (var cost in def.Cost)
+                            {
+                                if (!_player.Inventory.HasItem(cost.Key, cost.Value))
+                                {
+                                    isValid = false;
+                                    break;
+                                }
+                            }
                         }
 
                         // Set texture based on selected structure
-                        nint tex = FactoryResources.GetStructureTexture(_selectedStructure, _currentTier);
+                        nint tex = def?.Texture ?? IntPtr.Zero;
                         
                         // Reset size
                         Native.Entity_SetSize(_cursorEntity, 1.0f, 1.0f);
 
-                        if (_selectedStructure == FactoryStructure.ConveyorBelt)
+                        if (_selectedBuildingId == "conveyor")
                         {
                             // Procedural Conveyor Ghost (Default)
                             Native.Entity_SetTexturePtr(_cursorEntity, IntPtr.Zero);
@@ -872,17 +905,10 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
                         }
                         else
                         {
-                            // Fallback for structures without texture (Miner/Storage)
+                            // Fallback
                             Native.Entity_SetTexturePtr(_cursorEntity, IntPtr.Zero);
-                            
                             if (!isValid)
-                            {
                                 Native.Entity_SetColor(_cursorEntity, 1.0f, 0.0f, 0.0f);
-                            }
-                            else if (_selectedStructure == FactoryStructure.Miner)
-                                Native.Entity_SetColor(_cursorEntity, 0.6f, 0.2f, 0.6f);
-                            else if (_selectedStructure == FactoryStructure.Storage)
-                                Native.Entity_SetColor(_cursorEntity, 0.6f, 0.4f, 0.2f);
                             else
                                 Native.Entity_SetColor(_cursorEntity, 1.0f, 1.0f, 0.0f); // Default yellow
                         }
@@ -913,7 +939,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
             // Update Direction Indicator
             if (_cursorDirectionEntity != 0)
             {
-                bool showArrow = inBounds && _selectedStructure == FactoryStructure.ConveyorBelt && !_deleteMode;
+                bool showArrow = inBounds && _selectedBuildingId == "conveyor" && !_deleteMode;
                 Native.Entity_SetRender(_cursorDirectionEntity, showArrow);
                 
                 if (showArrow)
@@ -946,7 +972,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         }
         
         // Don't place tiles if mouse is over UI or if the click started on UI
-        if (isMouseDown && !UISystem.IsMouseOverUI && !_inputBlockedByUI && _selectedStructure != FactoryStructure.None)
+        if (isMouseDown && !UISystem.IsMouseOverUI && !_inputBlockedByUI && !string.IsNullOrEmpty(_selectedBuildingId))
         {
             if (!_wasMouseDown)
             {
@@ -961,23 +987,28 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
                 
                 if (_deleteMode)
                 {
-                    if (tile.Structure != FactoryStructure.None)
+                    if (tile.Structure != FactoryStructure.None || !string.IsNullOrEmpty(tile.BuildingId))
                     {
-                        game.World.Set(gridX, gridY, o => o.Structure = FactoryStructure.None);
+                        game.World.Set(gridX, gridY, o => {
+                            o.Structure = FactoryStructure.None;
+                            o.BuildingId = null;
+                        });
                         game.World.UpdateNeighbors(game, new Vec2i(gridX, gridY));
                     }
                 }
                 else
                 {
+                    var def = BuildingRegistry.Get(_selectedBuildingId);
+                    if (def == null) return;
+
                     // Check placement rules
-                    if (_selectedStructure == FactoryStructure.Miner && tile.OreType == FactoryOre.None)
+                    if (def.Components.Any(c => c.Type == "Miner") && tile.OreType == FactoryOre.None)
                     {
-                        // Invalid placement for Miner - must be on Ore
                         return;
                     }
 
-                    if (_selectedStructure == FactoryStructure.ConveyorBelt && 
-                        (tile.Structure == FactoryStructure.Miner || tile.Structure == FactoryStructure.Storage))
+                    if (_selectedBuildingId == "conveyor" && 
+                        (tile.Structure == FactoryStructure.Miner || tile.Structure == FactoryStructure.Storage || !string.IsNullOrEmpty(tile.BuildingId)))
                     {
                         // Don't overwrite buildings with belts, but update drag position
                         if (gridX != _lastGridX || gridY != _lastGridY)
@@ -990,12 +1021,6 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
 
                     // Determine direction based on drag
                     var newDir = tile.Direction;
-                    
-                    // If we are dragging, we want to continue the line
-                    // But we also want to respect the user's chosen rotation if they just clicked
-                    // Logic:
-                    // 1. If single click (not dragging), use _placementDirection
-                    // 2. If dragging (moved to new tile), infer direction from movement
                     
                     if (!_wasMouseDown) // Just clicked
                     {
@@ -1021,7 +1046,6 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
                         _placementDirection = newDir; // Update global state to match drag
                         
                         // Also update the PREVIOUS tile to point to this one if it was part of the drag
-                        // This makes corners work naturally
                         if (game.World[_lastGridX, _lastGridY].Structure == FactoryStructure.ConveyorBelt)
                         {
                             game.World.Set(_lastGridX, _lastGridY, o => o.Direction = newDir);
@@ -1029,25 +1053,24 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
                     }
                     else
                     {
-                        // Holding mouse on same tile? Keep current direction
                         newDir = _placementDirection;
                     }
 
-                    // Allow overwriting or updating direction
-                    
-                    // Check if this is just a rotation (same structure, same tier)
-                    bool isRotation = tile.Structure == _selectedStructure && tile.Tier == _currentTier;
+                    // Check if this is just a rotation
+                    bool isRotation = tile.BuildingId == _selectedBuildingId;
+                    if (_selectedBuildingId == "conveyor" && tile.Structure == FactoryStructure.ConveyorBelt) isRotation = true;
 
                     // Check Cost
-                    var cost = GetCost(_selectedStructure);
                     bool canAfford = true;
-                    
-                    // Only check cost if it's NOT just a rotation
-                    if (!isRotation && cost.HasValue && _player != null)
+                    if (!isRotation && _player != null)
                     {
-                        if (!_player.Inventory.HasItem(cost.Value.itemId, cost.Value.count))
+                        foreach (var cost in def.Cost)
                         {
-                            canAfford = false;
+                            if (!_player.Inventory.HasItem(cost.Key, cost.Value))
+                            {
+                                canAfford = false;
+                                break;
+                            }
                         }
                     }
 
@@ -1056,12 +1079,26 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
                         bool placed = false;
                         game.World.Set(gridX, gridY, o =>
                         {
-                            // Only charge if something actually changed (simplified check)
-                            if (o.Structure != _selectedStructure || o.Direction != newDir || o.Tier != _currentTier)
+                            // Only charge if something actually changed
+                            if (o.BuildingId != _selectedBuildingId || o.Direction != newDir)
                             {
-                                o.Structure = _selectedStructure;
+                                if (_selectedBuildingId == "conveyor")
+                                {
+                                    o.Structure = FactoryStructure.ConveyorBelt;
+                                    o.BuildingId = null;
+                                }
+                                else
+                                {
+                                    o.Structure = FactoryStructure.None;
+                                    o.BuildingId = _selectedBuildingId;
+                                    
+                                    // Map legacy structures for compatibility if needed
+                                    if (def.Components.Any(c => c.Type == "Miner")) o.Structure = FactoryStructure.Miner;
+                                    else if (def.Components.Any(c => c.Type == "Storage")) o.Structure = FactoryStructure.Storage;
+                                    else if (def.Components.Any(c => c.Type == "Farm")) o.Structure = FactoryStructure.FarmPlot;
+                                }
+                                
                                 o.Direction = newDir;
-                                o.Tier = _currentTier;
                                 placed = true;
                             }
                         });
@@ -1069,10 +1106,13 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
                         if (placed)
                         {
                             game.World.UpdateNeighbors(game, new Vec2i(gridX, gridY));
-                            // Deduct cost only if not rotation
-                            if (!isRotation && cost.HasValue && _player != null)
+                            // Deduct cost
+                            if (!isRotation && _player != null)
                             {
-                                _player.Inventory.RemoveItem(cost.Value.itemId, cost.Value.count);
+                                foreach (var cost in def.Cost)
+                                {
+                                    _player.Inventory.RemoveItem(cost.Key, cost.Value);
+                                }
                             }
                         }
                     }
@@ -1160,21 +1200,40 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
                         for (int y = startY; y <= endY; y++)
                         {
                             var tile = game.World[x, y];
-                            if (tile.Structure != FactoryStructure.None)
+                            string? idToRefund = tile.BuildingId;
+                            if (string.IsNullOrEmpty(idToRefund))
+                            {
+                                if (tile.Structure == FactoryStructure.ConveyorBelt) idToRefund = "conveyor";
+                                else if (tile.Structure == FactoryStructure.Miner) idToRefund = "miner_t1"; // Fallback
+                                else if (tile.Structure == FactoryStructure.Storage) idToRefund = "storage_t1";
+                                else if (tile.Structure == FactoryStructure.FarmPlot) idToRefund = "farm_plot";
+                                else if (tile.Structure == FactoryStructure.Wall) idToRefund = "wall";
+                            }
+
+                            if (tile.Structure != FactoryStructure.None || !string.IsNullOrEmpty(tile.BuildingId))
                             {
                                 // Refund
-                                var cost = GetCost(tile.Structure);
-                                if (cost.HasValue && _player != null)
+                                if (!string.IsNullOrEmpty(idToRefund))
                                 {
-                                    var itemDef = ItemRegistry.Get(cost.Value.itemId);
-                                    if (itemDef != null)
+                                    var def = BuildingRegistry.Get(idToRefund);
+                                    if (def != null && _player != null)
                                     {
-                                        _player.Inventory.AddItem(itemDef, cost.Value.count);
+                                        foreach (var cost in def.Cost)
+                                        {
+                                            var itemDef = ItemRegistry.Get(cost.Key);
+                                            if (itemDef != null)
+                                            {
+                                                _player.Inventory.AddItem(itemDef, cost.Value);
+                                            }
+                                        }
                                     }
                                 }
                                 
                                 // Remove
-                                game.World.Set(x, y, o => o.Structure = FactoryStructure.None);
+                                game.World.Set(x, y, o => {
+                                    o.Structure = FactoryStructure.None;
+                                    o.BuildingId = null;
+                                });
                                 game.World.UpdateNeighbors(game, new Vec2i(x, y));
                             }
                         }
@@ -1183,7 +1242,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
                 else
                 {
                     // Single Click: Deselect
-                    _selectedStructure = FactoryStructure.None;
+                    _selectedBuildingId = null;
                     _deleteMode = false;
                 }
                 

@@ -1,0 +1,44 @@
+[
+  {
+    "Id": "iron_ore",
+    "Name": "Iron Ore",
+    "Description": "Raw iron ore.",
+    "IconPath": "Textures/Factory/Items/iron_ore.png"
+  },
+  {
+    "Id": "copper_ore",
+    "Name": "Copper Ore",
+    "Description": "Raw copper ore.",
+    "IconPath": "Textures/Factory/Items/copper_ore.png"
+  },
+  {
+    "Id": "coal",
+    "Name": "Coal",
+    "Description": "Fuel.",
+    "IconPath": "Textures/Factory/Items/coal.png"
+  },
+  {
+    "Id": "gold_ore",
+    "Name": "Gold Ore",
+    "Description": "Shiny.",
+    "IconPath": "Textures/Factory/Items/gold_ore.png"
+  },
+  {
+    "Id": "stone",
+    "Name": "Stone",
+    "Description": "Basic building material.",
+    "IconPath": "Textures/Factory/Items/stone.png"
+  },
+  {
+    "Id": "vegetable",
+    "Name": "Vegetable",
+    "Description": "Food.",
+    "IconPath": "Textures/Factory/Items/vegetable.png"
+  },
+  {
+    "Id": "mutton",
+    "Name": "Mutton",
+    "Description": "Dropped by sheep.",
+    "IconPath": "Textures/Factory/Items/vegetable.png"
+  }
+]

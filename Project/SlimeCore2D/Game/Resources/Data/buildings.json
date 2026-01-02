@@ -1,0 +1,134 @@
+[
+  {
+    "Id": "conveyor",
+    "Name": "Conveyor Belt",
+    "Category": "Conveyor",
+    "Tier": 1,
+    "TexturePath": "Textures/Factory/conveyor.png",
+    "Cost": { "iron_ore": 1 },
+    "Components": [
+      { "Type": "Conveyor" }
+    ]
+  },
+  {
+    "Id": "miner_t1",
+    "Name": "Miner Mk.1",
+    "Category": "Miner",
+    "Tier": 1,
+    "TexturePath": "Textures/Factory/miner_t1.png",
+    "Cost": { "stone": 10 },
+    "Components": [
+      { 
+        "Type": "Miner", 
+        "Properties": { "Tier": 1, "Speed": 1.0 } 
+      }
+    ]
+  },
+  {
+    "Id": "miner_t2",
+    "Name": "Miner Mk.2",
+    "Category": "Miner",
+    "Tier": 2,
+    "TexturePath": "Textures/Factory/miner_t2.png",
+    "Cost": { "stone": 20 },
+    "Components": [
+      { 
+        "Type": "Miner", 
+        "Properties": { "Tier": 2, "Speed": 2.0 } 
+      }
+    ]
+  },
+  {
+    "Id": "miner_t3",
+    "Name": "Miner Mk.3",
+    "Category": "Miner",
+    "Tier": 3,
+    "TexturePath": "Textures/Factory/miner_t3.png",
+    "Cost": { "stone": 40 },
+    "Components": [
+      { 
+        "Type": "Miner", 
+        "Properties": { "Tier": 3, "Speed": 3.0 } 
+      }
+    ]
+  },
+  {
+    "Id": "storage_t1",
+    "Name": "Storage Container",
+    "Category": "Storage",
+    "Tier": 1,
+    "TexturePath": "Textures/Factory/storage_t1.png",
+    "Cost": { "stone": 5 },
+    "Components": [
+      { 
+        "Type": "Storage",
+        "Properties": { "Capacity": 100, "OutputRate": 0.5 }
+      }
+    ]
+  },
+  {
+    "Id": "storage_t2",
+    "Name": "Storage Container Mk.2",
+    "Category": "Storage",
+    "Tier": 2,
+    "TexturePath": "Textures/Factory/storage_t2.png",
+    "Cost": { "stone": 10 },
+    "Components": [
+      { 
+        "Type": "Storage",
+        "Properties": { "Capacity": 200, "OutputRate": 0.25 }
+      }
+    ]
+  },
+  {
+    "Id": "storage_t3",
+    "Name": "Storage Container Mk.3",
+    "Category": "Storage",
+    "Tier": 3,
+    "TexturePath": "Textures/Factory/storage_t3.png",
+    "Cost": { "stone": 20 },
+    "Components": [
+      { 
+        "Type": "Storage",
+        "Properties": { "Capacity": 400, "OutputRate": 0.1 }
+      }
+    ]
+  },
+  {
+    "Id": "farm_plot",
+    "Name": "Farm Plot",
+    "Category": "Farm",
+    "Tier": 1,
+    "TexturePath": "Textures/Factory/Structures/farmplot.png",
+    "Cost": { "stone": 2 },
+    "Components": [
+      { 
+        "Type": "Farm",
+        "Properties": { "GrowthTime": 1.0 }
+      }
+    ]
+  },
+  {
+    "Id": "wall",
+    "Name": "Wall",
+    "Category": "Wall",
+    "Tier": 1,
+    "TexturePath": "Textures/Factory/Structures/wall.png",
+    "Cost": { "stone": 1 },
+    "Components": []
+  },
+  {
+    "Id": "stone_gen",
+    "Name": "Stone Generator",
+    "Category": "Generator",
+    "Tier": 1,
+    "TexturePath": "Textures/Factory/stone_gen.png",
+    "Cost": { "stone": 50 },
+    "Components": [
+      { 
+        "Type": "Generator", 
+        "Properties": { "Interval": 2.0, "OutputItem": "stone" } 
+      }
+    ]
+  }
+]

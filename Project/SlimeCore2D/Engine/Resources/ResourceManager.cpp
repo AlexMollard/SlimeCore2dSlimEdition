@@ -427,6 +427,54 @@ Text* ResourceManager::GetFont(const std::string& name)
 	return nullptr;
 }
 
+#include <fstream>
+#include <sstream>
+
+// -----------------------------------------------------------------------------
+// TEXT DATA MANAGEMENT
+// -----------------------------------------------------------------------------
+
+const char* ResourceManager::LoadText(const std::string& name, const std::string& relativePath)
+{
+	std::string key = ToLower(name);
+
+	// 1. Check if already loaded
+	auto it = m_textFiles.find(key);
+	if (it != m_textFiles.end())
+	{
+		return it->second.c_str();
+	}
+
+	// 2. Resolve Path
+	std::string searchPath = relativePath.empty() ? name : relativePath;
+	std::string fullPath = GetResourcePath(searchPath);
+
+	if (fullPath.empty())
+	{
+		Logger::Error("ResourceManager: Failed to locate text file: " + searchPath);
+		return nullptr;
+	}
+
+	// 3. Load File
+	std::ifstream file(fullPath);
+	if (!file.is_open())
+	{
+		Logger::Error("ResourceManager: Failed to open text file: " + fullPath);
+		return nullptr;
+	}
+
+	std::stringstream buffer;
+	buffer << file.rdbuf();
+	std::string content = buffer.str();
+
+	// 4. Store
+	m_textFiles[key] = content;
+	Logger::Info("ResourceManager: Loaded Text '" + key + "' from " + fullPath);
+
+	// Return pointer to the string stored in the map
+	return m_textFiles[key].c_str();
+}
+
 // -----------------------------------------------------------------------------
 // PATH RESOLUTION
 // -----------------------------------------------------------------------------
@@ -562,6 +610,9 @@ void ResourceManager::Clear()
 		delete kv.second;
 	}
 	m_fonts.clear();
+
+	// 4. Text Files
+	m_textFiles.clear();
 
 	Logger::Info("ResourceManager: Resources cleared.");
 }

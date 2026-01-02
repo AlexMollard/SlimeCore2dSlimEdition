@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using EngineManaged.Numeric;
 using SlimeCore.GameModes.Factory.Actors;
 using SlimeCore.GameModes.Factory.Items;
+using SlimeCore.GameModes.Factory.Buildings;
+using SlimeCore.GameModes.Factory.Buildings.Behaviors;
 using SlimeCore.Source.Core;
 using SlimeCore.Source.World.Actors;
 
@@ -10,28 +12,20 @@ namespace SlimeCore.GameModes.Factory.World;
 
 public class BuildingSystem : IDisposable
 {
-    private struct Building
-    {
-        public FactoryStructure Type;
-        public int X, Y;
-        public float Timer;
-        public int InventoryCount;
-        public FactoryItemType InventoryItem;
-        public Direction Direction;
-        public int Tier;
-        public int LastOutputIndex;
-    }
-
-    private Dictionary<int, Building> _buildings = new();
+    private Dictionary<int, BuildingInstance> _buildings = new();
     private FactoryWorld _world;
     private ConveyorSystem _conveyorSystem;
-    private FactoryGame _game; // Need reference to game for ActorManager
+    private FactoryGame _game; 
 
     public BuildingSystem(FactoryGame game, FactoryWorld world, ConveyorSystem conveyorSystem)
     {
         _game = game;
         _world = world;
         _conveyorSystem = conveyorSystem;
+
+        // Initialize registries
+        ItemRegistry.Initialize();
+        BuildingRegistry.Initialize();
     }
 
     public void Dispose()
@@ -49,38 +43,84 @@ public class BuildingSystem : IDisposable
         Dispose(false);
     }
 
+    public void PlaceBuilding(int x, int y, string buildingId, Direction dir)
+    {
+        var def = BuildingRegistry.Get(buildingId);
+        if (def == null) return;
+
+        int idx = y * _world.Width() + x;
+        var instance = new BuildingInstance(def, x, y, dir);
+        
+        // Initialize behaviors
+        foreach (var comp in def.Components)
+        {
+            IBuildingBehavior? behavior = null;
+            switch (comp.Type)
+            {
+                case "Miner": behavior = new MinerBehavior(comp.Properties); break;
+                case "Storage": behavior = new StorageBehavior(comp.Properties); break;
+                case "Farm": behavior = new FarmBehavior(comp.Properties); break;
+                case "Generator": behavior = new GeneratorBehavior(comp.Properties); break;
+            }
+            
+            if (behavior != null)
+            {
+                instance.Behaviors.Add(behavior);
+                behavior.OnPlace(instance, _game);
+            }
+        }
+
+        _buildings[idx] = instance;
+    }
+
     public void PlaceBuilding(int x, int y, FactoryStructure type, Direction dir, int tier = 1)
     {
-        int idx = y * _world.Width() + x;
-        _buildings[idx] = new Building 
-        { 
-            Type = type, 
-            X = x, 
-            Y = y, 
-            Direction = dir,
-            Timer = 0,
-            Tier = tier
+        string id = type switch {
+            FactoryStructure.Miner => $"miner_t{tier}",
+            FactoryStructure.Storage => $"storage_t{tier}",
+            FactoryStructure.FarmPlot => "farm_plot",
+            FactoryStructure.Wall => "wall",
+            _ => ""
         };
+        
+        if (!string.IsNullOrEmpty(id))
+        {
+            PlaceBuilding(x, y, id, dir);
+        }
     }
 
     public void RemoveBuilding(int x, int y)
     {
         int idx = y * _world.Width() + x;
-        _buildings.Remove(idx);
+        if (_buildings.TryGetValue(idx, out var b))
+        {
+            foreach(var behavior in b.Behaviors)
+            {
+                behavior.OnRemove(b, _game);
+            }
+            _buildings.Remove(idx);
+        }
     }
 
     public bool TryAcceptItem(int x, int y, FactoryItemType item)
     {
+        string itemId = GetItemId(item);
+        return TryAcceptItem(x, y, itemId);
+    }
+
+    public bool TryAcceptItem(int x, int y, string itemId)
+    {
         int idx = y * _world.Width() + x;
         if (_buildings.TryGetValue(idx, out var b))
         {
-            if (b.Type == FactoryStructure.Storage)
+            foreach(var behavior in b.Behaviors)
             {
-                // Accept item
-                b.InventoryCount++;
-                b.InventoryItem = item; // Simple storage: just stores last type or mixed
-                _buildings[idx] = b;
-                return true;
+                if (behavior is StorageBehavior)
+                {
+                    b.InventoryCount++;
+                    b.InventoryItemId = itemId;
+                    return true;
+                }
             }
         }
         return false;
@@ -91,195 +131,26 @@ public class BuildingSystem : IDisposable
         int idx = y * _world.Width() + x;
         if (_buildings.TryGetValue(idx, out var b))
         {
-            return (b.InventoryCount, b.InventoryItem);
+            // TODO: Map string ID back to enum if needed for UI
+            return (b.InventoryCount, FactoryItemType.None);
         }
         return (0, FactoryItemType.None);
     }
 
     public void Update(float dt)
     {
-        // Iterate over keys to avoid modification issues if we were removing (we aren't here)
-        // But we are modifying the struct in the dictionary
         var keys = new List<int>(_buildings.Keys);
         
         foreach (int key in keys)
         {
-            var b = _buildings[key];
-            
-            if (b.Type == FactoryStructure.Miner)
+            if (_buildings.TryGetValue(key, out var b))
             {
-                // Mining logic
-                b.Timer += dt;
-                float miningTime = 1.0f / b.Tier; // Tier 1 = 1s, Tier 2 = 0.5s, Tier 3 = 0.33s
-                
-                if (b.Timer >= miningTime) 
+                foreach (var behavior in b.Behaviors)
                 {
-                    b.Timer = 0;
-                    // Check ore
-                    var tile = _world[b.X, b.Y];
-                    if (tile.OreType != FactoryOre.None)
-                    {
-                        var itemType = GetItemFromOre(tile.OreType);
-                        if (TryOutputToConveyor(b.X, b.Y, itemType, ref b.LastOutputIndex))
-                        {
-                            // Success
-                        }
-                    }
-                }
-            }
-            else if (b.Type == FactoryStructure.Storage)
-            {
-                b.Timer += dt;
-                if (b.Timer >= 0.5f) // Output rate
-                {
-                    b.Timer = 0;
-                    if (b.InventoryCount > 0)
-                    {
-                        if (TryOutputToConveyor(b.X, b.Y, b.InventoryItem, ref b.LastOutputIndex))
-                        {
-                            b.InventoryCount--;
-                            if (b.InventoryCount == 0) b.InventoryItem = FactoryItemType.None;
-                            _buildings[key] = b;
-                        }
-                    }
-                }
-            }
-            else if (b.Type == FactoryStructure.FarmPlot)
-            {
-                b.Timer += dt;
-                float growingTime = 1.0f / b.Tier; // Tier 1 = 1s, Tier 2 = 0.5s, Tier 3 = 0.33s
-                
-                if (b.Timer >= growingTime) 
-                {
-                    b.Timer = 0;
-                    TryOutputToConveyor(b.X, b.Y, FactoryItemType.Vegetable, ref b.LastOutputIndex);
-                }
-            }
-            
-            _buildings[key] = b;
-        }
-    }
-
-    private bool TryOutputToConveyor(int bx, int by, FactoryItemType itemType, ref int lastOutputIndex)
-    {
-        var dirs = new[] { Direction.North, Direction.East, Direction.South, Direction.West };
-        
-        for (int i = 1; i <= 4; i++)
-        {
-            int idx = (lastOutputIndex + i) % 4;
-            var dir = dirs[idx];
-            
-            var (nx, ny) = GetNeighbor(bx, by, dir);
-            var conveyorDir = _conveyorSystem.GetConveyorDirection(nx, ny);
-            
-            // Output to any adjacent conveyor, unless it points directly at us (head-on)
-            if (conveyorDir.HasValue)
-            {
-                if (conveyorDir.Value == dir.Opposite())
-                {
-                    continue;
-                }
-
-                // Check if output is blocked
-                if (IsOutputBlocked(nx, ny, dir))
-                {
-                    continue;
-                }
-
-                // Calculate spawn position at center of building
-                var spawnPos = new Vec2(bx + 0.5f, by + 0.5f);
-
-                // Check if spawn position is blocked (by stuck item)
-                if (IsSpawnBlocked(bx, by, spawnPos))
-                {
-                    continue;
-                }
-
-                // Spawn DroppedItem
-                var itemId = GetItemId(itemType);
-                var itemDef = ItemRegistry.Get(itemId);
-                if (itemDef != null)
-                {
-                    // Calculate velocity towards the conveyor
-                    float speed = 4.0f; // Increased ejection speed
-                    float dx = 0, dy = 0;
-                    switch(dir) {
-                        case Direction.North: dy = 1; break;
-                        case Direction.East: dx = 1; break;
-                        case Direction.South: dy = -1; break;
-                        case Direction.West: dx = -1; break;
-                    }
-                    var velocity = new Vec2(dx, dy) * speed;
-
-                    var dropped = new DroppedItem(spawnPos, itemDef, 1);
-                    dropped.Velocity = velocity;
-                    dropped.EjectionTimer = 0.5f; // Prevent immediate re-insertion
-                    _game.ActorManager?.Register(dropped);
-                    
-                    lastOutputIndex = idx;
-                    return true;
+                    behavior.Update(b, dt, _game);
                 }
             }
         }
-        return false;
-    }
-
-    private bool IsSpawnBlocked(int bx, int by, Vec2 spawnPos)
-    {
-        if (!_world.InBounds(bx, by)) return false;
-        var tile = _world[bx, by];
-        var items = tile.Items;
-        float checkRadius = 0.4f;
-
-        for(int i = 0; i < items.Count; i++)
-        {
-            var item = items[i];
-            if (item == null || item.IsDestroyed) continue;
-            
-            float distSq = (item.Position - spawnPos).LengthSquared();
-            if (distSq < checkRadius * checkRadius)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private bool IsOutputBlocked(int tx, int ty, Direction outputDir)
-    {
-        if (!_world.InBounds(tx, ty)) return true;
-        
-        var tile = _world[tx, ty];
-        var items = tile.Items;
-        
-        // Determine entry point on the target tile
-        float ex = tx + 0.5f;
-        float ey = ty + 0.5f;
-        
-        switch (outputDir)
-        {
-            case Direction.North: ey = ty + 0.1f; break; // Bottom edge
-            case Direction.South: ey = ty + 0.9f; break; // Top edge
-            case Direction.East: ex = tx + 0.1f; break; // Left edge
-            case Direction.West: ex = tx + 0.9f; break; // Right edge
-        }
-        
-        var entryPos = new Vec2(ex, ey);
-        float checkRadius = 0.4f; // Item size is 0.25, so 0.4 covers overlap.
-        
-        for(int i = 0; i < items.Count; i++)
-        {
-            var item = items[i];
-            if (item == null || item.IsDestroyed) continue;
-            
-            float distSq = (item.Position - entryPos).LengthSquared();
-            if (distSq < checkRadius * checkRadius)
-            {
-                return true;
-            }
-        }
-        
-        return false;
     }
 
     private string GetItemId(FactoryItemType type)
@@ -293,30 +164,6 @@ public class BuildingSystem : IDisposable
             FactoryItemType.Stone => "stone",
             FactoryItemType.Vegetable => "vegetable",
             _ => "stone"
-        };
-    }
-
-    private FactoryItemType GetItemFromOre(FactoryOre ore)
-    {
-        return ore switch
-        {
-            FactoryOre.Iron => FactoryItemType.IronOre,
-            FactoryOre.Copper => FactoryItemType.CopperOre,
-            FactoryOre.Coal => FactoryItemType.Coal,
-            FactoryOre.Gold => FactoryItemType.GoldOre,
-            _ => FactoryItemType.None
-        };
-    }
-
-    private (int x, int y) GetNeighbor(int x, int y, Direction dir)
-    {
-        return dir switch
-        {
-            Direction.North => (x, y + 1),
-            Direction.East => (x + 1, y),
-            Direction.South => (x, y - 1),
-            Direction.West => (x - 1, y),
-            _ => (x, y)
         };
     }
 }

@@ -55,6 +55,14 @@ public:
 	Text* GetFont(const std::string& name);
 
 	// -------------------------------------------------------------------------
+	// TEXT DATA MANAGEMENT
+	// -------------------------------------------------------------------------
+
+	// Loads a text file from disk and caches it.
+	// Returns a pointer to the internal string buffer, or nullptr on failure.
+	const char* LoadText(const std::string& name, const std::string& relativePath = "");
+
+	// -------------------------------------------------------------------------
 	// UTILITIES
 	// -------------------------------------------------------------------------
 
@@ -84,4 +92,5 @@ private:
 	std::unordered_map<std::string, Shader*> m_shaders;
 	std::unordered_map<std::string, Texture*> m_textures;
 	std::unordered_map<std::string, Text*> m_fonts;
+	std::unordered_map<std::string, std::string> m_textFiles;
 };

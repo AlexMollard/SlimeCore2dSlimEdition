@@ -1,5 +1,6 @@
 using EngineManaged.Numeric;
 using SlimeCore.GameModes.Factory.Actors;
+using SlimeCore.GameModes.Factory.Buildings;
 using SlimeCore.Source.World.Grid;
 using System;
 using System.Collections.Generic;
@@ -40,6 +41,7 @@ public sealed class FactoryTileOptions : TileOptions<FactoryTerrain>
     public FactoryOre OreType { get; set; } = FactoryOre.None;
     public bool IsMineable { get; set; }
     public FactoryStructure Structure { get; set; } = FactoryStructure.None;
+    public string? BuildingId { get; set; }
     public int Tier { get; set; } = 1;
     public Direction Direction { get; set; } = Direction.North;
     public int Bitmask { get; set; }
@@ -50,6 +52,7 @@ public class FactoryTile : Tile<FactoryGame, FactoryTerrain, FactoryTileOptions>
     public FactoryOre OreType { get; set; } = FactoryOre.None;
     public bool IsMineable { get; set; }
     public FactoryStructure Structure { get; set; } = FactoryStructure.None;
+    public string? BuildingId { get; set; }
     public int Tier { get; set; } = 1;
     public Direction Direction { get; set; } = Direction.North;
     public int Bitmask { get; set; }
@@ -75,6 +78,7 @@ public class FactoryTile : Tile<FactoryGame, FactoryTerrain, FactoryTileOptions>
             OreType = OreType,
             IsMineable = IsMineable,
             Structure = Structure,
+            BuildingId = BuildingId,
             Tier = Tier,
             Direction = Direction,
             Bitmask = Bitmask
@@ -93,7 +97,13 @@ public class FactoryTile : Tile<FactoryGame, FactoryTerrain, FactoryTileOptions>
             Structure = opts.Structure;
         }
 
-        if ((Structure == FactoryStructure.ConveyorBelt || Structure == FactoryStructure.FarmPlot || Structure == FactoryStructure.Wall) && Direction != opts.Direction)
+        if (BuildingId != opts.BuildingId)
+        {
+            Rendered = false;
+            BuildingId = opts.BuildingId;
+        }
+
+        if ((Structure == FactoryStructure.ConveyorBelt || Structure == FactoryStructure.FarmPlot || Structure == FactoryStructure.Wall || !string.IsNullOrEmpty(BuildingId)) && Direction != opts.Direction)
         {
             Rendered = false;
             Direction = opts.Direction;
@@ -102,6 +112,7 @@ public class FactoryTile : Tile<FactoryGame, FactoryTerrain, FactoryTileOptions>
         OreType = opts.OreType;
         IsMineable = opts.IsMineable;
         Structure = opts.Structure;
+        BuildingId = opts.BuildingId;
         Tier = opts.Tier;
         Bitmask = opts.Bitmask;
     }
@@ -136,7 +147,13 @@ public class FactoryTile : Tile<FactoryGame, FactoryTerrain, FactoryTileOptions>
         }
 
         // Structure color override (temporary visualization)
-        if (Structure == FactoryStructure.ConveyorBelt)
+        if (!string.IsNullOrEmpty(BuildingId))
+        {
+             // Maybe tint based on building type?
+             // For now, just use default or specific colors if we want debug
+             // But we are using textures mostly.
+        }
+        else if (Structure == FactoryStructure.ConveyorBelt)
         {
             col = new Vec3(0.3f, 0.3f, 0.3f); // Dark grey for conveyor
             
@@ -240,9 +257,25 @@ public class FactoryTile : Tile<FactoryGame, FactoryTerrain, FactoryTileOptions>
             Native.TileMap_SetTile(game.TileMap, PositionX, PositionY, 1, IntPtr.Zero, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
         // Layer 2: Structure
-        nint structTex = FactoryResources.GetStructureTexture(Structure, Tier);
+        nint structTex = IntPtr.Zero;
         float rotation = 0.0f;
-        if (Structure == FactoryStructure.Wall)
+
+        if (!string.IsNullOrEmpty(BuildingId))
+        {
+            var def = BuildingRegistry.Get(BuildingId);
+            if (def != null)
+            {
+                structTex = def.Texture;
+                game.BuildingSystem.PlaceBuilding(PositionX, PositionY, BuildingId, Direction);
+                game.ConveyorSystem.RemoveConveyor(PositionX, PositionY);
+            }
+        }
+        else
+        {
+            structTex = FactoryResources.GetStructureTexture(Structure, Tier);
+        }
+
+        if (Structure == FactoryStructure.Wall || (!string.IsNullOrEmpty(BuildingId) && BuildingId == "wall"))
         {
             switch (Direction)
             {
@@ -263,7 +296,7 @@ public class FactoryTile : Tile<FactoryGame, FactoryTerrain, FactoryTileOptions>
         }
         else if (Structure == FactoryStructure.Miner || Structure == FactoryStructure.Storage || Structure == FactoryStructure.FarmPlot)
         {
-            // Use BuildingSystem
+            // Use BuildingSystem (Legacy path)
             game.BuildingSystem.PlaceBuilding(PositionX, PositionY, Structure, Direction, Tier);
             game.ConveyorSystem.RemoveConveyor(PositionX, PositionY); // Ensure no conveyor
 
@@ -285,6 +318,14 @@ public class FactoryTile : Tile<FactoryGame, FactoryTerrain, FactoryTileOptions>
                     Native.TileMap_SetTile(game.TileMap, PositionX, PositionY, 2, baseTex, 0, 0, 1, 1, 0.6f, 0.4f, 0.2f, 1.0f, 0);
             }
         }
+        else if (!string.IsNullOrEmpty(BuildingId))
+        {
+             // New path
+             if (structTex != IntPtr.Zero)
+                Native.TileMap_SetTile(game.TileMap, PositionX, PositionY, 2, structTex, 0, 0, 1, 1, 1, 1, 1, 1, rotation);
+             else
+                Native.TileMap_SetTile(game.TileMap, PositionX, PositionY, 2, IntPtr.Zero, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        }
         else
         {
             // Remove from systems
@@ -301,15 +342,13 @@ public class FactoryTile : Tile<FactoryGame, FactoryTerrain, FactoryTileOptions>
         Rendered = true;
     }
 
-
-
     public bool IsBlocked()
     {
         if (Type == FactoryTerrain.Concrete)
         {
             return true;
         }
-        if (Structure != FactoryStructure.None)
+        if (Structure != FactoryStructure.None || !string.IsNullOrEmpty(BuildingId))
         {
             return true;
         }
