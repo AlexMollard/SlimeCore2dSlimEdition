@@ -26,7 +26,7 @@ public class DroppedItem : Actor<FactoryActors, FactoryGame>
     private float _bobTimer;
     private float _baseY;
     public bool IsDestroyed { get; private set; }
-    private Vec2i _lastTile = new Vec2i(-1, -1);
+    private Vec2i _lastTile = new(-1, -1);
 
     public DroppedItem(Vec2 position, ItemDefinition item, int count)
     {
@@ -291,7 +291,7 @@ public class DroppedItem : Actor<FactoryActors, FactoryGame>
         return false;
     }
 
-    private FactoryItemType GetFactoryItemType(string id)
+    static public FactoryItemType GetFactoryItemType(string id)
     {
         return id switch
         {

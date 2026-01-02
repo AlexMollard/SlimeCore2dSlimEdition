@@ -21,7 +21,7 @@ public class Player : Actor<FactoryActors, FactoryGame>, IControllable
     public float Size { get; set; } = 0.5f;
 
     public Inventory Inventory { get; } = new();
-    private float _dropCooldown = 0.0f;
+    private float _dropCooldown;
 
     public Player(Vec2 startPos)
     {

@@ -98,6 +98,8 @@ public class UIButton
     }
 
     public bool IconCentered { get; set; }
+    public bool RenderLabelOverIcon { get; set; }
+    public (float x, float y) LabelOffset { get; set; } = (0, 0);
 
     public void SetIcon(IntPtr texturePtr)
     {
@@ -132,8 +134,19 @@ public class UIButton
             if (IconCentered)
             {
                 icon.Position = (bx, by);
-                // Hide label if icon is centered (assuming icon-only mode)
-                Label.IsVisible(false);
+                
+                if (RenderLabelOverIcon)
+                {
+                    Label.Position = (bx + LabelOffset.x, by + LabelOffset.y);
+                    Label.IsVisible(IsVisible);
+                    // Ensure label is on top of icon
+                    Label.Layer(Layer + 2);
+                }
+                else
+                {
+                    // Hide label if icon is centered (assuming icon-only mode)
+                    Label.IsVisible(false);
+                }
             }
             else
             {

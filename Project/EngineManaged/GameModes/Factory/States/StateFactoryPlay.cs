@@ -8,6 +8,7 @@ using SlimeCore.Source.Core;
 using SlimeCore.Source.Input;
 using SlimeCore.Source.World.Actors;
 using System;
+using System.Collections.Generic;
 
 namespace SlimeCore.GameModes.Factory.States;
 
@@ -42,6 +43,12 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
     private float _menuAnimT;
     private const float MenuAnimSpeed = 5.0f;
 
+    // Inventory Animation
+    private bool _inventoryOpen;
+    private float _inventoryAnimT;
+    private UIScrollPanel? _inventoryMenu;
+    private UIButton? _btnInventoryToggle;
+
     // UI Elements
     private UIScrollPanel? _buildMenu;
     private UIButton? _btnBuildToggle;
@@ -50,12 +57,15 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
     private UIButton? _btnStorage;
     private UIButton? _btnFarm;
     private UIButton? _btnWall;
-    private UIText? _tierLabel;
-    private UIText? _rotationLabel;
+    private UIButton? _btnTier1;
+    private UIButton? _btnTier2;
+    private UIButton? _btnTier3;
+    // private UIText? _rotationLabel; // Removed
     private UIText? _tooltipTitle;
     private UIText? _tooltipBody;
     private UIImage? _tooltipBg;
-    private UIText? _inventoryLabel;
+    
+    private Dictionary<UIButton, ItemDefinition> _inventoryButtonItems = new();
 
     public void Enter(FactoryGame game)
     {
@@ -141,6 +151,8 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         game.ActorManager?.Register(new Wolf(wolfPos));
         game.ActorManager?.Register(new Sheep(sheepPos));
 
+        _player.Inventory.OnInventoryChanged += RebuildInventoryUI;
+
         CreateUI();
     }
 
@@ -219,27 +231,26 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         _btnFarm = CreateBtn("Farm", FactoryStructure.FarmPlot, 3, () => { _selectedStructure = FactoryStructure.FarmPlot; _deleteMode = false; });
         _btnWall = CreateBtn("Wall", FactoryStructure.Wall, 4, () => { _selectedStructure = FactoryStructure.Wall; _deleteMode = false; });
 
+        // Tier Buttons
+        float tierBtnSize = 2.0f;
+        
+        UIButton CreateTierBtn(string text, int tier)
+        {
+            var btn = UIButton.Create(text, 0, 0, tierBtnSize, tierBtnSize, 0.2f, 0.25f, 0.3f, 51, 1, false);
+            btn.Label.Color(1.0f, 1.0f, 1.0f);
+            btn.Clicked += () => { _currentTier = tier; };
+            btn.SetVisible(false);
+            return btn;
+        }
+
+        _btnTier1 = CreateTierBtn("1", 1);
+        _btnTier2 = CreateTierBtn("2", 2);
+        _btnTier3 = CreateTierBtn("3", 3);
+
         // Set content height for scrolling
         int totalRows = (5 + cols - 1) / cols;
         _buildMenu.ContentHeight = totalRows * (btnSize + gap) + gap * 2;
 
-        // Labels
-        var tLabel = UIText.Create("Tier: 1", 1, -13.0f, -13.0f); 
-        tLabel.Anchor(0.0f, 0.5f);
-        tLabel.Layer(52);
-        tLabel.Color(1.0f, 0.8f, 0.2f);
-        _tierLabel = tLabel;
-
-        var rLabel = UIText.Create("Rotate: [R]", 1, 17.0f, -13.0f); 
-        rLabel.Anchor(1.0f, 0.5f);
-        rLabel.Layer(52);
-        rLabel.Color(0.8f, 0.8f, 0.8f);
-        _rotationLabel = rLabel;
-        
-        // Start hidden
-        if (_tierLabel is { } tl) { tl.IsVisible(false); tl.Alpha(0f); }
-        if (_rotationLabel is { } rl) { rl.IsVisible(false); rl.Alpha(0f); }
-        
         // Tooltip
         var ttBg = UIImage.Create(0, 0, 1, 1);
         ttBg.Layer(199);
@@ -264,12 +275,81 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         ttBody.Anchor(0.5f, 0.5f);
         _tooltipBody = ttBody;
 
-        // Inventory Label
-        var invLabel = UIText.Create("Inventory:", 1, -19.0f, 10.0f); // Top Left
-        invLabel.Anchor(0.0f, 1.0f);
-        invLabel.Layer(52);
-        invLabel.Color(1.0f, 1.0f, 1.0f);
-        _inventoryLabel = invLabel;
+        // Inventory Label - Removed
+        // var invLabel = UIText.Create("Inventory:", 1, -19.0f, 10.0f); // Top Left
+        // invLabel.Anchor(0.0f, 1.0f);
+        // invLabel.Layer(52);
+        // invLabel.Color(1.0f, 1.0f, 1.0f);
+        // _inventoryLabel = invLabel;
+
+        // Inventory Toggle Button
+        float invToggleX = 18.0f; // Bottom Right
+        float invToggleY = -13.0f;
+        float invToggleW = 8.0f;
+        float invToggleH = 3.0f;
+        
+        _btnInventoryToggle = UIButton.Create("INVENTORY", invToggleX, invToggleY, invToggleW, invToggleH, 0.2f, 0.25f, 0.3f, 51, 1, false);
+        _btnInventoryToggle.Label.Color(0.0f, 0.8f, 1.0f); // Cyan Text
+        _btnInventoryToggle.Clicked += () => {
+            _inventoryOpen = !_inventoryOpen;
+            _btnInventoryToggle.SetBaseColor(_inventoryOpen ? 0.3f : 0.2f, _inventoryOpen ? 0.35f : 0.25f, _inventoryOpen ? 0.4f : 0.3f);
+        };
+
+        // Inventory Scroll Panel
+        float invPanelW = 10.0f;
+        float invPanelH = 18.0f;
+        float invPanelX = invToggleX; 
+        float invPanelY = invToggleY + (invToggleH / 2.0f) + (invPanelH / 2.0f) + 0.5f;
+        
+        _inventoryMenu = UIScrollPanel.Create(invPanelX, invPanelY, invPanelW, invPanelH, 50, false);
+        _inventoryMenu.Background.Color(0.15f, 0.1f, 0.1f); // Dark Red-ish background
+        _inventoryMenu.SetBorder(0.2f, 0.4f, 0.2f, 0.6f); // Orange-Grey Border, matching thickness
+        _inventoryMenu.SetVisible(false); // Start hidden
+
+        RebuildInventoryUI();
+    }
+
+    private void RebuildInventoryUI()
+    {
+        if (_inventoryMenu == null || _player == null) return;
+        
+        _inventoryMenu.Clear();
+        _inventoryButtonItems.Clear();
+        
+        float btnSize = 2.5f;
+        float gap = 0.3f;
+        int cols = 3;
+        
+        float startY = (_inventoryMenu.Height / 2.0f) - (btnSize / 2.0f) - gap;
+        float startX = -(_inventoryMenu.Width / 2.0f) + (btnSize / 2.0f) + gap;
+
+        int index = 0;
+        foreach (var slot in _player.Inventory.Slots)
+        {
+            int row = index / cols;
+            int col = index % cols;
+
+            float x = startX + col * (btnSize + gap); 
+            float y = startY - row * (btnSize + gap);
+            
+            var btn = UIButton.Create(slot.Count.ToString(), 0, 0, btnSize, btnSize, 0.3f, 0.3f, 0.3f, 51, 1, false);
+            btn.IconCentered = true;
+            btn.RenderLabelOverIcon = true;
+            btn.LabelOffset = (0.0f, -0.8f); // Bottom center
+            btn.Label.Color(1.0f, 1.0f, 1.0f);
+            
+            if (slot.Item.IconTexture != IntPtr.Zero)
+            {
+                btn.SetIcon(slot.Item.IconTexture);
+            }
+            
+            _inventoryMenu.AddChild(btn, x, y);
+            _inventoryButtonItems[btn] = slot.Item;
+            index++;
+        }
+        
+        int totalRows = (index + cols - 1) / cols;
+        _inventoryMenu.ContentHeight = totalRows * (btnSize + gap) + gap * 2;
     }
 
     private void UpdateUI()
@@ -287,6 +367,18 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         SetBtnState(_btnStorage, !_deleteMode && _selectedStructure == FactoryStructure.Storage);
         SetBtnState(_btnFarm, !_deleteMode && _selectedStructure == FactoryStructure.FarmPlot);
         SetBtnState(_btnWall, !_deleteMode && _selectedStructure == FactoryStructure.Wall);
+
+        // Update Tier Buttons Highlight
+        void SetTierBtnState(UIButton? btn, int tier)
+        {
+            if (btn == null) return;
+            if (_currentTier == tier) btn.SetBaseColor(0.5f, 0.5f, 0.6f); // Active
+            else btn.SetBaseColor(0.2f, 0.2f, 0.2f); // Inactive
+        }
+        
+        SetTierBtnState(_btnTier1, 1);
+        SetTierBtnState(_btnTier2, 2);
+        SetTierBtnState(_btnTier3, 3);
 
         // Update Icons if Tier Changed
         if (_currentTier != _lastTier)
@@ -309,31 +401,6 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
             
             _lastTier = _currentTier;
         }
-
-        // Update Tier Label
-        if (_tierLabel is { } tierLbl)
-        {
-            tierLbl.Text($"Tier: {_currentTier} [1-3]");
-        }
-        
-        // Update Rotation Label
-        if (_rotationLabel is { } rotLbl)
-        {
-            string dirStr = _placementDirection.ToString();
-             rotLbl.Text($"Rotate: [R] ({dirStr})");
-        }
-
-        // Update Inventory Label
-        if (_inventoryLabel is { } invLbl && _player != null)
-        {
-            var sb = new System.Text.StringBuilder();
-            sb.AppendLine("Inventory:");
-            foreach (var slot in _player.Inventory.Slots)
-            {
-                sb.AppendLine($"- {slot.Item.Name}: {slot.Count}");
-            }
-            invLbl.Text(sb.ToString());
-        }
     }
 
     public void Exit(FactoryGame game)
@@ -346,14 +413,21 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         _btnStorage?.Destroy();
         _btnFarm?.Destroy();
         _btnWall?.Destroy();
+        _btnTier1?.Destroy();
+        _btnTier2?.Destroy();
+        _btnTier3?.Destroy();
         _buildMenu?.Destroy();
         _btnBuildToggle?.Destroy();
-        if (_tierLabel is { } tl) tl.Destroy();
-        if (_rotationLabel is { } rl) rl.Destroy();
+        _inventoryMenu?.Destroy();
+        _btnInventoryToggle?.Destroy();
         if (_tooltipTitle is { } ttt) ttt.Destroy();
         if (_tooltipBody is { } ttb) ttb.Destroy();
         if (_tooltipBg is { } ttbg) ttbg.Destroy();
-        if (_inventoryLabel is { } il) il.Destroy();
+
+        if (_player != null)
+        {
+            _player.Inventory.OnInventoryChanged -= RebuildInventoryUI;
+        }
 
         UISystem.Clear();
         game.World?.Destroy();
@@ -395,6 +469,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
                 float toggleY = -13.0f;
                 float toggleH = 3.0f;
                 float panelH = 18.0f;
+                float panelW = 10.0f;
                 
                 // Target Y (Open)
                 float openY = toggleY + (toggleH / 2.0f) + (panelH / 2.0f) + 0.5f;
@@ -410,21 +485,76 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
                 _buildMenu.SetPosition(_buildMenu.X, currentY);
                 _buildMenu.SetAlpha(smoothT);
                 
-                if (_tierLabel is { } tl) tl.Alpha(smoothT);
-                if (_rotationLabel is { } rl) rl.Alpha(smoothT);
+                // Update Tier Buttons Position
+                float tierBtnSize = 2.0f;
+                float tierGap = 0.2f;
+                float tierX = _buildMenu.X + (panelW / 2.0f) + (tierBtnSize / 2.0f) + 0.2f; // Right side
+                float tierStartY = currentY + (panelH / 2.0f) - (tierBtnSize / 2.0f) - 1.0f;
+                
+                if (_btnTier1 != null) _btnTier1.SetPosition(tierX, tierStartY);
+                if (_btnTier2 != null) _btnTier2.SetPosition(tierX, tierStartY - (tierBtnSize + tierGap));
+                if (_btnTier3 != null) _btnTier3.SetPosition(tierX, tierStartY - (tierBtnSize + tierGap) * 2);
 
                 // Visibility
                 if (_menuAnimT > 0.01f)
                 {
                     if (!_buildMenu.IsVisible) _buildMenu.SetVisible(true);
-                    if (_tierLabel is { } tlVis) tlVis.IsVisible(true);
-                    if (_rotationLabel is { } rlVis) rlVis.IsVisible(true);
+                    _btnTier1?.SetVisible(true);
+                    _btnTier2?.SetVisible(true);
+                    _btnTier3?.SetVisible(true);
                 }
                 else
                 {
                     if (_buildMenu.IsVisible) _buildMenu.SetVisible(false);
-                    if (_tierLabel is { } tlVis) tlVis.IsVisible(false);
-                    if (_rotationLabel is { } rlVis) rlVis.IsVisible(false);
+                    _btnTier1?.SetVisible(false);
+                    _btnTier2?.SetVisible(false);
+                    _btnTier3?.SetVisible(false);
+                }
+                
+                // Alpha
+                _btnTier1?.SetAlpha(smoothT);
+                _btnTier2?.SetAlpha(smoothT);
+                _btnTier3?.SetAlpha(smoothT);
+            }
+        }
+
+        // Inventory Animation
+        float targetInvAnim = _inventoryOpen ? 1.0f : 0.0f;
+        if (Math.Abs(_inventoryAnimT - targetInvAnim) > 0.001f)
+        {
+            float dir = targetInvAnim > _inventoryAnimT ? 1.0f : -1.0f;
+            _inventoryAnimT += dir * MenuAnimSpeed * dt;
+            _inventoryAnimT = Math.Clamp(_inventoryAnimT, 0.0f, 1.0f);
+            
+            if (_inventoryMenu != null)
+            {
+                // Layout Constants (Must match CreateUI)
+                float toggleY = -13.0f;
+                float toggleH = 3.0f;
+                float panelH = 18.0f;
+                
+                // Target Y (Open)
+                float openY = toggleY + (toggleH / 2.0f) + (panelH / 2.0f) + 0.5f;
+                // Start Y (Closed)
+                float closedY = toggleY; 
+                
+                // Smoothstep
+                float t = _inventoryAnimT;
+                float smoothT = t * t * (3.0f - 2.0f * t);
+                
+                float currentY = closedY + (openY - closedY) * smoothT;
+                
+                _inventoryMenu.SetPosition(_inventoryMenu.X, currentY);
+                _inventoryMenu.SetAlpha(smoothT);
+                
+                // Visibility
+                if (_inventoryAnimT > 0.01f)
+                {
+                    if (!_inventoryMenu.IsVisible) _inventoryMenu.SetVisible(true);
+                }
+                else
+                {
+                    if (_inventoryMenu.IsVisible) _inventoryMenu.SetVisible(false);
                 }
             }
         }
@@ -551,6 +681,20 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
                 CheckBtn(_btnStorage, "Storage", FactoryStructure.Storage);
                 CheckBtn(_btnFarm, "Farm Plot", FactoryStructure.FarmPlot);
                 CheckBtn(_btnWall, "Wall", FactoryStructure.Wall);
+            }
+            
+            // Check Inventory Hover
+            if (_inventoryMenu != null && _inventoryMenu.IsVisible)
+            {
+                foreach (var (btn, item) in _inventoryButtonItems)
+                {
+                    if (btn.IsHovered)
+                    {
+                        titleText = item.Name;
+                        bodyText = item.Description;
+                        showTooltip = true;
+                    }
+                }
             }
 
             // If not hovering UI, check world
