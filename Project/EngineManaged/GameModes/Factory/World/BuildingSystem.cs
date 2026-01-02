@@ -180,14 +180,26 @@ public class BuildingSystem : IDisposable
                     continue;
                 }
 
+                // Check if output is blocked
+                if (IsOutputBlocked(nx, ny, dir))
+                {
+                    continue;
+                }
+
+                // Calculate spawn position at center of building
+                var spawnPos = new Vec2(bx + 0.5f, by + 0.5f);
+
+                // Check if spawn position is blocked (by stuck item)
+                if (IsSpawnBlocked(bx, by, spawnPos))
+                {
+                    continue;
+                }
+
                 // Spawn DroppedItem
                 var itemId = GetItemId(itemType);
                 var itemDef = ItemRegistry.Get(itemId);
                 if (itemDef != null)
                 {
-                    // Calculate spawn position at center of building
-                    var spawnPos = new Vec2(bx + 0.5f, by + 0.5f);
-                    
                     // Calculate velocity towards the conveyor
                     float speed = 4.0f; // Increased ejection speed
                     float dx = 0, dy = 0;
@@ -209,6 +221,64 @@ public class BuildingSystem : IDisposable
                 }
             }
         }
+        return false;
+    }
+
+    private bool IsSpawnBlocked(int bx, int by, Vec2 spawnPos)
+    {
+        if (!_world.InBounds(bx, by)) return false;
+        var tile = _world[bx, by];
+        var items = tile.Items;
+        float checkRadius = 0.4f;
+
+        for(int i = 0; i < items.Count; i++)
+        {
+            var item = items[i];
+            if (item == null || item.IsDestroyed) continue;
+            
+            float distSq = (item.Position - spawnPos).LengthSquared();
+            if (distSq < checkRadius * checkRadius)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private bool IsOutputBlocked(int tx, int ty, Direction outputDir)
+    {
+        if (!_world.InBounds(tx, ty)) return true;
+        
+        var tile = _world[tx, ty];
+        var items = tile.Items;
+        
+        // Determine entry point on the target tile
+        float ex = tx + 0.5f;
+        float ey = ty + 0.5f;
+        
+        switch (outputDir)
+        {
+            case Direction.North: ey = ty + 0.1f; break; // Bottom edge
+            case Direction.South: ey = ty + 0.9f; break; // Top edge
+            case Direction.East: ex = tx + 0.1f; break; // Left edge
+            case Direction.West: ex = tx + 0.9f; break; // Right edge
+        }
+        
+        var entryPos = new Vec2(ex, ey);
+        float checkRadius = 0.4f; // Item size is 0.25, so 0.4 covers overlap.
+        
+        for(int i = 0; i < items.Count; i++)
+        {
+            var item = items[i];
+            if (item == null || item.IsDestroyed) continue;
+            
+            float distSq = (item.Position - entryPos).LengthSquared();
+            if (distSq < checkRadius * checkRadius)
+            {
+                return true;
+            }
+        }
+        
         return false;
     }
 

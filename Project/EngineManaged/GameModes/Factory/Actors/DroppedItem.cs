@@ -25,7 +25,7 @@ public class DroppedItem : Actor<FactoryActors, FactoryGame>
     // Bobbing animation
     private float _bobTimer;
     private float _baseY;
-    private bool _isDestroyed;
+    public bool IsDestroyed { get; private set; }
     private Vec2i _lastTile = new Vec2i(-1, -1);
 
     public DroppedItem(Vec2 position, ItemDefinition item, int count)
@@ -47,7 +47,7 @@ public class DroppedItem : Actor<FactoryActors, FactoryGame>
 
     public override bool TakeAction(FactoryGame mode, float deltaTime)
     {
-        if (_isDestroyed) return false;
+        if (IsDestroyed) return false;
 
         // Update Tile Registration
         var currentTilePos = new Vec2i((int)Math.Floor(Position.X), (int)Math.Floor(Position.Y));
@@ -70,7 +70,17 @@ public class DroppedItem : Actor<FactoryActors, FactoryGame>
         // 1. Apply Velocity (for ejection from buildings)
         if (Velocity.LengthSquared() > 0.001f)
         {
-            Position += Velocity * deltaTime;
+            var move = Velocity * deltaTime;
+            var target = Position + move;
+            // Check collision for velocity movement too
+            if (!IsBlockedByItems(mode, target, Velocity.Normalized()))
+            {
+                Position = target;
+            }
+            else
+            {
+                Velocity = Vec2.Zero; // Stop if hit something
+            }
         }
 
         // 2. Apply Conveyor Physics
@@ -79,7 +89,11 @@ public class DroppedItem : Actor<FactoryActors, FactoryGame>
         // while transitioning between tiles or if they are slightly offset.
         // Also ignore collision to allow items to enter buildings (which are solid)
         // Pass IsBlockedByItems as extra check
-        FactoryPhysics.ApplyConveyorMovement(mode, ref pos, deltaTime, 0.1f, true, (targetPos) => IsBlockedByItems(mode, targetPos));
+        FactoryPhysics.ApplyConveyorMovement(mode, ref pos, deltaTime, 0.1f, true, (targetPos) => 
+        {
+            var moveDir = (targetPos - Position).Normalized();
+            return IsBlockedByItems(mode, targetPos, moveDir);
+        });
         
         // Debug logging
         if ((pos - Position).LengthSquared() > 0)
@@ -170,7 +184,7 @@ public class DroppedItem : Actor<FactoryActors, FactoryGame>
                         if (move.LengthSquared() > distSq) move = toCenter;
 
                         var targetPos = Position + move;
-                        if (!IsBlockedByItems(mode, targetPos))
+                        if (!IsBlockedByItems(mode, targetPos, move.Normalized()))
                         {
                             Position = targetPos;
                         }
@@ -189,34 +203,61 @@ public class DroppedItem : Actor<FactoryActors, FactoryGame>
         return true;
     }
 
-    private bool IsBlockedByItems(FactoryGame mode, Vec2 targetPos)
+    private bool IsBlockedByItems(FactoryGame mode, Vec2 targetPos, Vec2 moveDir)
     {
         var targetTilePos = new Vec2i((int)Math.Floor(targetPos.X), (int)Math.Floor(targetPos.Y));
         
-        if (CheckCollisionInTile(mode, targetTilePos, targetPos)) return true;
-        
-        // Also check current tile if different (e.g. moving out)
-        var currentTilePos = new Vec2i((int)Math.Floor(Position.X), (int)Math.Floor(Position.Y));
-        if (targetTilePos != currentTilePos)
+        // Check center tile
+        if (CheckCollisionInTile(mode, targetTilePos, targetPos, moveDir)) return true;
+
+        // Check neighbors
+        float collisionDist = Size * 0.95f;
+        float checkDist = collisionDist + 0.1f; // Buffer to ensure we check neighbors when close to edge
+
+        float relX = targetPos.X - targetTilePos.X;
+        float relY = targetPos.Y - targetTilePos.Y;
+
+        // Left
+        if (relX < checkDist)
         {
-             if (CheckCollisionInTile(mode, currentTilePos, targetPos)) return true;
+            if (CheckCollisionInTile(mode, new Vec2i(targetTilePos.X - 1, targetTilePos.Y), targetPos, moveDir)) return true;
+            if (relY < checkDist && CheckCollisionInTile(mode, new Vec2i(targetTilePos.X - 1, targetTilePos.Y - 1), targetPos, moveDir)) return true;
+            if (relY > 1.0f - checkDist && CheckCollisionInTile(mode, new Vec2i(targetTilePos.X - 1, targetTilePos.Y + 1), targetPos, moveDir)) return true;
+        }
+        // Right
+        else if (relX > 1.0f - checkDist)
+        {
+            if (CheckCollisionInTile(mode, new Vec2i(targetTilePos.X + 1, targetTilePos.Y), targetPos, moveDir)) return true;
+            if (relY < checkDist && CheckCollisionInTile(mode, new Vec2i(targetTilePos.X + 1, targetTilePos.Y - 1), targetPos, moveDir)) return true;
+            if (relY > 1.0f - checkDist && CheckCollisionInTile(mode, new Vec2i(targetTilePos.X + 1, targetTilePos.Y + 1), targetPos, moveDir)) return true;
+        }
+
+        // Bottom
+        if (relY < checkDist)
+        {
+            if (CheckCollisionInTile(mode, new Vec2i(targetTilePos.X, targetTilePos.Y - 1), targetPos, moveDir)) return true;
+        }
+        // Top
+        else if (relY > 1.0f - checkDist)
+        {
+            if (CheckCollisionInTile(mode, new Vec2i(targetTilePos.X, targetTilePos.Y + 1), targetPos, moveDir)) return true;
         }
         
         return false;
     }
 
-    private bool CheckCollisionInTile(FactoryGame mode, Vec2i tilePos, Vec2 myPos)
+    private bool CheckCollisionInTile(FactoryGame mode, Vec2i tilePos, Vec2 myPos, Vec2 moveDir)
     {
         if (!mode.World.InBounds(tilePos)) return false;
         
         var items = mode.World[tilePos].Items;
-        float collisionDist = Size * 0.8f; // Slightly smaller than visual size
+        float collisionDist = Size * 0.95f; // Increased from 0.8f to reduce overlap
         
         // Iterate backwards to allow removal of dead items
         for (int i = items.Count - 1; i >= 0; i--)
         {
             var item = items[i];
-            if (item == null || item._isDestroyed)
+            if (item == null || item.IsDestroyed)
             {
                 items.RemoveAt(i);
                 continue;
@@ -227,7 +268,24 @@ public class DroppedItem : Actor<FactoryActors, FactoryGame>
             float distSq = (item.Position - myPos).LengthSquared();
             if (distSq < collisionDist * collisionDist)
             {
-                return true;
+                // Collision detected!
+                // Check if we should ignore it based on direction (zipper merge)
+                if (moveDir.LengthSquared() > 0.001f)
+                {
+                    var toItem = item.Position - Position; // Vector from ME to ITEM
+                    float dot = Vec2.Dot(toItem.Normalized(), moveDir);
+                    
+                    // If item is "in front" (dot > 0.5, ~60 deg cone), it blocks us.
+                    // If item is to the side or behind, we ignore it to allow merging.
+                    // BUT: If we are literally overlapping (dist very small), we must block to prevent stacking.
+                    if (distSq < (Size * 0.5f) * (Size * 0.5f)) return true; // Hard block if overlapping
+                    
+                    if (dot > 0.5f) return true;
+                }
+                else
+                {
+                    return true;
+                }
             }
         }
         return false;
@@ -249,8 +307,8 @@ public class DroppedItem : Actor<FactoryActors, FactoryGame>
 
     public override void Destroy()
     {
-        if (_isDestroyed) return;
-        _isDestroyed = true;
+        if (IsDestroyed) return;
+        IsDestroyed = true;
         Entity.Destroy();
     }
 }
