@@ -238,4 +238,12 @@ public class UIScrollPanel
             }
         }
     }
+
+    public void EnableButtons(bool enabled)
+    {
+        foreach (var btn in _children)
+        {
+            btn.Enabled = enabled;
+        }
+    }
 }

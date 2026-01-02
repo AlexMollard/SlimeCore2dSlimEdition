@@ -76,6 +76,7 @@ public class FactoryGameUI : IDisposable
             MenuOpen = !MenuOpen;
             // Toggle button color
             _btnBuildToggle.SetBaseColor(MenuOpen ? 0.3f : 0.2f, MenuOpen ? 0.35f : 0.25f, MenuOpen ? 0.4f : 0.3f);
+            _buildMenu.EnableButtons(MenuOpen);
         };
 
         // Build Menu Scroll Panel
@@ -194,6 +195,7 @@ public class FactoryGameUI : IDisposable
         _btnInventoryToggle.Clicked += () => {
             InventoryOpen = !InventoryOpen;
             _btnInventoryToggle.SetBaseColor(InventoryOpen ? 0.3f : 0.2f, InventoryOpen ? 0.35f : 0.25f, InventoryOpen ? 0.4f : 0.3f);
+            _inventoryMenu.EnableButtons(InventoryOpen);
         };
 
         // Inventory Scroll Panel
