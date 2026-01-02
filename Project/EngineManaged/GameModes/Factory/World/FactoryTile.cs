@@ -225,6 +225,16 @@ public class FactoryTile : Tile<FactoryGame, FactoryTerrain, FactoryTileOptions>
         nint structTex = IntPtr.Zero;
         float rotation = 0.0f;
 
+        if (!string.IsNullOrEmpty(BuildingId) && BuildingId == "wall")
+        {
+            switch (Direction)
+            {
+                case Direction.East: rotation = -1.5708f; break;
+                case Direction.South: rotation = 3.14159f; break;
+                case Direction.West: rotation = 1.5708f; break;
+            }
+        }
+
         if (!string.IsNullOrEmpty(BuildingId))
         {
             var def = BuildingRegistry.Get(BuildingId);
@@ -260,16 +270,6 @@ public class FactoryTile : Tile<FactoryGame, FactoryTerrain, FactoryTileOptions>
             game.BuildingSystem.RemoveBuilding(PositionX, PositionY);
 
             Native.TileMap_SetTile(game.TileMap, PositionX, PositionY, 2, IntPtr.Zero, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-        }
-
-        if (!string.IsNullOrEmpty(BuildingId) && BuildingId == "wall")
-        {
-            switch (Direction)
-            {
-                case Direction.East: rotation = -1.5708f; break;
-                case Direction.South: rotation = 3.14159f; break;
-                case Direction.West: rotation = 1.5708f; break;
-            }
         }
 
         game.World.ShouldRender = true;
