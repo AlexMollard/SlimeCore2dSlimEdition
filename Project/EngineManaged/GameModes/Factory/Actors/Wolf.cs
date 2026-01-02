@@ -59,12 +59,12 @@ public class Wolf : Actor<FactoryActors, FactoryGame>, IThreat, IMobileEntity
             if (_target == null || !_target.IsAlive)
             {
                 _target = FindClosestSheep(mode);
-                _targetPos = _target.Position.ToVec2Int();
             }
         }
 
         if (_target != null)
         {
+            _targetPos = _target.Position.ToVec2Int();
             var nextDir = _pathFollower.Update(Position, _targetPos, mode.World);
             _targetDir = nextDir;
         }
