@@ -16,18 +16,22 @@ public class UIScrollPanel
     
     public float ScrollOffset { get; private set; }
     public float ContentHeight { get; set; }
+    public int Layer { get; private set; }
     
     public bool UseScreenSpace { get; private set; }
     public bool IsVisible { get; private set; } = true;
     public bool IsHovered { get; private set; }
 
+    private UIImage? _border;
+
     // Store relative positions of children
     private readonly Dictionary<UIButton, (float relX, float relY)> _childOffsets = new();
 
-    private UIScrollPanel(UIImage bg, float x, float y, float w, float h, bool useScreenSpace)
+    private UIScrollPanel(UIImage bg, float x, float y, float w, float h, int layer, bool useScreenSpace)
     {
         Background = bg;
         X = x; Y = y; Width = w; Height = h;
+        Layer = layer;
         UseScreenSpace = useScreenSpace;
     }
 
@@ -39,9 +43,57 @@ public class UIScrollPanel
         bg.UseScreenSpace(useScreenSpace);
         bg.Color(0.2f, 0.2f, 0.2f); // Default dark background
         
-        var panel = new UIScrollPanel(bg, x, y, w, h, useScreenSpace);
+        var panel = new UIScrollPanel(bg, x, y, w, h, layer, useScreenSpace);
         UISystem.Register(panel);
         return panel;
+    }
+
+    public void SetPosition(float x, float y)
+    {
+        X = x;
+        Y = y;
+        Background.Position = (x, y);
+        if (_border.HasValue)
+        {
+            var b = _border.Value;
+            b.Position = (x, y);
+        }
+        UpdateLayout();
+    }
+
+    public void SetAlpha(float a)
+    {
+        Background.Alpha(a);
+        if (_border.HasValue)
+        {
+            var b = _border.Value;
+            b.Alpha(a);
+        }
+        foreach (var btn in _children)
+        {
+            btn.SetAlpha(a);
+        }
+    }
+
+    public void SetBorder(float thickness, float r, float g, float b)
+    {
+        if (_border == null)
+        {
+            var newBorder = UIImage.Create(X, Y, Width + thickness * 2, Height + thickness * 2);
+            newBorder.Anchor(0.5f, 0.5f);
+            newBorder.Layer(Layer - 1); // Behind background
+            newBorder.UseScreenSpace(UseScreenSpace);
+            _border = newBorder;
+        }
+        else
+        {
+            var border = _border.Value;
+            border.Size = (Width + thickness * 2, Height + thickness * 2);
+        }
+        
+        var bVal = _border.Value;
+        bVal.Color(r, g, b);
+        bVal.IsVisible(IsVisible);
     }
 
     public void AddChild(UIButton btn, float relativeX, float relativeY)
@@ -79,6 +131,11 @@ public class UIScrollPanel
     public void Destroy()
     {
         Background.Destroy();
+        if (_border.HasValue)
+        {
+            var b = _border.Value;
+            b.Destroy();
+        }
         foreach(var btn in _children) btn.Destroy();
         _children.Clear();
         UISystem.Unregister(this);
@@ -88,6 +145,11 @@ public class UIScrollPanel
     {
         IsVisible = visible;
         Background.IsVisible(visible);
+        if (_border.HasValue)
+        {
+            var b = _border.Value;
+            b.IsVisible(visible);
+        }
         foreach(var btn in _children)
         {
             // If panel is hidden, hide all children. 

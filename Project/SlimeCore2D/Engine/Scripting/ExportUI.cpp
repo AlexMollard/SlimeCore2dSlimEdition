@@ -112,7 +112,19 @@ SLIME_EXPORT void __cdecl UI_SetColor(EntityId id, float r, float g, float b)
 		return;
 	if (PersistentUIElement* el = Scene::GetActiveScene()->GetUIElement((ObjectId) id))
 	{
-		el->Color = { r, g, b, 1.0f };
+		el->Color.r = r;
+		el->Color.g = g;
+		el->Color.b = b;
+	}
+}
+
+SLIME_EXPORT void __cdecl UI_SetAlpha(EntityId id, float a)
+{
+	if (!Scene::GetActiveScene() || id == 0)
+		return;
+	if (PersistentUIElement* el = Scene::GetActiveScene()->GetUIElement((ObjectId) id))
+	{
+		el->Color.a = a;
 	}
 }
 
@@ -133,6 +145,16 @@ SLIME_EXPORT void __cdecl UI_SetLayer(EntityId id, int layer)
 	if (PersistentUIElement* el = Scene::GetActiveScene()->GetUIElement((ObjectId) id))
 	{
 		el->Layer = layer;
+	}
+}
+
+SLIME_EXPORT void __cdecl UI_SetTexture(EntityId id, void* texturePtr)
+{
+	if (!Scene::GetActiveScene() || id == 0)
+		return;
+	if (PersistentUIElement* el = Scene::GetActiveScene()->GetUIElement((ObjectId) id))
+	{
+		el->Image = (Texture*)texturePtr;
 	}
 }
 

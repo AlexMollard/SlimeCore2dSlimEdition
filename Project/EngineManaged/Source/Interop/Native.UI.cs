@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.InteropServices;
 [System.Diagnostics.CodeAnalysis.SuppressMessage(
     "Interoperability", "CA2101:Specify marshaling for P/Invoke string arguments",
@@ -35,10 +36,16 @@ internal static partial class NativeMethods
     internal static extern void UI_SetColor(ulong id, float r, float g, float b);
 
     [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+    internal static extern void UI_SetAlpha(ulong id, float a);
+
+    [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
     internal static extern void UI_SetVisible(ulong id, bool visible);
 
     [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
     internal static extern void UI_SetLayer(ulong id, int layer);
+
+    [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+    internal static extern void UI_SetTexture(ulong id, IntPtr texturePtr);
 
     [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
     internal static extern void UI_SetUseScreenSpace(ulong id, bool useScreenSpace);

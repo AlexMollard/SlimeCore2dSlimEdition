@@ -1,3 +1,5 @@
+using System;
+
 namespace EngineManaged.UI;
 
 public readonly struct UIImage
@@ -30,10 +32,14 @@ public readonly struct UIImage
     public void Anchor(float x, float y) => NativeMethods.UI_SetAnchor(Id, x, y);
 
     public void Color(float r, float g, float b) => NativeMethods.UI_SetColor(Id, r, g, b);
+    
+    public void Alpha(float a) => NativeMethods.UI_SetAlpha(Id, a);
 
     public void IsVisible(bool val) => NativeMethods.UI_SetVisible(Id, val);
 
     public void Layer(int val) => NativeMethods.UI_SetLayer(Id, val);
+
+    public void SetTexture(IntPtr texturePtr) => NativeMethods.UI_SetTexture(Id, texturePtr);
 
     public void UseScreenSpace(bool val) => NativeMethods.UI_SetUseScreenSpace(Id, val);
 }

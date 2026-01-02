@@ -27,6 +27,8 @@ public readonly struct UIText
 
 
     public void Color(float r, float g, float b) => NativeMethods.UI_SetColor(Id, r, g, b);
+    
+    public void Alpha(float a) => NativeMethods.UI_SetAlpha(Id, a);
 
 
     public void IsVisible(bool val) => NativeMethods.UI_SetVisible(Id, val);

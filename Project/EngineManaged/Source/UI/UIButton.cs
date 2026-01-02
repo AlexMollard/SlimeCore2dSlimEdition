@@ -7,6 +7,7 @@ public class UIButton
 {
     public readonly UIImage Background;
     public readonly UIText Label;
+    public UIImage? Icon;
 
     public bool Enabled { get; set; } = true;
     public bool IsVisible { get; private set; } = true;
@@ -66,6 +67,11 @@ public class UIButton
     {
         Background.Destroy();
         Label.Destroy();
+        if (Icon.HasValue)
+        {
+            var icon = Icon.Value;
+            icon.Destroy();
+        }
         UISystem.Unregister(this);
     }
 
@@ -74,11 +80,87 @@ public class UIButton
         IsVisible = visible;
         Background.IsVisible(visible);
         Label.IsVisible(visible);
+        if (Icon.HasValue)
+        {
+            var icon = Icon.Value;
+            icon.IsVisible(visible);
+        }
     }
 
     public void SetText(string text)
     {
         Label.Text(text);
+    }
+
+    public void SetTexture(IntPtr texturePtr)
+    {
+        Background.SetTexture(texturePtr);
+    }
+
+    public bool IconCentered { get; set; }
+
+    public void SetIcon(IntPtr texturePtr)
+    {
+        if (Icon == null)
+        {
+             var (x, y) = Background.Position;
+             var newIcon = UIImage.Create(x, y, 0, 0);
+             newIcon.UseScreenSpace(UseScreenSpace);
+             newIcon.Layer(Layer + 1);
+             newIcon.Anchor(0.5f, 0.5f);
+             newIcon.Color(1, 1, 1);
+             Icon = newIcon;
+        }
+        
+        var icon = Icon.Value;
+        icon.SetTexture(texturePtr);
+        UpdateLayout();
+    }
+
+    private void UpdateLayout()
+    {
+        var (bx, by) = Background.Position;
+
+        if (Icon != null && Icon.Value.IsValid)
+        {
+            var icon = Icon.Value;
+
+            // Icon size: 80% of button height, square
+            float iconSize = _buttonHeight * 0.8f;
+            icon.Size = (iconSize, iconSize);
+            
+            if (IconCentered)
+            {
+                icon.Position = (bx, by);
+                // Hide label if icon is centered (assuming icon-only mode)
+                Label.IsVisible(false);
+            }
+            else
+            {
+                // Padding
+                float padding = _buttonHeight * 0.1f;
+                
+                // Icon Position: Left aligned with padding
+                // Button Left Edge = bx - _buttonWidth / 2
+                // Icon Center X = Left Edge + padding + iconSize / 2
+                float iconX = (bx - _buttonWidth / 2.0f) + padding + (iconSize / 2.0f);
+                icon.Position = (iconX, by);
+                
+                // Text Position: Centered in remaining space
+                // Remaining space starts after icon + padding
+                float startOfTextSpace = (bx - _buttonWidth / 2.0f) + padding + iconSize + padding;
+                float remainingWidth = _buttonWidth - (padding + iconSize + padding);
+                float textCenterX = startOfTextSpace + remainingWidth / 2.0f;
+                
+                Label.Position = (textCenterX, by);
+                Label.IsVisible(IsVisible);
+            }
+        }
+        else
+        {
+             Label.Position = (bx, by);
+             Label.IsVisible(IsVisible);
+        }
     }
 
     public (float width, float height) GetTextSize()
@@ -92,7 +174,7 @@ public class UIButton
     public void SetPosition(float x, float y)
     {
         Background.Position = (x, y);
-        Label.Position = (x, y);
+        UpdateLayout();
     }
 
     public void SetUseScreenSpace(bool useScreenSpace)
@@ -100,6 +182,11 @@ public class UIButton
         UseScreenSpace = useScreenSpace;
         Label.UseScreenSpace(useScreenSpace);
         Background.UseScreenSpace(useScreenSpace);
+        if (Icon.HasValue)
+        {
+            var icon = Icon.Value;
+            icon.UseScreenSpace(useScreenSpace);
+        }
     }
 
     public event Action Clicked
@@ -115,6 +202,17 @@ public class UIButton
         _baseR = r; _baseG = g; _baseB = b;
         _hoverR = Math.Min(1f, r * 1.2f); _hoverG = Math.Min(1f, g * 1.2f); _hoverB = Math.Min(1f, b * 1.2f);
         _pressR = Math.Max(0f, r * 0.8f); _pressG = Math.Max(0f, g * 0.8f); _pressB = Math.Max(0f, b * 0.8f);
+    }
+
+    public void SetAlpha(float a)
+    {
+        Background.Alpha(a);
+        Label.Alpha(a);
+        if (Icon.HasValue)
+        {
+            var icon = Icon.Value;
+            icon.Alpha(a);
+        }
     }
 
     internal bool ContainsPoint(float mx, float my)

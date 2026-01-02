@@ -24,13 +24,19 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
     private int _lastGridY = -1;
     private bool _wasMouseDown;
     private int _currentTier = 1;
-    
+    private int _lastTier;
+
     private FactoryStructure _selectedStructure = FactoryStructure.ConveyorBelt;
     private Direction _placementDirection = Direction.North;
     private bool _deleteMode;
     private bool _inputBlockedByUI;
     private bool _zoomInHeld;
     private bool _zoomOutHeld;
+
+    // Menu Animation
+    private bool _menuOpen;
+    private float _menuAnimT;
+    private const float MenuAnimSpeed = 5.0f;
 
     // UI Elements
     private UIScrollPanel? _buildMenu;
@@ -42,7 +48,9 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
     private UIButton? _btnWall;
     private UIText? _tierLabel;
     private UIText? _rotationLabel;
-    private UIText? _tooltipLabel;
+    private UIText? _tooltipTitle;
+    private UIText? _tooltipBody;
+    private UIImage? _tooltipBg;
     private UIText? _inventoryLabel;
 
     public void Enter(FactoryGame game)
@@ -128,20 +136,17 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         UISystem.Clear();
 
         // Toggle Button
-        float toggleX = -22.0f; // Bottom left
+        float toggleX = -18.0f; // Bottom left (Adjusted inwards)
         float toggleY = -13.0f;
         float toggleW = 8.0f;
         float toggleH = 3.0f;
         
-        _btnBuildToggle = UIButton.Create("Build", toggleX, toggleY, toggleW, toggleH, 0.3f, 0.3f, 0.3f, 51, 1, false);
-        _btnBuildToggle.Label.Color(0.9f, 0.9f, 0.9f);
+        _btnBuildToggle = UIButton.Create("BUILD", toggleX, toggleY, toggleW, toggleH, 0.2f, 0.25f, 0.3f, 51, 1, false);
+        _btnBuildToggle.Label.Color(1.0f, 0.6f, 0.0f); // Orange Text
         _btnBuildToggle.Clicked += () => {
-            if (_buildMenu != null)
-            {
-                bool vis = !_buildMenu.IsVisible;
-                _buildMenu.SetVisible(vis);
-                _btnBuildToggle.SetBaseColor(vis ? 0.4f : 0.3f, vis ? 0.4f : 0.3f, vis ? 0.5f : 0.3f);
-            }
+            _menuOpen = !_menuOpen;
+            // Toggle button color
+            _btnBuildToggle.SetBaseColor(_menuOpen ? 0.3f : 0.2f, _menuOpen ? 0.35f : 0.25f, _menuOpen ? 0.4f : 0.3f);
         };
 
         // Build Menu Scroll Panel
@@ -152,41 +157,61 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         float panelY = toggleY + (toggleH / 2.0f) + (panelH / 2.0f) + 0.5f;
         
         _buildMenu = UIScrollPanel.Create(panelX, panelY, panelW, panelH, 50, false);
+        _buildMenu.Background.Color(0.1f, 0.1f, 0.15f); // Dark Blue-ish background
+        _buildMenu.SetBorder(0.2f, 0.4f, 0.5f, 0.6f); // Light Blue-Grey Border
         _buildMenu.SetVisible(false); // Start hidden
         
         // Buttons
-        float btnW = 8.0f;
-        float btnH = 3.0f;
+        float btnSize = 4.0f;
         float gap = 0.5f;
-        float startY = (panelH / 2.0f) - (btnH / 2.0f) - gap;
+        int cols = 2;
         
+        // Calculate start position (top-left of content area)
+        // Content is centered in panel.
+        // Let's just use relative coordinates from top-left of panel content area.
+        // UIScrollPanel centers content vertically based on ContentHeight? No, it uses relative Y.
+        // Let's start from top.
+        float startY = (panelH / 2.0f) - (btnSize / 2.0f) - gap;
+        float startX = -(panelW / 2.0f) + (btnSize / 2.0f) + gap; // Left side
+
         // Helper to create styled button
-        UIButton CreateBtn(string text, int index, Action onClick)
+        UIButton CreateBtn(string text, FactoryStructure structure, int index, Action onClick)
         {
+            int row = index / cols;
+            int col = index % cols;
+
             // Relative position inside the panel
-            float x = 0; 
-            float y = startY - index * (btnH + gap);
+            float x = startX + col * (btnSize + gap); 
+            float y = startY - row * (btnSize + gap);
             
             // Create button at (0,0) initially, panel will position it
-            var btn = UIButton.Create(text, 0, 0, btnW, btnH, 0.3f, 0.3f, 0.3f, 51, 1, false); 
-            btn.Label.Color(0.9f, 0.9f, 0.9f);
+            var btn = UIButton.Create("", 0, 0, btnSize, btnSize, 0.3f, 0.3f, 0.3f, 51, 1, false); 
+            btn.IconCentered = true;
             btn.Clicked += onClick;
+
+            // Set texture
+            IntPtr tex = FactoryResources.GetStructureTexture(structure, 1);
+            if (tex != IntPtr.Zero)
+            {
+                btn.SetIcon(tex);
+            }
             
             _buildMenu.AddChild(btn, x, y);
             return btn;
         }
 
-        _btnConveyor = CreateBtn("Conveyor", 0, () => { _selectedStructure = FactoryStructure.ConveyorBelt; _deleteMode = false; });
-        _btnMiner = CreateBtn("Miner", 1, () => { _selectedStructure = FactoryStructure.Miner; _deleteMode = false; });
-        _btnStorage = CreateBtn("Storage", 2, () => { _selectedStructure = FactoryStructure.Storage; _deleteMode = false; });
-        _btnFarm = CreateBtn("Farm", 3, () => { _selectedStructure = FactoryStructure.FarmPlot; _deleteMode = false; });
-        _btnWall = CreateBtn("Wall", 4, () => { _selectedStructure = FactoryStructure.Wall; _deleteMode = false; });
+        _btnConveyor = CreateBtn("Conveyor", FactoryStructure.ConveyorBelt, 0, () => { _selectedStructure = FactoryStructure.ConveyorBelt; _deleteMode = false; });
+        _btnMiner = CreateBtn("Miner", FactoryStructure.Miner, 1, () => { _selectedStructure = FactoryStructure.Miner; _deleteMode = false; });
+        _btnStorage = CreateBtn("Storage", FactoryStructure.Storage, 2, () => { _selectedStructure = FactoryStructure.Storage; _deleteMode = false; });
+        _btnFarm = CreateBtn("Farm", FactoryStructure.FarmPlot, 3, () => { _selectedStructure = FactoryStructure.FarmPlot; _deleteMode = false; });
+        _btnWall = CreateBtn("Wall", FactoryStructure.Wall, 4, () => { _selectedStructure = FactoryStructure.Wall; _deleteMode = false; });
 
         // Set content height for scrolling
-        _buildMenu.ContentHeight = 5 * (btnH + gap) + gap * 2;
+        int totalRows = (5 + cols - 1) / cols;
+        _buildMenu.ContentHeight = totalRows * (btnSize + gap) + gap * 2;
 
         // Labels
-        var tLabel = UIText.Create("Tier: 1", 1, -17.0f, -13.0f); 
+        var tLabel = UIText.Create("Tier: 1", 1, -13.0f, -13.0f); 
         tLabel.Anchor(0.0f, 0.5f);
         tLabel.Layer(52);
         tLabel.Color(1.0f, 0.8f, 0.2f);
@@ -197,13 +222,34 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         rLabel.Layer(52);
         rLabel.Color(0.8f, 0.8f, 0.8f);
         _rotationLabel = rLabel;
+        
+        // Start hidden
+        if (_tierLabel is { } tl) { tl.IsVisible(false); tl.Alpha(0f); }
+        if (_rotationLabel is { } rl) { rl.IsVisible(false); rl.Alpha(0f); }
+        
         // Tooltip
-        var tt = UIText.Create("", 1, 0, 0);
-        tt.Layer(200);
-        tt.Color(1.0f, 1.0f, 1.0f);
-        tt.IsVisible(false);
-        tt.UseScreenSpace(false);
-        _tooltipLabel = tt;
+        var ttBg = UIImage.Create(0, 0, 1, 1);
+        ttBg.Layer(199);
+        ttBg.Color(0.1f, 0.1f, 0.1f);
+        ttBg.IsVisible(false);
+        ttBg.UseScreenSpace(false);
+        _tooltipBg = ttBg;
+
+        var ttTitle = UIText.Create("", 1, 0, 0);
+        ttTitle.Layer(200);
+        ttTitle.Color(1.0f, 0.9f, 0.2f); // Gold
+        ttTitle.IsVisible(false);
+        ttTitle.UseScreenSpace(false);
+        ttTitle.Anchor(0.5f, 0.5f);
+        _tooltipTitle = ttTitle;
+
+        var ttBody = UIText.Create("", 1, 0, 0);
+        ttBody.Layer(200);
+        ttBody.Color(0.9f, 0.9f, 0.9f); // White
+        ttBody.IsVisible(false);
+        ttBody.UseScreenSpace(false);
+        ttBody.Anchor(0.5f, 0.5f);
+        _tooltipBody = ttBody;
 
         // Inventory Label
         var invLabel = UIText.Create("Inventory:", 1, -19.0f, 10.0f); // Top Left
@@ -228,6 +274,28 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         SetBtnState(_btnStorage, !_deleteMode && _selectedStructure == FactoryStructure.Storage);
         SetBtnState(_btnFarm, !_deleteMode && _selectedStructure == FactoryStructure.FarmPlot);
         SetBtnState(_btnWall, !_deleteMode && _selectedStructure == FactoryStructure.Wall);
+
+        // Update Icons if Tier Changed
+        if (_currentTier != _lastTier)
+        {
+            void UpdateBtnIcon(UIButton? btn, FactoryStructure structure)
+            {
+                if (btn == null) return;
+                IntPtr tex = FactoryResources.GetStructureTexture(structure, _currentTier);
+                if (tex != IntPtr.Zero)
+                {
+                    btn.SetIcon(tex);
+                }
+            }
+
+            UpdateBtnIcon(_btnConveyor, FactoryStructure.ConveyorBelt);
+            UpdateBtnIcon(_btnMiner, FactoryStructure.Miner);
+            UpdateBtnIcon(_btnStorage, FactoryStructure.Storage);
+            UpdateBtnIcon(_btnFarm, FactoryStructure.FarmPlot);
+            UpdateBtnIcon(_btnWall, FactoryStructure.Wall);
+            
+            _lastTier = _currentTier;
+        }
 
         // Update Tier Label
         if (_tierLabel is { } tierLbl)
@@ -269,7 +337,9 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         _btnBuildToggle?.Destroy();
         if (_tierLabel is { } tl) tl.Destroy();
         if (_rotationLabel is { } rl) rl.Destroy();
-        if (_tooltipLabel is { } tt) tt.Destroy();
+        if (_tooltipTitle is { } ttt) ttt.Destroy();
+        if (_tooltipBody is { } ttb) ttb.Destroy();
+        if (_tooltipBg is { } ttbg) ttbg.Destroy();
         if (_inventoryLabel is { } il) il.Destroy();
 
         UISystem.Clear();
@@ -297,6 +367,54 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
     public void Update(FactoryGame game, float dt)
     {
         if (game.World == null) return;
+
+        // Menu Animation
+        float targetAnim = _menuOpen ? 1.0f : 0.0f;
+        if (Math.Abs(_menuAnimT - targetAnim) > 0.001f)
+        {
+            float dir = targetAnim > _menuAnimT ? 1.0f : -1.0f;
+            _menuAnimT += dir * MenuAnimSpeed * dt;
+            _menuAnimT = Math.Clamp(_menuAnimT, 0.0f, 1.0f);
+            
+            if (_buildMenu != null)
+            {
+                // Layout Constants (Must match CreateUI)
+                float toggleY = -13.0f;
+                float toggleH = 3.0f;
+                float panelH = 18.0f;
+                
+                // Target Y (Open)
+                float openY = toggleY + (toggleH / 2.0f) + (panelH / 2.0f) + 0.5f;
+                // Start Y (Closed)
+                float closedY = toggleY; 
+                
+                // Smoothstep
+                float t = _menuAnimT;
+                float smoothT = t * t * (3.0f - 2.0f * t);
+                
+                float currentY = closedY + (openY - closedY) * smoothT;
+                
+                _buildMenu.SetPosition(_buildMenu.X, currentY);
+                _buildMenu.SetAlpha(smoothT);
+                
+                if (_tierLabel is { } tl) tl.Alpha(smoothT);
+                if (_rotationLabel is { } rl) rl.Alpha(smoothT);
+
+                // Visibility
+                if (_menuAnimT > 0.01f)
+                {
+                    if (!_buildMenu.IsVisible) _buildMenu.SetVisible(true);
+                    if (_tierLabel is { } tlVis) tlVis.IsVisible(true);
+                    if (_rotationLabel is { } rlVis) rlVis.IsVisible(true);
+                }
+                else
+                {
+                    if (_buildMenu.IsVisible) _buildMenu.SetVisible(false);
+                    if (_tierLabel is { } tlVis) tlVis.IsVisible(false);
+                    if (_rotationLabel is { } rlVis) rlVis.IsVisible(false);
+                }
+            }
+        }
 
         _time += dt;
         game.ActorManager?.Tick(game, dt);
@@ -395,24 +513,137 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         int gridY = (int)Math.Floor(my);
 
         // Tooltip Logic
-        if (_tooltipLabel is { } tt)
+        if (_tooltipTitle is { } ttTitle && _tooltipBody is { } ttBody && _tooltipBg is { } ttBg)
         {
             bool showTooltip = false;
-            if (gridX >= 0 && gridX < game.World.Width() && gridY >= 0 && gridY < game.World.Height())
+            string titleText = "";
+            string bodyText = "";
+            
+            // Check UI Hover first
+            if (_buildMenu != null && _buildMenu.IsVisible)
+            {
+                void CheckBtn(UIButton? btn, string name, FactoryStructure structure)
+                {
+                    if (btn != null && btn.IsHovered)
+                    {
+                        titleText = name;
+                        var cost = GetCost(structure);
+                        bodyText = cost.HasValue ? $"Cost: {cost.Value.count} {cost.Value.itemId}" : "Free";
+                        showTooltip = true;
+                    }
+                }
+
+                CheckBtn(_btnConveyor, "Conveyor Belt", FactoryStructure.ConveyorBelt);
+                CheckBtn(_btnMiner, "Miner", FactoryStructure.Miner);
+                CheckBtn(_btnStorage, "Storage", FactoryStructure.Storage);
+                CheckBtn(_btnFarm, "Farm Plot", FactoryStructure.FarmPlot);
+                CheckBtn(_btnWall, "Wall", FactoryStructure.Wall);
+            }
+
+            // If not hovering UI, check world
+            if (!showTooltip && gridX >= 0 && gridX < game.World.Width() && gridY >= 0 && gridY < game.World.Height())
             {
                 var tile = game.World[gridX, gridY];
                 if (tile.Structure == FactoryStructure.Storage && game.BuildingSystem != null)
                 {
                     var (count, item) = game.BuildingSystem.GetBuildingInventory(gridX, gridY);
-                    tt.Text($"{item}: {count}");
-                    // Convert world mouse pos to UI pos (relative to camera center)
-                    // Since UI camera is at (0,0), we just subtract the main camera position
-                    // We also need to account for the camera zoom, as UI is not zoomed
-                    tt.Position = ((mx - _cam.X) * game.World.Zoom, (my - _cam.Y) * game.World.Zoom);
+                    titleText = "Storage";
+                    bodyText = $"{item}: {count}";
                     showTooltip = true;
                 }
+                else if (tile.Structure == FactoryStructure.Miner)
+                {
+                     titleText = "Miner";
+                     bodyText = $"Mining: {tile.OreType}";
+                     showTooltip = true;
+                }
             }
-            tt.IsVisible(showTooltip);
+
+            if (showTooltip)
+            {
+                ttTitle.Text(titleText);
+                ttBody.Text(bodyText);
+                
+                // Calculate sizes
+                var (tw, th) = ttTitle.GetSize();
+                var (bw, bh) = ttBody.GetSize();
+                
+                float spacing = 0.3f;
+                float padding = 0.6f;
+                
+                float totalW = Math.Max(tw, bw);
+                float totalH = th + bh + spacing;
+                
+                // Calculate bounds
+                float bgW = totalW + padding * 2;
+                float bgH = totalH + padding * 2;
+
+                // Get Viewport Info
+                NativeMethods.Input_GetViewportRect(out _, out _, out int vpW, out int vpH);
+                float aspect = (float)vpW / vpH;
+                float viewH = FactoryGame.VIEW_H;
+                float viewW = viewH * aspect;
+                
+                float screenRight = viewW / 2.0f;
+                float screenLeft = -viewW / 2.0f;
+                float screenTop = viewH / 2.0f;
+                float screenBottom = -viewH / 2.0f;
+
+                // Mouse Pos in UI Space
+                float zoom = game.World.Zoom;
+                float mouseUiX = (mx - _cam.X) * zoom;
+                float mouseUiY = (my - _cam.Y) * zoom;
+                
+                // Default Position (Bottom-Right of mouse)
+                float offset = 1.0f;
+                // Position is center of tooltip
+                float ttX = mouseUiX + offset + bgW / 2.0f;
+                float ttY = mouseUiY - offset - bgH / 2.0f;
+                
+                // Check Right Edge
+                if (ttX + bgW / 2.0f > screenRight)
+                {
+                    // Flip to Left
+                    ttX = mouseUiX - offset - bgW / 2.0f;
+                }
+                
+                // Check Bottom Edge
+                if (ttY - bgH / 2.0f < screenBottom)
+                {
+                    // Flip to Top
+                    ttY = mouseUiY + offset + bgH / 2.0f;
+                }
+                
+                // Clamp to ensure it stays on screen even after flip
+                float halfW = bgW / 2.0f;
+                if (ttX + halfW > screenRight) ttX = screenRight - halfW;
+                if (ttX - halfW < screenLeft) ttX = screenLeft + halfW;
+                
+                float halfH = bgH / 2.0f;
+                if (ttY + halfH > screenTop) ttY = screenTop - halfH;
+                if (ttY - halfH < screenBottom) ttY = screenBottom + halfH;
+
+                // Update Background
+                ttBg.Size = (bgW, bgH);
+                ttBg.Position = (ttX, ttY);
+                ttBg.Anchor(0.5f, 0.5f);
+                
+                // Update Text Positions (Centered vertically in their slots)
+                // Title Top
+                ttTitle.Position = (ttX, ttY + totalH / 2.0f - th / 2.0f);
+                // Body Bottom
+                ttBody.Position = (ttX, ttY - totalH / 2.0f + bh / 2.0f);
+                
+                ttTitle.IsVisible(true);
+                ttBody.IsVisible(true);
+                ttBg.IsVisible(true);
+            }
+            else
+            {
+                ttTitle.IsVisible(false);
+                ttBody.IsVisible(false);
+                ttBg.IsVisible(false);
+            }
         }
 
         // Update Cursor Position
