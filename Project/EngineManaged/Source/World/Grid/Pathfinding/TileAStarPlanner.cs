@@ -24,7 +24,7 @@ public sealed class TileAStarPlanner : IPathPlanner
 
         open.Enqueue(from, Heuristic(from, to));
 
-        while (open.Count > 0)
+        while (open.Count > 0 && path.Count < 512)
         {
             var current = open.Dequeue();
             if (!closed.Add(current))

@@ -20,8 +20,8 @@ public static class GameHost
         //GameManager.LoadMode(new SnakeGame(new SnakeSettings()));
         //GameManager.LoadMode(new DudeGame());
         //GameManager.LoadMode(new HeadsTailsGame());
-        GameManager.LoadMode(new IdleGame());
-        //GameManager.LoadMode(new FactoryGame(new FactorySettings()));
+        //GameManager.LoadMode(new IdleGame());
+        GameManager.LoadMode(new FactoryGame(new FactorySettings()));
 		UnsafeNativeMethods.Memory_PopContext();
     }
 

@@ -1,28 +1,24 @@
 ﻿using EngineManaged.Numeric;
 using Microsoft.Data.Sqlite;
 using SlimeCore.Source.Common;
-using SlimeCore.Source.World.Actors;
-using SlimeCore.Source.World.Grid;
+using SlimeCore.Source.Core;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using static MessagePack.GeneratedMessagePackResolver.SlimeCore;
-using static MessagePack.GeneratedMessagePackResolver.SlimeCore.GameModes;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
-namespace SlimeCore.Source.Core;
+namespace SlimeCore.GameModes.Factory.Systems;
 
-public static class SaveGame
+public class FactorySaveGame : ISaveGame
 {
-    public static readonly string SaveRoot = Path
-        .Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "SlimeCore", "PissAnt", "SaveData");
+    public static string SaveRoot => Path
+       .Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+           "SlimeCore", "PissAnt", "SaveData");
 
-    static void InitSchema(SqliteConnection db)
+    public static void InitSchema(SqliteConnection db)
     {
         using var cmd = db.CreateCommand();
-        cmd.CommandText = 
+        cmd.CommandText =
         """
         CREATE TABLE IF NOT EXISTS World (
           Id TEXT PRIMARY KEY,
@@ -39,7 +35,7 @@ public static class SaveGame
         cmd.ExecuteNonQuery();
     }
 
-    public static void PreSave<TGameMode>(this TGameMode game, string slot)
+    public static void PreSave<TGameMode>(TGameMode game, string slot)
     where TGameMode : IGameMode
     {
         Directory.CreateDirectory(SaveRoot);
@@ -54,7 +50,7 @@ public static class SaveGame
         db.Close();
     }
 
-    public static void SaveWorld<TGameMode>(this TGameMode game, string slot, Guid worldId, byte[] data)
+    public static void SaveWorld<TGameMode>(TGameMode game, string slot, Guid worldId, byte[] data)
         where TGameMode : IGameMode
     {
         Directory.CreateDirectory(SaveRoot);
@@ -77,7 +73,7 @@ public static class SaveGame
         db.Close();
     }
 
-    public static void SaveActors<TGameMode>(this TGameMode game, string slot,  params (Guid id, Vec2i position, byte[] actor)[] actors)
+    public static void SaveActors<TGameMode>(TGameMode game, string slot, params (Guid id, Vec2i position, byte[] actor)[] actors)
     where TGameMode : IGameMode
     {
         Directory.CreateDirectory(SaveRoot);
@@ -109,6 +105,5 @@ public static class SaveGame
         transaction.Commit();
         db.Close();
     }
-
-
 }
+
