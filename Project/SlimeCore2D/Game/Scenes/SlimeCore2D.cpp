@@ -4,9 +4,20 @@
 #include "Core/Logger.h"
 #include "Core/Memory.h"
 #include "Resources/ResourceManager.h"
+#include "Core/EngineSettings.h"
+#include <string>
 
-int main()
+int main(int argc, char** argv)
 {
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+        if (arg == "--vulkan" || arg == "-vk") {
+            g_RendererType = RendererType::Vulkan;
+        } else if (arg == "--d3d11" || arg == "-dx11") {
+            g_RendererType = RendererType::D3D11;
+        }
+    }
+
 	MemoryAllocator::Init();
 	Logger::Init();
 	Logger::Info("Engine Initializing...");

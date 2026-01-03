@@ -1,0 +1,3 @@
+[submodule "Project/Dependencies/DiligentEngine"]
+	path = Project/Dependencies/DiligentEngine
+	url = https://github.com/DiligentGraphics/DiligentEngine.git
