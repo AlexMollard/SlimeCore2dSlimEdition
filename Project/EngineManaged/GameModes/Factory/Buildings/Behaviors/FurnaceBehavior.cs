@@ -22,14 +22,14 @@ public class FurnaceBehavior : IBuildingBehavior
 
         if (props != null)
         {
-            if (props.TryGetValue("ProcessTime", out var timeObj))
+            if (props.TryGetValue("ProcessTime", out object? timeObj))
             {
                  if (timeObj is JsonElement je) _processTime = (float)je.GetDouble();
                  else if (timeObj is double d) _processTime = (float)d;
                  else if (timeObj is float f) _processTime = f;
             }
 
-            if (props.TryGetValue("Recipes", out var recipesObj))
+            if (props.TryGetValue("Recipes", out object? recipesObj))
             {
                 if (recipesObj is JsonElement je && je.ValueKind == JsonValueKind.Object)
                 {
@@ -50,7 +50,7 @@ public class FurnaceBehavior : IBuildingBehavior
         {
             // Check if item is an output of any recipe
             bool isOutput = false;
-            foreach(var r in _recipes.Values)
+            foreach(string r in _recipes.Values)
             {
                 if (r == kvp.Key) 
                 {

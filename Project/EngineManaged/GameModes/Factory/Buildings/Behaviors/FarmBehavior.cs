@@ -15,7 +15,7 @@ public class FarmBehavior : IBuildingBehavior
 
         if (props != null)
         {
-            if (props.TryGetValue("GrowthTime", out var timeObj))
+            if (props.TryGetValue("GrowthTime", out object? timeObj))
             {
                  if (timeObj is JsonElement je) _growthTime = (float)je.GetDouble();
                  else if (timeObj is double d) _growthTime = (float)d;

@@ -1,4 +1,5 @@
 using EngineManaged.Numeric;
+using MessagePack;
 using System;
 
 namespace EngineManaged.Numeric;
@@ -7,9 +8,13 @@ namespace EngineManaged.Numeric;
 /// Integer 2D vector type for grid-like or integer-coordinate usage.
 /// Provides conversions to/from floating-point Vec2.
 /// </summary>
+[MessagePackObject]
 public struct Vec2i : IEquatable<Vec2i>
 {
-    public int X, Y;
+    [Key(0)]
+    public int X;
+    [Key(1)]
+    public int Y;
     public Vec2i(int x, int y) { X = x; Y = y; }
 
     // -----------------------------------------------------------------

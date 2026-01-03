@@ -1,8 +1,9 @@
-﻿using System;
+﻿using SlimeCore.GameModes.Factory;
+using SlimeCore.GameModes.Idle;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
-using SlimeCore.GameModes.Idle;
 
 namespace SlimeCore.GameModes.Idle.Store;
 
@@ -15,9 +16,16 @@ public static class StoreRegistry
         {
             return;
         }
-    
+
+        
+        if (store.Texture == IntPtr.Zero && !string.IsNullOrEmpty(store.TexturePath))
+        {
+            store.Texture = FactoryResources.GetOrCreateTexture($"{store.Id}", store.TexturePath);
+        }
+
         _store[store.Id] = store;
         _store[store.Id].Cost = store.BaseCost;
+
     }
     
     public static StoreDefinition? Get(string id)

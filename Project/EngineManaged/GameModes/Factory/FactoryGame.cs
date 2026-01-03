@@ -82,6 +82,7 @@ public sealed class FactoryGame : GameMode<FactoryGame>, IGameMode, IDisposable
 
     public override void Init()
     {
+        SQLitePCL.Batteries.Init();
         ChangeState(new StateFactoryMenu());
     }
 

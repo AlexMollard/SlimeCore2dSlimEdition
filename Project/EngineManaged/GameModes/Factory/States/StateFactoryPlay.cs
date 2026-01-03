@@ -1,12 +1,14 @@
 using EngineManaged.Numeric;
 using EngineManaged.Scene;
 using EngineManaged.UI;
+using MessagePack;
 using SlimeCore.GameModes.Factory.Actors;
 using SlimeCore.GameModes.Factory.Buildings;
 using SlimeCore.GameModes.Factory.Items;
 using SlimeCore.GameModes.Factory.World;
 using SlimeCore.GameModes.Factory.UI;
 using SlimeCore.GameModes.Factory.Systems;
+using SlimeCore.Source.Common;
 using SlimeCore.Source.Core;
 using SlimeCore.Source.Input;
 using SlimeCore.Source.World.Actors;
@@ -121,6 +123,15 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         if (game.World == null) return;
 
         _ui.Update(dt);
+        if (_ui.IsSaveRequested)
+        {
+            string slot = "NewWorld";
+            game.PreSave(slot);
+            byte[] world = MessagePackSerializer.Serialize(game.World);
+            game.SaveWorld(slot, game.World.Id, world);
+            _ui.IsSaveRequested = false;
+            Logger.Info($"Saved Game to slot {slot}");
+        }
 
         _time += dt;
         game.ActorManager?.Tick(game, dt);
