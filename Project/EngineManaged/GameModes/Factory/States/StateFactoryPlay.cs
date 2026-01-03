@@ -126,9 +126,9 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         if (_ui.IsSaveRequested)
         {
             string slot = "NewWorld";
-            game.PreSave(slot);
+            FactorySaveGame.PreSave(game, slot);
             byte[] world = MessagePackSerializer.Serialize(game.World);
-            game.SaveWorld(slot, game.World.Id, world);
+            FactorySaveGame.SaveWorld(game, slot, game.World.Id, world);
             _ui.IsSaveRequested = false;
             Logger.Info($"Saved Game to slot {slot}");
         }

@@ -35,6 +35,10 @@ public static class StoreRegistry
 
     public static IEnumerable<StoreDefinition> GetAll() => _store.Values;
 
+    public static void Unload()
+    {
+        _store.Clear();
+    }
     public static void Initialize()
     {
         // Load from ResourceManager
