@@ -132,6 +132,18 @@
     <ClCompile Include="Engine\Scene\Components.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Scripting\ExportParticles.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Rendering\ConveyorMap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Scripting\ExportConveyorMap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Rendering\ParticleSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Physics\BoundingBox.h">
@@ -251,26 +263,22 @@
     <ClInclude Include="Engine\Scripting\ExportRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Scripting\ExportParticles.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Rendering\ConveyorMap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Scripting\ExportConveyorMap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Rendering\ParticleSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Game\Resources\Shaders\BasicVertex.shader">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Game\Resources\Shaders\BasicFragment.shader">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Game\Resources\Shaders\UIFragment.shader">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Game\Resources\Shaders\UIVertex.shader">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Game\Resources\Shaders\textVert.shader">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Game\Resources\Shaders\textFrag.shader">
-      <Filter>Shaders</Filter>
-    </None>
     <None Include="cpp.hint" />
+    <None Include="Game\Resources\Shaders\BasicPixel.hlsl" />
+    <None Include="Game\Resources\Shaders\BasicVertex.hlsl" />
   </ItemGroup>
 </Project>

@@ -1,0 +1,20 @@
+[
+  {
+    "Id": "stones",
+    "Name": "Stones",
+    "BaseCost": 15,
+    "ClickAdd": 1    
+  },
+  {
+    "Id": "factory",
+    "Name": "factory",
+    "BaseCost": 50,
+    "CPS": 0.1
+  },
+  {
+    "Id": "pickaxe",
+    "Name": "Pickaxe",
+    "BaseCost": 150,
+    "ClickAdd": 2
+  }
+]

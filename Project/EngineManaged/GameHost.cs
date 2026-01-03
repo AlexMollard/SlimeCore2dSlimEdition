@@ -1,5 +1,9 @@
-﻿using SlimeCore.GameModes.Factory;
+﻿using GameModes.Dude;
+using GameModes.Idle;
+using GameModes.Test;
+using SlimeCore.GameModes.Factory;
 using SlimeCore.GameModes.Snake;
+using SlimeCore.GameModes.Test;
 using SlimeCore.Source.Core;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -15,7 +19,9 @@ public static class GameHost
 		UnsafeNativeMethods.Memory_PushContext("Managed::Init");
         //GameManager.LoadMode(new SnakeGame(new SnakeSettings()));
         //GameManager.LoadMode(new DudeGame());
-        GameManager.LoadMode(new FactoryGame(new FactorySettings()));
+        //GameManager.LoadMode(new HeadsTailsGame());
+        GameManager.LoadMode(new IdleGame());
+        //GameManager.LoadMode(new FactoryGame(new FactorySettings()));
 		UnsafeNativeMethods.Memory_PopContext();
     }
 
