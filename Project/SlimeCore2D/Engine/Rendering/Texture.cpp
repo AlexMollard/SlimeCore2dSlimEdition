@@ -14,7 +14,7 @@ Texture::Texture(const std::string& path, Filter filter, Wrap wrap)
 {
 	TextureLoadInfo loadInfo;
 	loadInfo.IsSRGB = false;
-	loadInfo.FlipVertically = true;
+	loadInfo.FlipVertically = false;
 
 	auto device = Window::GetDevice();
 
