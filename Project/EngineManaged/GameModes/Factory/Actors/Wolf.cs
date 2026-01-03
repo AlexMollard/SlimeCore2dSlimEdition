@@ -30,7 +30,7 @@ public class Wolf : Actor<FactoryActors, FactoryGame>, IThreat, IMobileEntity
     private float _bobTime;
     private float _hunger;
 
-    private readonly PathFollower<BasicPlanner> _pathFollower;
+    private readonly PathFollower<TileAStarPlanner> _pathFollower;
     private Sheep? _target;
     private Vec2i _targetPos { get; set; }
 
@@ -41,7 +41,7 @@ public class Wolf : Actor<FactoryActors, FactoryGame>, IThreat, IMobileEntity
         Entity = SceneFactory.CreateQuad(Position.X, Position.Y, Size, Size, 1.0f, 1.0f, 1.0f, layer: 9);
         var sprite = Entity.GetComponent<SpriteComponent>();
         sprite.TexturePtr = FactoryResources.TexWolf;
-        _pathFollower = new PathFollower<BasicPlanner>();
+        _pathFollower = new PathFollower<TileAStarPlanner>();
         //sprite.Color = (1.0f, 1.0f, 1.0f); // White player for now
     }
 
