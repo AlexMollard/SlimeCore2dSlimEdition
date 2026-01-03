@@ -1,9 +1,11 @@
 #include "Text.h"
-#include "Core/Logger.h"
 
 #include <algorithm>
 #include <iostream>
-#include <d3d11.h>
+
+#include "Core/Logger.h"
+
+using namespace Diligent;
 
 // Note: Ensure you are linking against FreeType 2.11+ for SDF support.
 // If your FreeType is older, remove 'FT_RENDER_MODE_SDF' and standard aliasing will apply,
@@ -90,11 +92,11 @@ void Text::GenerateAtlas(FT_Face face)
 		int height = face->glyph->bitmap.rows;
 
 		// Check if we need to move to the next row
-		// We add a 1 pixel padding to prevent texture bleeding
-		if (xOffset + width + 1 > atlasWidth)
+		// We add a 2 pixel padding to prevent texture bleeding
+		if (xOffset + width + 2 > atlasWidth)
 		{
 			xOffset = 0;
-			yOffset += rowHeight + 1; // +1 padding
+			yOffset += rowHeight + 2; // +2 padding
 			rowHeight = 0;
 		}
 
@@ -142,15 +144,15 @@ void Text::GenerateAtlas(FT_Face face)
 
 		// Update packing cursor
 		rowHeight = std::max(rowHeight, height);
-		xOffset += width + 1; // +1 padding
+		xOffset += width + 2; // +2 padding
 	}
 
 	// 4. Create Texture
 	// Create and Upload Texture using the new Class
-	m_AtlasTexture = new Texture(atlasWidth, atlasHeight, DXGI_FORMAT_R8_UNORM, Texture::Filter::Linear, Texture::Wrap::ClampToEdge);
-	
+	m_AtlasTexture = new Texture(atlasWidth, atlasHeight, TEX_FORMAT_R8_UNORM, Texture::Filter::Linear, Texture::Wrap::ClampToEdge);
+
 	// Upload the raw bitmap data we generated into the texture
-	m_AtlasTexture->SetData(atlasData.data(), (uint32_t)atlasData.size());
+	m_AtlasTexture->SetData(atlasData.data(), (uint32_t) atlasData.size());
 }
 
 glm::vec2 Text::CalculateSize(const std::string& text, float scale)
@@ -183,9 +185,9 @@ glm::vec3 Text::CalculateSizeWithBaseline(const std::string& text, float scale)
 		x += (ch.Advance >> 6) * scale;
 	}
 
-	result.x = x; // width
+	result.x = x;           // width
 	result.y = maxY + minY; // total height
-	result.z = maxY; // baseline offset (how far above baseline)
+	result.z = maxY;        // baseline offset (how far above baseline)
 
 	return result;
 }

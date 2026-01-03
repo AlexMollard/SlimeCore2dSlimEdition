@@ -1,10 +1,10 @@
 #include "ResourceManager.h"
 
+#include "Core/Logger.h"
 #include "Rendering/Shader.h"
 #include "Rendering/Text.h"
 #include "Rendering/Texture.h"
-#include "Core/Logger.h"
-#include "Core/Memory.h"
+//#include "Core/Memory.h"
 
 #if defined(_WIN32)
 #	include <windows.h>
@@ -188,8 +188,8 @@ bool ResourceManager::LoadShadersFromDir(const std::string& dir)
 		auto lower = ToLower(filename);
 		std::string filepath = chosen + "\\" + filename;
 
-		// Simple heuristic to pair .vert and .frag files (and now .hlsl)
-		if (lower.find("vertex.shader") != std::string::npos || lower.find("vert.shader") != std::string::npos || lower.find("vertex.hlsl") != std::string::npos)
+		// Simple heuristic to pair .vert and .frag files (and now .hlsl and .glsl)
+		if (lower.find("vertex.shader") != std::string::npos || lower.find("vert.shader") != std::string::npos || lower.find("vertex.hlsl") != std::string::npos || lower.find("vertex.glsl") != std::string::npos)
 		{
 			std::string base = filename.substr(0, filename.find_last_of('.'));
 			while (true)
@@ -208,7 +208,7 @@ bool ResourceManager::LoadShadersFromDir(const std::string& dir)
 			}
 			vmap[ToLower(base)] = filepath;
 		}
-		else if (lower.find("fragment.shader") != std::string::npos || lower.find("frag.shader") != std::string::npos || lower.find("pixel.hlsl") != std::string::npos || lower.find("frag.hlsl") != std::string::npos)
+		else if (lower.find("fragment.shader") != std::string::npos || lower.find("frag.shader") != std::string::npos || lower.find("pixel.hlsl") != std::string::npos || lower.find("frag.hlsl") != std::string::npos || lower.find("pixel.glsl") != std::string::npos || lower.find("frag.glsl") != std::string::npos)
 		{
 			std::string base = filename.substr(0, filename.find_last_of('.'));
 			while (true)

@@ -1,11 +1,11 @@
 #include "PhysicsScene.h"
-#include "Core/Logger.h"
 
 #include <iostream>
 #include <sstream>
 #include <tuple>
 #include <unordered_map>
 
+#include "Core/Logger.h"
 #include "Rendering/Renderer2D.h"
 
 PhysicsScene::PhysicsScene()

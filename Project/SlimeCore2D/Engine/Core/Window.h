@@ -3,12 +3,14 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <glfw3.h>
 #include <glfw3native.h>
-#include <d3d11.h>
-#include <d3dcompiler.h>
-#include <wrl/client.h>
 #include <iostream>
 
-using Microsoft::WRL::ComPtr;
+#include "DeviceContext.h"
+#include "RefCntAutoPtr.hpp"
+#include "RenderDevice.h"
+#include "SwapChain.h"
+
+using namespace Diligent;
 
 class Window
 {
@@ -18,16 +20,33 @@ public:
 
 	// Window Functions
 	int Window_intit(int width, int height, char* name);
+	void BeginFrame();
 	void Update_Window();
 	int Window_shouldClose();
 	void Window_destroy();
-    void Resize(int width, int height);
+	void Resize(int width, int height);
 
 	float GetDeltaTime();
 
-	static ID3D11Device* GetDevice() { return s_Device.Get(); }
-	static ID3D11DeviceContext* GetContext() { return s_Context.Get(); }
-	static ID3D11DepthStencilView* GetDepthStencilView() { return s_DepthStencilView.Get(); }
+	static IRenderDevice* GetDevice()
+	{
+		return s_Device;
+	}
+
+	static IDeviceContext* GetContext()
+	{
+		return s_Context;
+	}
+
+	static ITextureView* GetDepthStencilView()
+	{
+		return m_SwapChain ? m_SwapChain->GetDepthBufferDSV() : nullptr;
+	}
+
+	static ISwapChain* GetSwapChain()
+	{
+		return m_SwapChain;
+	}
 
 protected:
 	// Main Window
@@ -38,19 +57,10 @@ protected:
 	double now = 0.0;
 	float delta = 1.0f;
 
-	// DX11
-	static ComPtr<ID3D11Device> s_Device;
-	static ComPtr<ID3D11DeviceContext> s_Context;
-	static ComPtr<ID3D11RenderTargetView> s_RenderTargetView;
-	static ComPtr<ID3D11DepthStencilView> s_DepthStencilView;
-	
-	ComPtr<IDXGISwapChain> m_SwapChain;
-	ComPtr<ID3D11Texture2D> m_DepthStencilBuffer;
-	ComPtr<ID3D11RasterizerState> m_RasterizerState;
-	ComPtr<ID3D11BlendState> m_BlendState;
-	ComPtr<ID3D11DepthStencilState> m_DepthStencilState;
+	// Diligent Engine
+	static RefCntAutoPtr<IRenderDevice> s_Device;
+	static RefCntAutoPtr<IDeviceContext> s_Context;
+	static RefCntAutoPtr<ISwapChain> m_SwapChain;
 
-	void InitDirectX(HWND hwnd, int width, int height);
-	void CreateRenderTarget(int width, int height);
-	void CleanupRenderTarget();
+	void InitDiligent(HWND hwnd, int width, int height);
 };

@@ -1,16 +1,23 @@
 #pragma once
 
 #define NOMINMAX
+#include <array>
 #include <glm.hpp>
 #include <string>
 #include <vector>
-#include <array>
-#include <d3d11.h>
-#include <wrl/client.h>
 
+#include "Buffer.h"
 #include "Core/Camera.h"
+#include "DeviceContext.h"
+#include "PipelineState.h"
+#include "RefCntAutoPtr.hpp"
+#include "RenderDevice.h"
+#include "Sampler.h"
 #include "Shader.h"
+#include "ShaderResourceBinding.h"
 #include "Texture.h"
+
+using namespace Diligent;
 
 // Forward Declaration for your Text/Font class
 class Text;
@@ -75,6 +82,16 @@ public:
 		return s_Data.TextureShader;
 	}
 
+	static IPipelineState* GetPSO()
+	{
+		return s_Data.PSO;
+	}
+
+	static ITextureView* GetWhiteTextureSRV()
+	{
+		return s_Data.WhiteTextureSRV;
+	}
+
 private:
 	static void StartBatch();
 	static void NextBatch();
@@ -83,41 +100,40 @@ private:
 	struct Renderer2DData
 	{
 		const uint32_t MaxQuads = 10000;
-		const uint32_t MaxVertices = MaxQuads * 4;
+		// Instancing: 1 instance per quad
+		const uint32_t MaxInstances = MaxQuads;
 		const uint32_t MaxIndices = MaxQuads * 6;
-		static const uint32_t MaxTextureSlots = 32; // Check your GPU caps, 32 is standard for modern GL
+		static const uint32_t MaxTextureSlots = 32;
 
-		Microsoft::WRL::ComPtr<ID3D11Buffer> QuadVB;
-		Microsoft::WRL::ComPtr<ID3D11Buffer> QuadIB;
+		RefCntAutoPtr<IBuffer> QuadVB;     // Static Geometry (0..1)
+		RefCntAutoPtr<IBuffer> InstanceVB; // Dynamic Instance Data
+		RefCntAutoPtr<IBuffer> QuadIB;     // Static Indices
 
-		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> WhiteTextureSRV;
-		Microsoft::WRL::ComPtr<ID3D11SamplerState> TextureSampler;
-		Microsoft::WRL::ComPtr<ID3D11SamplerState> TextureSamplerLinear;
-		Microsoft::WRL::ComPtr<ID3D11BlendState> BlendState;
-		Microsoft::WRL::ComPtr<ID3D11RasterizerState> RasterizerState;
-		Microsoft::WRL::ComPtr<ID3D11DepthStencilState> DepthStencilState;
+		RefCntAutoPtr<IPipelineState> PSO;
+		RefCntAutoPtr<IShaderResourceBinding> SRB;
+		RefCntAutoPtr<ITextureView> WhiteTextureSRV;
 
-		uint32_t IndexCount = 0;
+		uint32_t QuadCount = 0;
 
-		// Vertex Definition
-		struct QuadVertex
+		// Instance Data Definition
+		struct InstanceData
 		{
-			glm::vec3 Position;
+			glm::mat4 Transform;
 			glm::vec4 Color;
-			glm::vec2 TexCoord;
+			glm::vec4 UVRect; // x=minU, y=minV, z=maxU, w=maxV
 			float TexIndex;
-			float TilingFactor;
-			float IsText; // 1.0 if SDF text, 0.0 if normal sprite
+			float Tiling;
+			float IsText;
+			float Padding; // Align to 16 bytes if needed, though 4 floats is 16 bytes.
 		};
 
-		QuadVertex* QuadBuffer = nullptr;
-		QuadVertex* QuadBufferPtr = nullptr;
+		InstanceData* InstanceBuffer = nullptr;
+		InstanceData* InstanceBufferPtr = nullptr;
 
-		std::array<ID3D11ShaderResourceView*, MaxTextureSlots> TextureSlots;
+		std::array<ITextureView*, MaxTextureSlots> TextureSlots;
 		uint32_t TextureSlotIndex = 1; // 0 is white texture
 
 		Shader* TextureShader = nullptr;
-		glm::vec4 QuadVertexPositions[4]; // For rotation calculations
 
 		Statistics Stats;
 	};

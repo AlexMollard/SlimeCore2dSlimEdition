@@ -1,6 +1,8 @@
 #include "Scripting/ExportCore.h"
-#include "Core/Logger.h"
+
 #include <iostream>
+
+#include "Core/Logger.h"
 
 SLIME_EXPORT void __cdecl Engine_Log(const char* msg)
 {

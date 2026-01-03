@@ -2,12 +2,12 @@
 
 #include <string>
 #include <unordered_map>
-#include <d3d11.h>
-#include <d3dcompiler.h>
-#include <wrl/client.h>
-#include "glm.hpp"
 
-using Microsoft::WRL::ComPtr;
+#include "glm.hpp"
+#include "RefCntAutoPtr.hpp"
+#include "RenderDevice.h"
+
+using namespace Diligent;
 
 class Shader
 {
@@ -23,7 +23,12 @@ public:
 	Shader& operator=(Shader&& other) noexcept;
 
 	void Use() const;
-	void Bind() const { Use(); }
+
+	void Bind() const
+	{
+		Use();
+	}
+
 	void Unbind() const;
 
 	void setBool(const std::string& name, bool value) const;
@@ -39,27 +44,44 @@ public:
 	void setMat2(const std::string& name, const glm::mat2& mat) const;
 	void setMat3(const std::string& name, const glm::mat3& mat) const;
 	void setMat4(const std::string& name, const glm::mat4& mat) const;
-	void SetMat4(const std::string& name, const glm::mat4& mat) const { setMat4(name, mat); }
 
-    ID3D11InputLayout* GetInputLayout() const { return m_InputLayout.Get(); }
+	void SetMat4(const std::string& name, const glm::mat4& mat) const
+	{
+		setMat4(name, mat);
+	}
+
+	IShader* GetVertexShader() const
+	{
+		return m_VertexShader;
+	}
+
+	IShader* GetPixelShader() const
+	{
+		return m_PixelShader;
+	}
+
+	IBuffer* GetConstantBuffer() const
+	{
+		return m_ConstantBuffer;
+	}
 
 private:
-    struct ConstantBuffer
-    {
-        glm::mat4 ViewProjection;
-        float Time;
-        float Padding[3];
-    };
-    mutable ConstantBuffer m_CBufferData;
-    mutable ComPtr<ID3D11Buffer> m_ConstantBuffer;
+	struct ConstantBuffer
+	{
+		glm::mat4 ViewProjection;
+		float Time;
+		float Padding[3];
+	};
 
-    ComPtr<ID3D11VertexShader> m_VertexShader;
-    ComPtr<ID3D11PixelShader> m_PixelShader;
-    ComPtr<ID3D11InputLayout> m_InputLayout;
-    
+	mutable ConstantBuffer m_CBufferData;
+	mutable RefCntAutoPtr<IBuffer> m_ConstantBuffer;
+
+	RefCntAutoPtr<IShader> m_VertexShader;
+	RefCntAutoPtr<IShader> m_PixelShader;
+
 	std::string m_name;
-    
-    void CompileShader(const std::string& source, const std::string& profile, ID3DBlob** blob);
-    void CreateConstantBuffer();
-    void UpdateConstantBuffer() const;
+	bool m_IsGLSL = false;
+
+	void CreateConstantBuffer();
+	void UpdateConstantBuffer() const;
 };

@@ -1,7 +1,8 @@
 #include "RigidBody.h"
-#include "Core/Logger.h"
 
 #include <iostream>
+
+#include "Core/Logger.h"
 
 void RigidBody::SetPos(glm::vec3 newPos)
 {

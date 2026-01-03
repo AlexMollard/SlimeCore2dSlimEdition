@@ -15,7 +15,7 @@ public:
 
 	static float Float()
 	{
-		return (float)s_Distribution(s_RandomEngine) / (float)std::numeric_limits<uint32_t>::max();
+		return (float) s_Distribution(s_RandomEngine) / (float) std::numeric_limits<uint32_t>::max();
 	}
 
 private:
@@ -27,14 +27,14 @@ std::mt19937 Random::s_RandomEngine;
 std::uniform_int_distribution<std::mt19937::result_type> Random::s_Distribution;
 
 ParticleSystem::ParticleSystem(uint32_t maxParticles)
-	: m_PoolIndex(maxParticles - 1)
+      : m_PoolIndex(maxParticles - 1)
 {
 	m_ParticlePool.resize(maxParticles);
 }
 
 void ParticleSystem::OnUpdate(float ts)
 {
-	for (auto& particle : m_ParticlePool)
+	for (auto& particle: m_ParticlePool)
 	{
 		if (!particle.Active)
 			continue;
@@ -53,17 +53,17 @@ void ParticleSystem::OnUpdate(float ts)
 
 void ParticleSystem::OnRender()
 {
-	for (auto& particle : m_ParticlePool)
+	for (auto& particle: m_ParticlePool)
 	{
 		if (!particle.Active)
 			continue;
 
 		float life = particle.LifeRemaining / particle.LifeTime;
 		glm::vec4 color = glm::lerp(particle.ColorEnd, particle.ColorBegin, life);
-		
+
 		float size = glm::lerp(particle.SizeEnd, particle.SizeBegin, life);
-		
-		Renderer2D::DrawRotatedQuad(particle.Position, { size, size }, particle.Rotation, color);
+
+		Renderer2D::DrawRotatedQuad({ particle.Position.x, particle.Position.y, -0.01f }, { size, size }, particle.Rotation, color);
 	}
 }
 

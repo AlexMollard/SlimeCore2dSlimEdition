@@ -1,9 +1,11 @@
+#include "Game2D.h"
+
 #include <iostream>
 
-#include "Game2D.h"
-#include "Scripting/DotNetHost.h"
-#include "gtc/matrix_transform.hpp"
 #include "Core/Window.h"
+#include "gtc/matrix_transform.hpp"
+#include "Scripting/DotNetHost.h"
+
 #include "Core/Memory.h"
 
 Game2D::Game2D()
@@ -81,7 +83,7 @@ void Game2D::Draw()
 		{
 			auto& tc = m_scene->GetRegistry().GetComponent<TransformComponent>(camEntity);
 			auto& cc = m_scene->GetRegistry().GetComponent<CameraComponent>(camEntity);
-			
+
 			m_camera->SetPosition(tc.Position);
 			m_camera->SetRotation(tc.Rotation);
 			m_camera->SetZoom(cc.ZoomLevel);
@@ -101,9 +103,9 @@ void Game2D::Draw()
 		// Create a UI camera that matches the window settings but stays at origin
 		// This ensures UI elements (HUD) don't move with the world camera
 		Camera uiCamera(m_camera->GetOrthographicSize(), m_camera->GetAspectRatio());
-		
+
 		// Clear Depth Buffer for UI overlay
-		Window::GetContext()->ClearDepthStencilView(Window::GetDepthStencilView(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+		Window::GetContext()->ClearDepthStencil(Window::GetDepthStencilView(), CLEAR_DEPTH_FLAG, 1.0f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
 		Renderer2D::BeginScene(uiCamera);
 		m_scene->RenderUI(m_camera->GetOrthographicSize());

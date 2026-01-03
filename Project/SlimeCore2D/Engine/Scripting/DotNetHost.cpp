@@ -1,20 +1,17 @@
 #include "DotNetHost.h"
 
-#include "EngineExports.h"
-#include "Core/Logger.h"
-
 #include <cassert>
 #include <cstdio>
 #include <filesystem>
 #include <vector>
 #include <windows.h>
 
+#include "Core/Logger.h"
 #include "coreclr_delegates.h"
+#include "EngineExports.h"
 #include "hostfxr.h"
 #include "nethost.h"
-
 #include "Resources/ResourceManager.h"
-
 
 static std::wstring ToWide(const std::string& s)
 {

@@ -2,6 +2,7 @@
 
 #include <glm.hpp>
 #include <vector>
+
 #include "Renderer2D.h"
 
 struct ParticleProps

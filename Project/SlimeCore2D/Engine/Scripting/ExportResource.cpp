@@ -1,6 +1,8 @@
 #include "Scripting/ExportResource.h"
-#include "Resources/ResourceManager.h"
+
 #include <string>
+
+#include "Resources/ResourceManager.h"
 
 SLIME_EXPORT void* __cdecl Resources_LoadTexture(const char* name, const char* path)
 {

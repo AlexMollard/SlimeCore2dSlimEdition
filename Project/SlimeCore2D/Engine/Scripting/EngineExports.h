@@ -17,9 +17,8 @@ using EntityId = std::uint64_t;
 #include "Scripting/ExportCore.h"
 #include "Scripting/ExportEntity.h"
 #include "Scripting/ExportInput.h"
+#include "Scripting/ExportParticles.h"
 #include "Scripting/ExportResource.h"
 #include "Scripting/ExportScene.h"
 #include "Scripting/ExportText.h"
 #include "Scripting/ExportUI.h"
-#include "Scripting/ExportParticles.h"
-

@@ -1,8 +1,10 @@
 #include "Scripting/ExportUI.h"
-#include "Scene/Scene.h"
-#include "Resources/ResourceManager.h"
-#include "Rendering/Text.h"
+
 #include <string>
+
+#include "Rendering/Text.h"
+#include "Resources/ResourceManager.h"
+#include "Scene/Scene.h"
 
 SLIME_EXPORT EntityId __cdecl UI_CreateText(const char* text, int fontSize, float x, float y)
 {
@@ -80,8 +82,10 @@ SLIME_EXPORT void __cdecl UI_GetPosition(EntityId id, float* outX, float* outY)
 		return;
 	if (PersistentUIElement* el = Scene::GetActiveScene()->GetUIElement((ObjectId) id))
 	{
-		if (outX) *outX = el->Position.x;
-		if (outY) *outY = el->Position.y;
+		if (outX)
+			*outX = el->Position.x;
+		if (outY)
+			*outY = el->Position.y;
 	}
 }
 
@@ -101,8 +105,10 @@ SLIME_EXPORT void __cdecl UI_GetSize(EntityId id, float* outW, float* outH)
 		return;
 	if (PersistentUIElement* el = Scene::GetActiveScene()->GetUIElement((ObjectId) id))
 	{
-		if (outW) *outW = el->Scale.x;
-		if (outH) *outH = el->Scale.y;
+		if (outW)
+			*outW = el->Scale.x;
+		if (outH)
+			*outH = el->Scale.y;
 	}
 }
 
@@ -154,7 +160,7 @@ SLIME_EXPORT void __cdecl UI_SetTexture(EntityId id, void* texturePtr)
 		return;
 	if (PersistentUIElement* el = Scene::GetActiveScene()->GetUIElement((ObjectId) id))
 	{
-		el->Image = (Texture*)texturePtr;
+		el->Image = (Texture*) texturePtr;
 	}
 }
 
@@ -187,8 +193,10 @@ SLIME_EXPORT void __cdecl UI_GetTextSize(EntityId id, float* outWidth, float* ou
 		if (el->IsText && el->Font)
 		{
 			glm::vec2 size = el->Font->CalculateSize(el->TextContent, el->Scale.x);
-			if (outWidth) *outWidth = size.x;
-			if (outHeight) *outHeight = size.y;
+			if (outWidth)
+				*outWidth = size.x;
+			if (outHeight)
+				*outHeight = size.y;
 		}
 	}
 }

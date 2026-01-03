@@ -1,4 +1,5 @@
 #include "Scripting/ExportText.h"
+
 #include "Resources/ResourceManager.h"
 
 SLIME_EXPORT void* __cdecl Font_LoadFromFile(const char* path)

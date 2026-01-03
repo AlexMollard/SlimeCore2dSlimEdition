@@ -7,12 +7,12 @@ cbuffer ConstantBuffer : register(b0)
 
 struct VS_INPUT
 {
-    float3 Position : POSITION;
-    float4 Color : COLOR;
-    float2 TexCoord : TEXCOORD0;
-    float IsBelt : TEXCOORD1; // Using TEXCOORD1 for IsBelt flag
-    float Tiling : TILING;
-    float IsText : ISTEXT;
+    float3 Position : ATTRIB0;
+    float4 Color : ATTRIB1;
+    float2 TexCoord : ATTRIB2;
+    float IsBelt : ATTRIB3; // Using TEXCOORD1 for IsBelt flag
+    float Tiling : ATTRIB4;
+    float IsText : ATTRIB5;
 };
 
 struct PS_INPUT

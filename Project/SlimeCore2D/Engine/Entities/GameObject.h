@@ -1,8 +1,9 @@
 #pragma once
 
+#include <vector>
+
 #include "glm.hpp"
 #include "Rendering/Texture.h"
-#include <vector>
 
 class GameObject
 {
@@ -23,8 +24,16 @@ public:
 	// --- Hierarchy ---
 	void AddChild(GameObject* child);
 	void RemoveChild(GameObject* child);
-	const std::vector<GameObject*>& GetChildren() const { return m_Children; }
-	GameObject* GetParent() const { return m_Parent; }
+
+	const std::vector<GameObject*>& GetChildren() const
+	{
+		return m_Children;
+	}
+
+	GameObject* GetParent() const
+	{
+		return m_Parent;
+	}
 
 	glm::mat4 GetLocalTransform() const;
 	glm::mat4 GetWorldTransform() const;

@@ -3,6 +3,7 @@
 #include <glm.hpp>
 #include <string>
 #include <vector>
+
 #include "Rendering/Texture.h"
 
 // Entity ID type

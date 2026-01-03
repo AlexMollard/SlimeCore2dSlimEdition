@@ -41,8 +41,15 @@ public:
 		isKinematic = value;
 	};
 
-	bool GetFixedRotation() { return fixedRotation; }
-	void SetFixedRotation(bool value) { fixedRotation = value; }
+	bool GetFixedRotation()
+	{
+		return fixedRotation;
+	}
+
+	void SetFixedRotation(bool value)
+	{
+		fixedRotation = value;
+	}
 
 	void ApplyDrag(float timeStep);
 

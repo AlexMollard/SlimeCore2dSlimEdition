@@ -1,4 +1,5 @@
 #include "ExportParticles.h"
+
 #include "Rendering/ParticleSystem.h"
 
 SLIME_EXPORT void* __cdecl ParticleSystem_Create(uint32_t maxParticles)
@@ -8,17 +9,17 @@ SLIME_EXPORT void* __cdecl ParticleSystem_Create(uint32_t maxParticles)
 
 SLIME_EXPORT void __cdecl ParticleSystem_Destroy(void* system)
 {
-	delete (ParticleSystem*)system;
+	delete (ParticleSystem*) system;
 }
 
 SLIME_EXPORT void __cdecl ParticleSystem_OnUpdate(void* system, float ts)
 {
-	((ParticleSystem*)system)->OnUpdate(ts);
+	((ParticleSystem*) system)->OnUpdate(ts);
 }
 
 SLIME_EXPORT void __cdecl ParticleSystem_OnRender(void* system)
 {
-	((ParticleSystem*)system)->OnRender();
+	((ParticleSystem*) system)->OnRender();
 }
 
 SLIME_EXPORT void __cdecl ParticleSystem_Emit(void* system, ParticleProps_Interop* props)
@@ -34,5 +35,5 @@ SLIME_EXPORT void __cdecl ParticleSystem_Emit(void* system, ParticleProps_Intero
 	p.SizeVariation = props->SizeVariation;
 	p.LifeTime = props->LifeTime;
 
-	((ParticleSystem*)system)->Emit(p);
+	((ParticleSystem*) system)->Emit(p);
 }

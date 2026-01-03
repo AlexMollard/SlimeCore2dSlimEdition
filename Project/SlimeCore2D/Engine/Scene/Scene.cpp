@@ -1,9 +1,11 @@
 #include "Scene.h"
-#include "Rendering/Renderer2D.h"
-#include "Rendering/ParticleSystem.h"
+
+#include <algorithm>
+
 #include "Core/Input.h"
 #include "Physics/RigidBody.h"
-#include <algorithm>
+#include "Rendering/ParticleSystem.h"
+#include "Rendering/Renderer2D.h"
 
 Scene* Scene::s_ActiveScene = nullptr;
 
@@ -33,17 +35,17 @@ Scene::~Scene()
 {
 	if (s_ActiveScene == this)
 		s_ActiveScene = nullptr;
-	
+
 	// Cleanup all active entities properly to ensure physics bodies are released
-	for (auto entity : m_ActiveEntities)
+	for (auto entity: m_ActiveEntities)
 	{
 		if (m_Registry.HasComponent<RigidBodyComponent>(entity))
 		{
 			auto& rb = m_Registry.GetComponent<RigidBodyComponent>(entity);
 			if (rb.RuntimeBody && m_PhysicsScene)
 			{
-				m_PhysicsScene->removeActor((RigidBody*)rb.RuntimeBody);
-				delete (RigidBody*)rb.RuntimeBody;
+				m_PhysicsScene->removeActor((RigidBody*) rb.RuntimeBody);
+				delete (RigidBody*) rb.RuntimeBody;
 				rb.RuntimeBody = nullptr;
 			}
 		}
@@ -54,7 +56,7 @@ Scene::~Scene()
 		delete m_PhysicsScene;
 		m_PhysicsScene = nullptr;
 	}
-	
+
 	// Registry cleans up itself, but we should clear active entities
 	m_ActiveEntities.clear();
 	m_UIElements.clear();
@@ -63,7 +65,7 @@ Scene::~Scene()
 Entity Scene::GetPrimaryCameraEntity()
 {
 	auto view = m_Registry.View<CameraComponent>();
-	for (auto entity : view)
+	for (auto entity: view)
 	{
 		const auto& camera = m_Registry.GetComponent<CameraComponent>(entity);
 		if (camera.IsPrimary)
@@ -147,8 +149,8 @@ void Scene::DestroyObject(ObjectId id)
 			auto& rb = m_Registry.GetComponent<RigidBodyComponent>(id);
 			if (rb.RuntimeBody && m_PhysicsScene)
 			{
-				m_PhysicsScene->removeActor((RigidBody*)rb.RuntimeBody);
-				delete (RigidBody*)rb.RuntimeBody;
+				m_PhysicsScene->removeActor((RigidBody*) rb.RuntimeBody);
+				delete (RigidBody*) rb.RuntimeBody;
 				rb.RuntimeBody = nullptr;
 			}
 		}
@@ -162,10 +164,11 @@ bool Scene::IsAlive(ObjectId id) const
 {
 	if (id >= 100000)
 		return m_UIElements.find(id) != m_UIElements.end();
-	
+
 	// Check if in active entities list (O(N) but safe)
-	for (auto e : m_ActiveEntities)
-		if (e == id) return true;
+	for (auto e: m_ActiveEntities)
+		if (e == id)
+			return true;
 	return false;
 }
 
@@ -188,10 +191,21 @@ PersistentUIElement* Scene::GetUIElement(ObjectId id)
 
 void Scene::RenderUI(float uiHeight)
 {
+	// Sort UI elements by Layer (Ascending) so higher layers draw last (Painter's Algorithm)
+	// Since we disabled Depth Testing in Renderer2D, draw order is critical.
+	std::vector<PersistentUIElement*> sortedUI;
 	for (auto& [id, element] : m_UIElements)
 	{
-		if (!element.IsVisible)
-			continue;
+		if (element.IsVisible)
+			sortedUI.push_back(&element);
+	}
+	std::sort(sortedUI.begin(), sortedUI.end(), [](PersistentUIElement* a, PersistentUIElement* b) {
+		return a->Layer < b->Layer;
+	});
+
+	for (auto* elementPtr : sortedUI)
+	{
+		auto& element = *elementPtr;
 
 		glm::vec2 position = element.Position;
 		glm::vec2 size = element.Scale;
@@ -199,7 +213,7 @@ void Scene::RenderUI(float uiHeight)
 		if (element.UseScreenSpace)
 		{
 			position = ScreenSpaceToUISpace(element.Position.x, element.Position.y, uiHeight);
-			
+
 			if (!element.IsText)
 			{
 				auto viewport = Input::GetInstance()->GetViewportRect();
@@ -209,7 +223,8 @@ void Scene::RenderUI(float uiHeight)
 			}
 		}
 
-		glm::vec3 drawPos = glm::vec3(position.x, position.y, 0.9f + (element.Layer * 0.001f));
+		// Z is irrelevant now that Depth Test is disabled, but keep it 0.0f
+		glm::vec3 drawPos = glm::vec3(position.x, position.y, 0.0f);
 
 		if (element.IsText && element.Font)
 		{
@@ -262,7 +277,7 @@ void Scene::RenderUI(float uiHeight)
 
 ObjectId Scene::GetIdAtIndex(int index) const
 {
-	if (index < 0 || index >= (int)m_ActiveEntities.size())
+	if (index < 0 || index >= (int) m_ActiveEntities.size())
 		return InvalidObjectId;
 	return m_ActiveEntities[index];
 }
@@ -273,8 +288,8 @@ void Scene::Update(float deltaTime)
 	if (m_PhysicsScene)
 	{
 		const auto& rbEntities = m_Registry.View<RigidBodyComponent>();
-		
-		for (Entity entity : rbEntities)
+
+		for (Entity entity: rbEntities)
 		{
 			if (!m_Registry.HasComponent<TransformComponent>(entity))
 				continue;
@@ -291,7 +306,7 @@ void Scene::Update(float deltaTime)
 				body->SetKinematic(rb.IsKinematic);
 				body->SetFixedRotation(rb.FixedRotation);
 				body->SetVelocity(rb.Velocity);
-				
+
 				// Handle Colliders
 				if (m_Registry.HasComponent<BoxColliderComponent>(entity))
 				{
@@ -304,8 +319,8 @@ void Scene::Update(float deltaTime)
 			}
 			else
 			{
-				RigidBody* body = (RigidBody*)rb.RuntimeBody;
-				
+				RigidBody* body = (RigidBody*) rb.RuntimeBody;
+
 				// Sync ECS -> Physics (if Kinematic or properties changed)
 				if (rb.IsKinematic)
 				{
@@ -316,7 +331,7 @@ void Scene::Update(float deltaTime)
 					// Allow ECS to drive velocity for dynamic bodies (Arcade Physics style)
 					body->SetVelocity(rb.Velocity);
 				}
-				
+
 				// Sync properties that might change at runtime
 				body->SetMass(rb.Mass);
 				body->SetKinematic(rb.IsKinematic);
@@ -327,14 +342,14 @@ void Scene::Update(float deltaTime)
 		m_PhysicsScene->update(deltaTime);
 
 		// Sync Physics -> ECS
-		for (Entity entity : rbEntities)
+		for (Entity entity: rbEntities)
 		{
 			if (!m_Registry.HasComponent<TransformComponent>(entity))
 				continue;
 
 			auto& transform = m_Registry.GetComponent<TransformComponent>(entity);
 			auto& rb = m_Registry.GetComponent<RigidBodyComponent>(entity);
-			RigidBody* body = (RigidBody*)rb.RuntimeBody;
+			RigidBody* body = (RigidBody*) rb.RuntimeBody;
 
 			if (body && !rb.IsKinematic)
 			{
@@ -345,7 +360,7 @@ void Scene::Update(float deltaTime)
 	}
 
 	// Animation System
-	for (Entity entity : m_ActiveEntities)
+	for (Entity entity: m_ActiveEntities)
 	{
 		if (m_Registry.HasComponent<AnimationComponent>(entity))
 		{
@@ -354,13 +369,13 @@ void Scene::Update(float deltaTime)
 			{
 				anim.Timer += deltaTime;
 				float timePerFrame = (anim.FrameRate > 0.0f) ? (1.0f / anim.FrameRate) : 0.0f;
-				
+
 				if (timePerFrame > 0.0f && anim.Timer >= timePerFrame)
 				{
 					while (anim.Timer >= timePerFrame)
 					{
 						anim.Timer -= timePerFrame;
-						
+
 						// Advance Frame
 						if (m_Registry.HasComponent<SpriteComponent>(entity))
 						{
@@ -369,8 +384,9 @@ void Scene::Update(float deltaTime)
 							{
 								int texWidth = sprite.Texture->GetWidth();
 								int maxFrames = texWidth / anim.SpriteWidth;
-								if (maxFrames < 1) maxFrames = 1;
-								
+								if (maxFrames < 1)
+									maxFrames = 1;
+
 								anim.Frame++;
 								if (anim.Frame >= maxFrames)
 									anim.Frame = 0;
@@ -407,22 +423,24 @@ void Scene::Render(Camera& camera)
 	// In our LH_ZO projection (Near=10, Far=-10), smaller Z is "farther" (Depth 1)
 	// So we sort Ascending: -10 (Far) -> 10 (Near)
 	std::vector<Entity> sortedEntities = m_ActiveEntities;
-	std::sort(sortedEntities.begin(), sortedEntities.end(), [&](Entity a, Entity b) {
-		float zA = 0.0f;
-		float zB = 0.0f;
-		if (m_Registry.HasComponent<TransformComponent>(a))
-			zA = m_Registry.GetComponent<TransformComponent>(a).Position.z;
-		if (m_Registry.HasComponent<TransformComponent>(b))
-			zB = m_Registry.GetComponent<TransformComponent>(b).Position.z;
-		return zA < zB;
-	});
+	std::sort(sortedEntities.begin(),
+	        sortedEntities.end(),
+	        [&](Entity a, Entity b)
+	        {
+		        float zA = 0.0f;
+		        float zB = 0.0f;
+		        if (m_Registry.HasComponent<TransformComponent>(a))
+			        zA = m_Registry.GetComponent<TransformComponent>(a).Position.z;
+		        if (m_Registry.HasComponent<TransformComponent>(b))
+			        zB = m_Registry.GetComponent<TransformComponent>(b).Position.z;
+		        return zA < zB;
+	        });
 
 	Renderer2D::BeginScene(camera);
 
-	for (Entity entity : sortedEntities)
+	for (Entity entity: sortedEntities)
 	{
-		if (m_Registry.HasComponent<TransformComponent>(entity) && 
-			m_Registry.HasComponent<SpriteComponent>(entity))
+		if (m_Registry.HasComponent<TransformComponent>(entity) && m_Registry.HasComponent<SpriteComponent>(entity))
 		{
 			auto& transform = m_Registry.GetComponent<TransformComponent>(entity);
 			auto& sprite = m_Registry.GetComponent<SpriteComponent>(entity);
@@ -443,12 +461,13 @@ void Scene::Render(Camera& camera)
 						hasAnim = true;
 						int texWidth = sprite.Texture->GetWidth();
 						int framesPerRow = texWidth / anim.SpriteWidth;
-						if (framesPerRow == 0) framesPerRow = 1;
+						if (framesPerRow == 0)
+							framesPerRow = 1;
 						int column = anim.Frame % framesPerRow;
 
-						float u0 = (float)(column * anim.SpriteWidth) / texWidth;
+						float u0 = (float) (column * anim.SpriteWidth) / texWidth;
 						float v0 = 0.0f;
-						float u1 = (float)((column + 1) * anim.SpriteWidth) / texWidth;
+						float u1 = (float) ((column + 1) * anim.SpriteWidth) / texWidth;
 						float v1 = 1.0f;
 
 						glm::vec2 uvs[4] = {
@@ -461,7 +480,7 @@ void Scene::Render(Camera& camera)
 						Renderer2D::DrawQuadUV(transformMat, sprite.Texture, uvs, sprite.Color);
 					}
 				}
-				
+
 				if (!hasAnim)
 				{
 					Renderer2D::DrawQuad(transformMat, sprite.Texture, sprite.TilingFactor, sprite.Color);
@@ -474,7 +493,7 @@ void Scene::Render(Camera& camera)
 		}
 	}
 
-	for (auto ps : m_ParticleSystems)
+	for (auto ps: m_ParticleSystems)
 		ps->OnRender();
 
 	Renderer2D::EndScene();

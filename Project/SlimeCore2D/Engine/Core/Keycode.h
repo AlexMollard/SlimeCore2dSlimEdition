@@ -1,7 +1,7 @@
 #pragma once
 
 #ifdef DELETE // Might not do this
-#undef DELETE
+#	undef DELETE
 #endif
 
 enum Keycode

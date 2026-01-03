@@ -1,157 +1,115 @@
 #include "Renderer2D.h"
-#include "Core/Logger.h"
-#include "Core/Window.h"
 
 #include <array>
 #include <gtc/matrix_transform.hpp>
 #include <iostream>
 
+#include "Core/Logger.h"
+#include "Core/Window.h"
 #include "Resources/ResourceManager.h"
-#include "Text.h" 
+#include "Text.h"
+
+using namespace Diligent;
 
 // Define the static data instance
 Renderer2D::Renderer2DData Renderer2D::s_Data;
 
 void Renderer2D::Init()
 {
-	s_Data.QuadBuffer = new Renderer2DData::QuadVertex[s_Data.MaxVertices];
+	Logger::Info("Renderer2D: InstanceData Size: " + std::to_string(sizeof(Renderer2DData::InstanceData)));
+	s_Data.InstanceBuffer = new Renderer2DData::InstanceData[s_Data.MaxInstances];
 
 	auto device = Window::GetDevice();
-	auto context = Window::GetContext();
 
-	// 1. Create Vertex Buffer (Dynamic)
-	D3D11_BUFFER_DESC vbDesc = {};
-	vbDesc.ByteWidth = s_Data.MaxVertices * sizeof(Renderer2DData::QuadVertex);
-	vbDesc.Usage = D3D11_USAGE_DYNAMIC;
-	vbDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	vbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	// 1. Create Quad Vertex Buffer (Static Geometry)
+	// Vertices: Pos(3), UV(2)
+	float quadVertices[] = {
+		-0.5f,
+		-0.5f,
+		0.0f,
+		0.0f,
+		1.0f, // BL
+		0.5f,
+		-0.5f,
+		0.0f,
+		1.0f,
+		1.0f, // BR
+		0.5f,
+		0.5f,
+		0.0f,
+		1.0f,
+		0.0f, // TR
+		-0.5f,
+		0.5f,
+		0.0f,
+		0.0f,
+		0.0f // TL
+	};
 
-	HRESULT hr = device->CreateBuffer(&vbDesc, nullptr, s_Data.QuadVB.GetAddressOf());
-	if (FAILED(hr))
+	Diligent::BufferDesc QuadVBDesc;
+	QuadVBDesc.Name = "Quad Geometry Buffer";
+	QuadVBDesc.Size = sizeof(quadVertices);
+	QuadVBDesc.Usage = USAGE_IMMUTABLE;
+	QuadVBDesc.BindFlags = BIND_VERTEX_BUFFER;
+
+	BufferData QuadVBData;
+	QuadVBData.pData = quadVertices;
+	QuadVBData.DataSize = sizeof(quadVertices);
+	device->CreateBuffer(QuadVBDesc, &QuadVBData, &s_Data.QuadVB);
+
+	// 2. Create Instance Buffer (Dynamic)
+	Diligent::BufferDesc InstVBDesc;
+	InstVBDesc.Name = "Quad Instance Buffer";
+	InstVBDesc.Size = s_Data.MaxInstances * sizeof(Renderer2DData::InstanceData);
+	InstVBDesc.Usage = USAGE_DYNAMIC;
+	InstVBDesc.BindFlags = BIND_VERTEX_BUFFER;
+	InstVBDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
+	device->CreateBuffer(InstVBDesc, nullptr, &s_Data.InstanceVB);
+
+	if (!s_Data.InstanceVB)
 	{
-		Logger::Error("Renderer2D: Failed to create Vertex Buffer!");
-		return;
+		Logger::Error("Renderer2D: Failed to create Instance Buffer!");
 	}
 
-	// 2. Create Index Buffer (Static)
-	uint32_t* quadIndices = new uint32_t[s_Data.MaxIndices];
-	uint32_t offset = 0;
-	for (uint32_t i = 0; i < s_Data.MaxIndices; i += 6)
-	{
-		quadIndices[i + 0] = offset + 0;
-		quadIndices[i + 1] = offset + 1;
-		quadIndices[i + 2] = offset + 2;
+	// 3. Create Index Buffer (Static)
+	uint32_t quadIndices[] = { 0, 1, 2, 2, 3, 0 };
 
-		quadIndices[i + 3] = offset + 2;
-		quadIndices[i + 4] = offset + 3;
-		quadIndices[i + 5] = offset + 0;
+	Diligent::BufferDesc IBDesc;
+	IBDesc.Name = "Quad Index Buffer";
+	IBDesc.Size = sizeof(quadIndices);
+	IBDesc.Usage = USAGE_IMMUTABLE;
+	IBDesc.BindFlags = BIND_INDEX_BUFFER;
 
-		offset += 4;
-	}
+	BufferData IBData;
+	IBData.pData = quadIndices;
+	IBData.DataSize = sizeof(quadIndices);
+	device->CreateBuffer(IBDesc, &IBData, &s_Data.QuadIB);
 
-	D3D11_BUFFER_DESC ibDesc = {};
-	ibDesc.ByteWidth = s_Data.MaxIndices * sizeof(uint32_t);
-	ibDesc.Usage = D3D11_USAGE_DEFAULT;
-	ibDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-	ibDesc.CPUAccessFlags = 0;
-
-	D3D11_SUBRESOURCE_DATA ibData = {};
-	ibData.pSysMem = quadIndices;
-
-	hr = device->CreateBuffer(&ibDesc, &ibData, s_Data.QuadIB.GetAddressOf());
-	if (FAILED(hr))
-	{
-		Logger::Error("Renderer2D: Failed to create Index Buffer!");
-	}
-	delete[] quadIndices;
-
-	// 3. Create White Texture (1x1)
-	D3D11_TEXTURE2D_DESC texDesc = {};
-	texDesc.Width = 1;
-	texDesc.Height = 1;
-	texDesc.MipLevels = 1;
-	texDesc.ArraySize = 1;
-	texDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	texDesc.SampleDesc.Count = 1;
-	texDesc.Usage = D3D11_USAGE_DEFAULT;
-	texDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	// 4. Create White Texture (1x1)
+	TextureDesc TexDesc;
+	TexDesc.Name = "White Texture";
+	TexDesc.Type = RESOURCE_DIM_TEX_2D;
+	TexDesc.Width = 1;
+	TexDesc.Height = 1;
+	TexDesc.Format = TEX_FORMAT_RGBA8_UNORM;
+	TexDesc.Usage = USAGE_IMMUTABLE;
+	TexDesc.BindFlags = BIND_SHADER_RESOURCE;
+	TexDesc.MipLevels = 1;
 
 	uint32_t whiteColor = 0xffffffff;
-	D3D11_SUBRESOURCE_DATA texData = {};
-	texData.pSysMem = &whiteColor;
-	texData.SysMemPitch = 4;
+	TextureSubResData Level0Data;
+	Level0Data.pData = &whiteColor;
+	Level0Data.Stride = 4;
+	TextureData InitData;
+	InitData.pSubResources = &Level0Data;
+	InitData.NumSubresources = 1;
 
-	Microsoft::WRL::ComPtr<ID3D11Texture2D> whiteTexture;
-	hr = device->CreateTexture2D(&texDesc, &texData, whiteTexture.GetAddressOf());
-	if (FAILED(hr))
-	{
-		Logger::Error("Renderer2D: Failed to create White Texture!");
-	}
-	else
-	{
-		hr = device->CreateShaderResourceView(whiteTexture.Get(), nullptr, s_Data.WhiteTextureSRV.GetAddressOf());
-		if (FAILED(hr))
-			Logger::Error("Renderer2D: Failed to create White Texture SRV!");
-	}
-
-	// 4. Create Sampler State
-	D3D11_SAMPLER_DESC samplerDesc = {};
-	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
-	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-	samplerDesc.MinLOD = 0;
-	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-
-	hr = device->CreateSamplerState(&samplerDesc, s_Data.TextureSampler.GetAddressOf());
-	if (FAILED(hr))
-		Logger::Error("Renderer2D: Failed to create Sampler State!");
-
-	// Create Linear Sampler
-	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-	hr = device->CreateSamplerState(&samplerDesc, s_Data.TextureSamplerLinear.GetAddressOf());
-	if (FAILED(hr))
-		Logger::Error("Renderer2D: Failed to create Linear Sampler State!");
-
-	// 5. Create Blend State
-	D3D11_BLEND_DESC blendDesc = {};
-	blendDesc.RenderTarget[0].BlendEnable = TRUE;
-	blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
-	blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
-	blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-	blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-	blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
-	blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-	blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-
-	hr = device->CreateBlendState(&blendDesc, s_Data.BlendState.GetAddressOf());
-	if (FAILED(hr))
-		Logger::Error("Renderer2D: Failed to create Blend State!");
-
-	// 6. Create Rasterizer State (Cull None for 2D usually, or Back)
-	D3D11_RASTERIZER_DESC rasterDesc = {};
-	rasterDesc.FillMode = D3D11_FILL_SOLID;
-	rasterDesc.CullMode = D3D11_CULL_NONE; // Don't cull for 2D
-	rasterDesc.FrontCounterClockwise = FALSE; // Default
-	rasterDesc.DepthClipEnable = TRUE;
-
-	hr = device->CreateRasterizerState(&rasterDesc, s_Data.RasterizerState.GetAddressOf());
-	if (FAILED(hr))
-		Logger::Error("Renderer2D: Failed to create Rasterizer State!");
-
-	// 7. Create Depth Stencil State
-	D3D11_DEPTH_STENCIL_DESC depthDesc = {};
-	depthDesc.DepthEnable = TRUE;
-	depthDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	depthDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
-
-	hr = device->CreateDepthStencilState(&depthDesc, s_Data.DepthStencilState.GetAddressOf());
-	if (FAILED(hr))
-		Logger::Error("Renderer2D: Failed to create Depth Stencil State!");
+	RefCntAutoPtr<ITexture> whiteTexture;
+	device->CreateTexture(TexDesc, &InitData, &whiteTexture);
+	s_Data.WhiteTextureSRV = whiteTexture->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
 
 	// Initialize Texture Slots
-	s_Data.TextureSlots[0] = s_Data.WhiteTextureSRV.Get();
+	s_Data.TextureSlots[0] = s_Data.WhiteTextureSRV;
 	for (size_t i = 1; i < s_Data.MaxTextureSlots; i++)
 		s_Data.TextureSlots[i] = nullptr;
 
@@ -161,33 +119,133 @@ void Renderer2D::Init()
 	if (!s_Data.TextureShader)
 	{
 		Logger::Warn("Renderer2D Warning: 'basic' shader not found.");
+		return;
 	}
 
-	// Helper for rotation
-	s_Data.QuadVertexPositions[0] = { -0.5f, -0.5f, 0.0f, 1.0f };
-	s_Data.QuadVertexPositions[1] = { 0.5f, -0.5f, 0.0f, 1.0f };
-	s_Data.QuadVertexPositions[2] = { 0.5f, 0.5f, 0.0f, 1.0f };
-	s_Data.QuadVertexPositions[3] = { -0.5f, 0.5f, 0.0f, 1.0f };
+	// Create PSO
+	GraphicsPipelineStateCreateInfo PSOCreateInfo;
+	PSOCreateInfo.PSODesc.Name = "Renderer2D PSO";
+	PSOCreateInfo.PSODesc.PipelineType = PIPELINE_TYPE_GRAPHICS;
+	PSOCreateInfo.GraphicsPipeline.NumRenderTargets = 1;
+	PSOCreateInfo.GraphicsPipeline.RTVFormats[0] = TEX_FORMAT_RGBA8_UNORM;
+	PSOCreateInfo.GraphicsPipeline.DSVFormat = TEX_FORMAT_D24_UNORM_S8_UINT;
+	PSOCreateInfo.GraphicsPipeline.PrimitiveTopology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+	// Blend State
+	PSOCreateInfo.GraphicsPipeline.BlendDesc.RenderTargets[0].BlendEnable = true;
+	PSOCreateInfo.GraphicsPipeline.BlendDesc.RenderTargets[0].SrcBlend = BLEND_FACTOR_SRC_ALPHA;
+	PSOCreateInfo.GraphicsPipeline.BlendDesc.RenderTargets[0].DestBlend = BLEND_FACTOR_INV_SRC_ALPHA;
+	PSOCreateInfo.GraphicsPipeline.BlendDesc.RenderTargets[0].BlendOp = BLEND_OPERATION_ADD;
+	PSOCreateInfo.GraphicsPipeline.BlendDesc.RenderTargets[0].SrcBlendAlpha = BLEND_FACTOR_ONE;
+	PSOCreateInfo.GraphicsPipeline.BlendDesc.RenderTargets[0].DestBlendAlpha = BLEND_FACTOR_ZERO;
+	PSOCreateInfo.GraphicsPipeline.BlendDesc.RenderTargets[0].BlendOpAlpha = BLEND_OPERATION_ADD;
+
+	// Rasterizer State
+	PSOCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_NONE;
+	PSOCreateInfo.GraphicsPipeline.RasterizerDesc.FillMode = FILL_MODE_SOLID;
+	PSOCreateInfo.GraphicsPipeline.RasterizerDesc.FrontCounterClockwise = false;
+
+	// Depth Stencil State
+	PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable = false;
+	PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthWriteEnable = false;
+	PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthFunc = COMPARISON_FUNC_ALWAYS; // Disable depth test for 2D
+
+	// Input Layout
+	LayoutElement LayoutElems[] = {
+		// Slot 0 - Geometry
+		LayoutElement{ "ATTRIB", 0, 0, 3, VT_FLOAT32, False, 0, 5 * sizeof(float) }, // Position
+		LayoutElement{ "ATTRIB", 1, 0, 2, VT_FLOAT32, False, 3 * sizeof(float), 5 * sizeof(float) }, // TexCoord
+
+		// Slot 1 - Instance Data
+		// Transform Row 0
+		LayoutElement{ "ATTRIB", 2, 1, 4, VT_FLOAT32, False, 0, sizeof(Renderer2DData::InstanceData), INPUT_ELEMENT_FREQUENCY_PER_INSTANCE },
+		// Transform Row 1
+		LayoutElement{ "ATTRIB", 3, 1, 4, VT_FLOAT32, False, 4 * sizeof(float), sizeof(Renderer2DData::InstanceData), INPUT_ELEMENT_FREQUENCY_PER_INSTANCE },
+		// Transform Row 2
+		LayoutElement{ "ATTRIB", 4, 1, 4, VT_FLOAT32, False, 8 * sizeof(float), sizeof(Renderer2DData::InstanceData), INPUT_ELEMENT_FREQUENCY_PER_INSTANCE },
+		// Transform Row 3
+		LayoutElement{ "ATTRIB", 5, 1, 4, VT_FLOAT32, False, 12 * sizeof(float), sizeof(Renderer2DData::InstanceData), INPUT_ELEMENT_FREQUENCY_PER_INSTANCE },
+
+		// Color
+		LayoutElement{ "ATTRIB", 6, 1, 4, VT_FLOAT32, False, 16 * sizeof(float), sizeof(Renderer2DData::InstanceData), INPUT_ELEMENT_FREQUENCY_PER_INSTANCE },
+		// UVRect
+		LayoutElement{ "ATTRIB", 7, 1, 4, VT_FLOAT32, False, 20 * sizeof(float), sizeof(Renderer2DData::InstanceData), INPUT_ELEMENT_FREQUENCY_PER_INSTANCE },
+		// TexIndex
+		LayoutElement{ "ATTRIB", 8, 1, 1, VT_FLOAT32, False, 24 * sizeof(float), sizeof(Renderer2DData::InstanceData), INPUT_ELEMENT_FREQUENCY_PER_INSTANCE },
+		// Tiling
+		LayoutElement{ "ATTRIB", 9, 1, 1, VT_FLOAT32, False, 25 * sizeof(float), sizeof(Renderer2DData::InstanceData), INPUT_ELEMENT_FREQUENCY_PER_INSTANCE },
+		// IsText
+		LayoutElement{ "ATTRIB", 10, 1, 1, VT_FLOAT32, False, 26 * sizeof(float), sizeof(Renderer2DData::InstanceData), INPUT_ELEMENT_FREQUENCY_PER_INSTANCE }
+	};
+	PSOCreateInfo.GraphicsPipeline.InputLayout.LayoutElements = LayoutElems;
+	PSOCreateInfo.GraphicsPipeline.InputLayout.NumElements = _countof(LayoutElems);
+
+	// Shaders
+	PSOCreateInfo.pVS = s_Data.TextureShader->GetVertexShader();
+	PSOCreateInfo.pPS = s_Data.TextureShader->GetPixelShader();
+
+	// Shader Variables
+	ShaderResourceVariableDesc Vars[] = {
+		{		              SHADER_TYPE_PIXEL,     "u_Textures", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC },
+        { SHADER_TYPE_VERTEX | SHADER_TYPE_PIXEL, "ConstantBuffer", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE }
+	};
+	PSOCreateInfo.PSODesc.ResourceLayout.Variables = Vars;
+	PSOCreateInfo.PSODesc.ResourceLayout.NumVariables = _countof(Vars);
+
+	// Immutable Samplers
+	SamplerDesc SamLinear;
+	SamLinear.MinFilter = FILTER_TYPE_LINEAR;
+	SamLinear.MagFilter = FILTER_TYPE_LINEAR;
+	SamLinear.MipFilter = FILTER_TYPE_LINEAR;
+	SamLinear.AddressU = TEXTURE_ADDRESS_WRAP;
+	SamLinear.AddressV = TEXTURE_ADDRESS_WRAP;
+	SamLinear.AddressW = TEXTURE_ADDRESS_WRAP;
+
+	SamplerDesc SamPoint;
+	SamPoint.MinFilter = FILTER_TYPE_POINT;
+	SamPoint.MagFilter = FILTER_TYPE_POINT;
+	SamPoint.MipFilter = FILTER_TYPE_POINT;
+	SamPoint.AddressU = TEXTURE_ADDRESS_WRAP;
+	SamPoint.AddressV = TEXTURE_ADDRESS_WRAP;
+	SamPoint.AddressW = TEXTURE_ADDRESS_WRAP;
+
+	ImmutableSamplerDesc ImtblSamplers[] = {
+		{ SHADER_TYPE_PIXEL,       "u_Sampler",  SamPoint },
+        { SHADER_TYPE_PIXEL, "u_SamplerLinear", SamLinear }
+	};
+	PSOCreateInfo.PSODesc.ResourceLayout.ImmutableSamplers = ImtblSamplers;
+	PSOCreateInfo.PSODesc.ResourceLayout.NumImmutableSamplers = _countof(ImtblSamplers);
+
+	device->CreateGraphicsPipelineState(PSOCreateInfo, &s_Data.PSO);
+
+	// Create SRB
+	s_Data.PSO->CreateShaderResourceBinding(&s_Data.SRB, true);
+
+	// Bind Constant Buffer
+	if (auto* pCB = s_Data.TextureShader->GetConstantBuffer())
+	{
+		if (auto* pVar = s_Data.SRB->GetVariableByName(SHADER_TYPE_VERTEX, "ConstantBuffer"))
+			pVar->Set(pCB);
+		if (auto* pVar = s_Data.SRB->GetVariableByName(SHADER_TYPE_PIXEL, "ConstantBuffer"))
+			pVar->Set(pCB);
+	}
 }
 
 void Renderer2D::Shutdown()
 {
-	delete[] s_Data.QuadBuffer;
-	s_Data.QuadVB.Reset();
-	s_Data.QuadIB.Reset();
-	s_Data.WhiteTextureSRV.Reset();
-	s_Data.TextureSampler.Reset();
-	s_Data.TextureSamplerLinear.Reset();
-	s_Data.BlendState.Reset();
-	s_Data.RasterizerState.Reset();
-	s_Data.DepthStencilState.Reset();
+	delete[] s_Data.InstanceBuffer;
+	s_Data.QuadVB.Release();
+	s_Data.InstanceVB.Release();
+	s_Data.QuadIB.Release();
+	s_Data.WhiteTextureSRV.Release();
+	s_Data.PSO.Release();
+	s_Data.SRB.Release();
 }
 
 void Renderer2D::BeginScene(Camera& camera)
 {
 	if (s_Data.TextureShader)
 	{
-		s_Data.TextureShader->Bind();
 		s_Data.TextureShader->SetMat4("u_ViewProjection", camera.GetViewProjectionMatrix());
 	}
 	StartBatch();
@@ -197,7 +255,6 @@ void Renderer2D::BeginScene(const glm::mat4& viewProj)
 {
 	if (s_Data.TextureShader)
 	{
-		s_Data.TextureShader->Bind();
 		s_Data.TextureShader->SetMat4("u_ViewProjection", viewProj);
 	}
 	StartBatch();
@@ -210,53 +267,74 @@ void Renderer2D::EndScene()
 
 void Renderer2D::StartBatch()
 {
-	s_Data.IndexCount = 0;
-	s_Data.QuadBufferPtr = s_Data.QuadBuffer;
+	s_Data.QuadCount = 0;
+	s_Data.InstanceBufferPtr = s_Data.InstanceBuffer;
 	s_Data.TextureSlotIndex = 1;
 }
 
 void Renderer2D::Flush()
 {
-	if (s_Data.IndexCount == 0)
+	if (s_Data.QuadCount == 0)
 		return;
 
 	auto context = Window::GetContext();
 
-	// 1. Update Vertex Buffer
-	uint32_t dataSize = (uint32_t)((uint8_t*)s_Data.QuadBufferPtr - (uint8_t*)s_Data.QuadBuffer);
-	
-	D3D11_MAPPED_SUBRESOURCE mappedRes;
-	HRESULT hr = context->Map(s_Data.QuadVB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedRes);
-	if (SUCCEEDED(hr))
-	{
-		memcpy(mappedRes.pData, s_Data.QuadBuffer, dataSize);
-		context->Unmap(s_Data.QuadVB.Get(), 0);
-	}
+	// 1. Update Instance Buffer
+	uint32_t dataSize = (uint32_t) ((uint8_t*) s_Data.InstanceBufferPtr - (uint8_t*) s_Data.InstanceBuffer);
+
+	void* pData;
+	context->MapBuffer(s_Data.InstanceVB, MAP_WRITE, MAP_FLAG_DISCARD, pData);
+	memcpy(pData, s_Data.InstanceBuffer, dataSize);
+	context->UnmapBuffer(s_Data.InstanceVB, MAP_WRITE);
 
 	// 2. Bind States
-	float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-	context->OMSetBlendState(s_Data.BlendState.Get(), blendFactor, 0xffffffff);
-	context->OMSetDepthStencilState(s_Data.DepthStencilState.Get(), 0);
-	context->RSSetState(s_Data.RasterizerState.Get());
+	context->SetPipelineState(s_Data.PSO);
 
 	// 3. Bind Buffers
-	UINT stride = sizeof(Renderer2DData::QuadVertex);
-	UINT offset = 0;
-	context->IASetVertexBuffers(0, 1, s_Data.QuadVB.GetAddressOf(), &stride, &offset);
-	context->IASetIndexBuffer(s_Data.QuadIB.Get(), DXGI_FORMAT_R32_UINT, 0);
-	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	// Slot 0: Quad Geometry (Static)
+	// Slot 1: Instance Data (Dynamic)
+	if (s_Data.InstanceVB)
+	{
+		IBuffer* pVBs[] = { s_Data.QuadVB, s_Data.InstanceVB };
+		Uint64 offsets[] = { 0, 0 };
+		context->SetVertexBuffers(0, 2, pVBs, offsets, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
+	}
+	else
+	{
+		Logger::Error("Renderer2D: Instance Buffer is null!");
+		return;
+	}
+
+	context->SetIndexBuffer(s_Data.QuadIB, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
 	// 4. Bind Textures
-	context->PSSetShaderResources(0, s_Data.TextureSlotIndex, s_Data.TextureSlots.data());
-	ID3D11SamplerState* samplers[] = { s_Data.TextureSampler.Get(), s_Data.TextureSamplerLinear.Get() };
-	context->PSSetSamplers(0, 2, samplers);
+	if (auto* pVar = s_Data.SRB->GetVariableByName(SHADER_TYPE_PIXEL, "u_Textures"))
+	{
+		std::vector<IDeviceObject*> pViews(s_Data.MaxTextureSlots);
+		for (uint32_t i = 0; i < s_Data.TextureSlotIndex; ++i)
+			pViews[i] = s_Data.TextureSlots[i];
 
-	// 5. Draw
-	context->DrawIndexed(s_Data.IndexCount, 0, 0);
+		// Fill the rest with white texture
+		for (uint32_t i = s_Data.TextureSlotIndex; i < s_Data.MaxTextureSlots; ++i)
+			pViews[i] = s_Data.WhiteTextureSRV;
+
+		pVar->SetArray(pViews.data(), 0, s_Data.MaxTextureSlots);
+	}
+
+	context->CommitShaderResources(s_Data.SRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+	// 5. Draw Instanced
+	DrawIndexedAttribs DrawAttrs;
+	DrawAttrs.NumIndices = 6; // Always 6 indices per quad
+	DrawAttrs.NumInstances = s_Data.QuadCount;
+	DrawAttrs.IndexType = VT_UINT32;
+	DrawAttrs.Flags = DRAW_FLAG_VERIFY_ALL;
+	context->DrawIndexed(DrawAttrs);
 
 	s_Data.Stats.DrawCalls++;
-	s_Data.Stats.VertexCount += s_Data.IndexCount / 6 * 4;
-	s_Data.Stats.IndexCount += s_Data.IndexCount;
+	s_Data.Stats.QuadCount += s_Data.QuadCount;
+	s_Data.Stats.VertexCount += s_Data.QuadCount * 4;
+	s_Data.Stats.IndexCount += s_Data.QuadCount * 6;
 }
 
 void Renderer2D::NextBatch()
@@ -265,10 +343,6 @@ void Renderer2D::NextBatch()
 	StartBatch();
 }
 
-// -------------------------------------------------------------------------
-// Drawing Primitives
-// -------------------------------------------------------------------------
-
 void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color)
 {
 	DrawQuad({ position.x, position.y, 0.0f }, size, color);
@@ -276,40 +350,20 @@ void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, cons
 
 void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, const glm::vec4& color)
 {
-	if (s_Data.IndexCount >= s_Data.MaxIndices)
+	if (s_Data.QuadCount >= s_Data.MaxInstances)
 		NextBatch();
 
-	const float texIndex = 0.0f; // White Texture
-	const float tilingFactor = 1.0f;
-	const glm::vec2 texCoords[] = {
-		{ 0.0f, 1.0f }, // BL
-        { 1.0f, 1.0f }, // BR
-        { 1.0f, 0.0f }, // TR
-        { 0.0f, 0.0f }  // TL
-	};
+	glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) * glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
 
-	glm::vec3 transformPos;
-	// Center-based anchor logic
-	glm::vec3 offsets[4] = {
-		{ -0.5f * size.x, -0.5f * size.y, 0.0f },
-        {  0.5f * size.x, -0.5f * size.y, 0.0f },
-        {  0.5f * size.x,  0.5f * size.y, 0.0f },
-        { -0.5f * size.x,  0.5f * size.y, 0.0f }
-	};
+	s_Data.InstanceBufferPtr->Transform = transform;
+	s_Data.InstanceBufferPtr->Color = color;
+	s_Data.InstanceBufferPtr->UVRect = { 0.0f, 0.0f, 1.0f, 1.0f }; // Default UVs
+	s_Data.InstanceBufferPtr->TexIndex = 0.0f;                     // White Texture
+	s_Data.InstanceBufferPtr->Tiling = 1.0f;
+	s_Data.InstanceBufferPtr->IsText = 0.0f;
+	s_Data.InstanceBufferPtr++;
 
-	for (int i = 0; i < 4; i++)
-	{
-		s_Data.QuadBufferPtr->Position = position + offsets[i];
-		s_Data.QuadBufferPtr->Color = color;
-		s_Data.QuadBufferPtr->TexCoord = texCoords[i];
-		s_Data.QuadBufferPtr->TexIndex = texIndex;
-		s_Data.QuadBufferPtr->TilingFactor = tilingFactor;
-		s_Data.QuadBufferPtr->IsText = 0.0f;
-		s_Data.QuadBufferPtr++;
-	}
-
-	s_Data.IndexCount += 6;
-	s_Data.Stats.QuadCount++;
+	s_Data.QuadCount++;
 }
 
 void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, Texture* texture, float tiling, const glm::vec4& tintColor)
@@ -319,11 +373,11 @@ void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, Text
 
 void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, Texture* texture, float tiling, const glm::vec4& tintColor)
 {
-	if (s_Data.IndexCount >= s_Data.MaxIndices || s_Data.TextureSlotIndex > 31)
+	if (s_Data.QuadCount >= s_Data.MaxInstances || s_Data.TextureSlotIndex > 31)
 		NextBatch();
 
 	float textureIndex = 0.0f;
-	ID3D11ShaderResourceView* srv = texture->GetSRV();
+	ITextureView* srv = texture->GetSRV();
 
 	for (uint32_t i = 1; i < s_Data.TextureSlotIndex; i++)
 	{
@@ -343,33 +397,17 @@ void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, Text
 		s_Data.TextureSlotIndex++;
 	}
 
-	glm::vec2 texCoords[] = {
-		{ 0.0f, 1.0f },
-        { 1.0f, 1.0f },
-        { 1.0f, 0.0f },
-        { 0.0f, 0.0f }
-	};
+	glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) * glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
 
-	glm::vec3 offsets[4] = {
-		{ -0.5f * size.x, -0.5f * size.y, 0.0f },
-        {  0.5f * size.x, -0.5f * size.y, 0.0f },
-        {  0.5f * size.x,  0.5f * size.y, 0.0f },
-        { -0.5f * size.x,  0.5f * size.y, 0.0f }
-	};
+	s_Data.InstanceBufferPtr->Transform = transform;
+	s_Data.InstanceBufferPtr->Color = tintColor;
+	s_Data.InstanceBufferPtr->UVRect = { 0.0f, 0.0f, 1.0f, 1.0f };
+	s_Data.InstanceBufferPtr->TexIndex = textureIndex;
+	s_Data.InstanceBufferPtr->Tiling = tiling;
+	s_Data.InstanceBufferPtr->IsText = 0.0f;
+	s_Data.InstanceBufferPtr++;
 
-	for (int i = 0; i < 4; i++)
-	{
-		s_Data.QuadBufferPtr->Position = position + offsets[i];
-		s_Data.QuadBufferPtr->Color = tintColor;
-		s_Data.QuadBufferPtr->TexCoord = texCoords[i];
-		s_Data.QuadBufferPtr->TexIndex = textureIndex;
-		s_Data.QuadBufferPtr->TilingFactor = tiling;
-		s_Data.QuadBufferPtr->IsText = 0.0f;
-		s_Data.QuadBufferPtr++;
-	}
-
-	s_Data.IndexCount += 6;
-	s_Data.Stats.QuadCount++;
+	s_Data.QuadCount++;
 }
 
 void Renderer2D::DrawRotatedQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const glm::vec4& color)
@@ -379,42 +417,29 @@ void Renderer2D::DrawRotatedQuad(const glm::vec2& position, const glm::vec2& siz
 
 void Renderer2D::DrawRotatedQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const glm::vec4& color)
 {
-	if (s_Data.IndexCount >= s_Data.MaxIndices)
+	if (s_Data.QuadCount >= s_Data.MaxInstances)
 		NextBatch();
-
-	const float texIndex = 0.0f;
-	const float tiling = 1.0f;
-	const glm::vec2 texCoords[] = {
-		{ 0.0f, 1.0f },
-        { 1.0f, 1.0f },
-        { 1.0f, 0.0f },
-        { 0.0f, 0.0f }
-	};
 
 	glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) * glm::rotate(glm::mat4(1.0f), rotation, { 0.0f, 0.0f, 1.0f }) * glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
 
-	for (int i = 0; i < 4; i++)
-	{
-		s_Data.QuadBufferPtr->Position = transform * s_Data.QuadVertexPositions[i];
-		s_Data.QuadBufferPtr->Color = color;
-		s_Data.QuadBufferPtr->TexCoord = texCoords[i];
-		s_Data.QuadBufferPtr->TexIndex = texIndex;
-		s_Data.QuadBufferPtr->TilingFactor = tiling;
-		s_Data.QuadBufferPtr->IsText = 0.0f;
-		s_Data.QuadBufferPtr++;
-	}
+	s_Data.InstanceBufferPtr->Transform = transform;
+	s_Data.InstanceBufferPtr->Color = color;
+	s_Data.InstanceBufferPtr->UVRect = { 0.0f, 0.0f, 1.0f, 1.0f };
+	s_Data.InstanceBufferPtr->TexIndex = 0.0f;
+	s_Data.InstanceBufferPtr->Tiling = 1.0f;
+	s_Data.InstanceBufferPtr->IsText = 0.0f;
+	s_Data.InstanceBufferPtr++;
 
-	s_Data.IndexCount += 6;
-	s_Data.Stats.QuadCount++;
+	s_Data.QuadCount++;
 }
 
 void Renderer2D::DrawRotatedQuad(const glm::vec3& position, const glm::vec2& size, float rotation, Texture* texture, float tiling, const glm::vec4& tintColor)
 {
-	if (s_Data.IndexCount >= s_Data.MaxIndices || s_Data.TextureSlotIndex > 31)
+	if (s_Data.QuadCount >= s_Data.MaxInstances || s_Data.TextureSlotIndex > 31)
 		NextBatch();
 
 	float textureIndex = 0.0f;
-	ID3D11ShaderResourceView* srv = texture->GetSRV();
+	ITextureView* srv = texture->GetSRV();
 
 	for (uint32_t i = 1; i < s_Data.TextureSlotIndex; i++)
 	{
@@ -436,64 +461,40 @@ void Renderer2D::DrawRotatedQuad(const glm::vec3& position, const glm::vec2& siz
 
 	glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) * glm::rotate(glm::mat4(1.0f), rotation, { 0.0f, 0.0f, 1.0f }) * glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
 
-	const glm::vec2 texCoords[] = {
-		{ 0.0f, 1.0f },
-        { 1.0f, 1.0f },
-        { 1.0f, 0.0f },
-        { 0.0f, 0.0f }
-	};
+	s_Data.InstanceBufferPtr->Transform = transform;
+	s_Data.InstanceBufferPtr->Color = tintColor;
+	s_Data.InstanceBufferPtr->UVRect = { 0.0f, 0.0f, 1.0f, 1.0f };
+	s_Data.InstanceBufferPtr->TexIndex = textureIndex;
+	s_Data.InstanceBufferPtr->Tiling = tiling;
+	s_Data.InstanceBufferPtr->IsText = 0.0f;
+	s_Data.InstanceBufferPtr++;
 
-	for (int i = 0; i < 4; i++)
-	{
-		s_Data.QuadBufferPtr->Position = transform * s_Data.QuadVertexPositions[i];
-		s_Data.QuadBufferPtr->Color = tintColor;
-		s_Data.QuadBufferPtr->TexCoord = texCoords[i];
-		s_Data.QuadBufferPtr->TexIndex = textureIndex;
-		s_Data.QuadBufferPtr->TilingFactor = tiling;
-		s_Data.QuadBufferPtr->IsText = 0.0f;
-		s_Data.QuadBufferPtr++;
-	}
-
-	s_Data.IndexCount += 6;
-	s_Data.Stats.QuadCount++;
+	s_Data.QuadCount++;
 }
 
 void Renderer2D::DrawQuad(const glm::mat4& transform, const glm::vec4& color)
 {
-	if (s_Data.IndexCount >= s_Data.MaxIndices)
+	if (s_Data.QuadCount >= s_Data.MaxInstances)
 		NextBatch();
 
-	const float texIndex = 0.0f;
-	const float tiling = 1.0f;
-	const glm::vec2 texCoords[] = {
-		{ 0.0f, 1.0f },
-        { 1.0f, 1.0f },
-        { 1.0f, 0.0f },
-        { 0.0f, 0.0f }
-	};
+	s_Data.InstanceBufferPtr->Transform = transform;
+	s_Data.InstanceBufferPtr->Color = color;
+	s_Data.InstanceBufferPtr->UVRect = { 0.0f, 0.0f, 1.0f, 1.0f };
+	s_Data.InstanceBufferPtr->TexIndex = 0.0f;
+	s_Data.InstanceBufferPtr->Tiling = 1.0f;
+	s_Data.InstanceBufferPtr->IsText = 0.0f;
+	s_Data.InstanceBufferPtr++;
 
-	for (int i = 0; i < 4; i++)
-	{
-		s_Data.QuadBufferPtr->Position = transform * s_Data.QuadVertexPositions[i];
-		s_Data.QuadBufferPtr->Color = color;
-		s_Data.QuadBufferPtr->TexCoord = texCoords[i];
-		s_Data.QuadBufferPtr->TexIndex = texIndex;
-		s_Data.QuadBufferPtr->TilingFactor = tiling;
-		s_Data.QuadBufferPtr->IsText = 0.0f;
-		s_Data.QuadBufferPtr++;
-	}
-
-	s_Data.IndexCount += 6;
-	s_Data.Stats.QuadCount++;
+	s_Data.QuadCount++;
 }
 
 void Renderer2D::DrawQuad(const glm::mat4& transform, Texture* texture, float tiling, const glm::vec4& tintColor)
 {
-	if (s_Data.IndexCount >= s_Data.MaxIndices || s_Data.TextureSlotIndex > 31)
+	if (s_Data.QuadCount >= s_Data.MaxInstances || s_Data.TextureSlotIndex > 31)
 		NextBatch();
 
 	float textureIndex = 0.0f;
-	ID3D11ShaderResourceView* srv = texture->GetSRV();
+	ITextureView* srv = texture->GetSRV();
 
 	for (uint32_t i = 1; i < s_Data.TextureSlotIndex; i++)
 	{
@@ -513,35 +514,24 @@ void Renderer2D::DrawQuad(const glm::mat4& transform, Texture* texture, float ti
 		s_Data.TextureSlotIndex++;
 	}
 
-	const glm::vec2 texCoords[] = {
-		{ 0.0f, 1.0f },
-        { 1.0f, 1.0f },
-        { 1.0f, 0.0f },
-        { 0.0f, 0.0f }
-	};
+	s_Data.InstanceBufferPtr->Transform = transform;
+	s_Data.InstanceBufferPtr->Color = tintColor;
+	s_Data.InstanceBufferPtr->UVRect = { 0.0f, 0.0f, 1.0f, 1.0f };
+	s_Data.InstanceBufferPtr->TexIndex = textureIndex;
+	s_Data.InstanceBufferPtr->Tiling = tiling;
+	s_Data.InstanceBufferPtr->IsText = 0.0f;
+	s_Data.InstanceBufferPtr++;
 
-	for (int i = 0; i < 4; i++)
-	{
-		s_Data.QuadBufferPtr->Position = transform * s_Data.QuadVertexPositions[i];
-		s_Data.QuadBufferPtr->Color = tintColor;
-		s_Data.QuadBufferPtr->TexCoord = texCoords[i];
-		s_Data.QuadBufferPtr->TexIndex = textureIndex;
-		s_Data.QuadBufferPtr->TilingFactor = tiling;
-		s_Data.QuadBufferPtr->IsText = 0.0f;
-		s_Data.QuadBufferPtr++;
-	}
-
-	s_Data.IndexCount += 6;
-	s_Data.Stats.QuadCount++;
+	s_Data.QuadCount++;
 }
 
 void Renderer2D::DrawQuadUV(const glm::mat4& transform, Texture* texture, const glm::vec2 uv[], const glm::vec4& tintColor)
 {
-	if (s_Data.IndexCount >= s_Data.MaxIndices || s_Data.TextureSlotIndex > 31)
+	if (s_Data.QuadCount >= s_Data.MaxInstances || s_Data.TextureSlotIndex > 31)
 		NextBatch();
 
 	float textureIndex = 0.0f;
-	ID3D11ShaderResourceView* srv = texture->GetSRV();
+	ITextureView* srv = texture->GetSRV();
 
 	for (uint32_t i = 1; i < s_Data.TextureSlotIndex; i++)
 	{
@@ -560,28 +550,39 @@ void Renderer2D::DrawQuadUV(const glm::mat4& transform, Texture* texture, const 
 		s_Data.TextureSlotIndex++;
 	}
 
-	for (int i = 0; i < 4; i++)
+	// Calculate Min/Max UVs
+	float minU = uv[0].x, minV = uv[0].y;
+	float maxU = uv[0].x, maxV = uv[0].y;
+	for (int i = 1; i < 4; ++i)
 	{
-		s_Data.QuadBufferPtr->Position = transform * s_Data.QuadVertexPositions[i];
-		s_Data.QuadBufferPtr->Color = tintColor;
-		s_Data.QuadBufferPtr->TexCoord = uv[i];
-		s_Data.QuadBufferPtr->TexIndex = textureIndex;
-		s_Data.QuadBufferPtr->TilingFactor = 1.0f;
-		s_Data.QuadBufferPtr->IsText = 0.0f;
-		s_Data.QuadBufferPtr++;
+		if (uv[i].x < minU)
+			minU = uv[i].x;
+		if (uv[i].y < minV)
+			minV = uv[i].y;
+		if (uv[i].x > maxU)
+			maxU = uv[i].x;
+		if (uv[i].y > maxV)
+			maxV = uv[i].y;
 	}
 
-	s_Data.IndexCount += 6;
-	s_Data.Stats.QuadCount++;
+	s_Data.InstanceBufferPtr->Transform = transform;
+	s_Data.InstanceBufferPtr->Color = tintColor;
+	s_Data.InstanceBufferPtr->UVRect = { minU, minV, maxU, maxV };
+	s_Data.InstanceBufferPtr->TexIndex = textureIndex;
+	s_Data.InstanceBufferPtr->Tiling = 1.0f;
+	s_Data.InstanceBufferPtr->IsText = 0.0f;
+	s_Data.InstanceBufferPtr++;
+
+	s_Data.QuadCount++;
 }
 
 void Renderer2D::DrawQuadUV(const glm::vec3& position, const glm::vec2& size, Texture* texture, const glm::vec2 uv[], const glm::vec4& tintColor)
 {
-	if (s_Data.IndexCount >= s_Data.MaxIndices || s_Data.TextureSlotIndex > 31)
+	if (s_Data.QuadCount >= s_Data.MaxInstances || s_Data.TextureSlotIndex > 31)
 		NextBatch();
 
 	float textureIndex = 0.0f;
-	ID3D11ShaderResourceView* srv = texture->GetSRV();
+	ITextureView* srv = texture->GetSRV();
 
 	for (uint32_t i = 1; i < s_Data.TextureSlotIndex; i++)
 	{
@@ -600,27 +601,32 @@ void Renderer2D::DrawQuadUV(const glm::vec3& position, const glm::vec2& size, Te
 		s_Data.TextureSlotIndex++;
 	}
 
-	// Assuming UVs are passed as { BL, BR, TR, TL }
-	glm::vec3 offsets[4] = {
-		{ -0.5f * size.x, -0.5f * size.y, 0.0f },
-        {  0.5f * size.x, -0.5f * size.y, 0.0f },
-        {  0.5f * size.x,  0.5f * size.y, 0.0f },
-        { -0.5f * size.x,  0.5f * size.y, 0.0f }
-	};
-
-	for (int i = 0; i < 4; i++)
+	// Calculate Min/Max UVs
+	float minU = uv[0].x, minV = uv[0].y;
+	float maxU = uv[0].x, maxV = uv[0].y;
+	for (int i = 1; i < 4; ++i)
 	{
-		s_Data.QuadBufferPtr->Position = position + offsets[i];
-		s_Data.QuadBufferPtr->Color = tintColor;
-		s_Data.QuadBufferPtr->TexCoord = uv[i]; // Use explicit UV
-		s_Data.QuadBufferPtr->TexIndex = textureIndex;
-		s_Data.QuadBufferPtr->TilingFactor = 1.0f;
-		s_Data.QuadBufferPtr->IsText = 0.0f;
-		s_Data.QuadBufferPtr++;
+		if (uv[i].x < minU)
+			minU = uv[i].x;
+		if (uv[i].y < minV)
+			minV = uv[i].y;
+		if (uv[i].x > maxU)
+			maxU = uv[i].x;
+		if (uv[i].y > maxV)
+			maxV = uv[i].y;
 	}
 
-	s_Data.IndexCount += 6;
-	s_Data.Stats.QuadCount++;
+	glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) * glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
+
+	s_Data.InstanceBufferPtr->Transform = transform;
+	s_Data.InstanceBufferPtr->Color = tintColor;
+	s_Data.InstanceBufferPtr->UVRect = { minU, minV, maxU, maxV };
+	s_Data.InstanceBufferPtr->TexIndex = textureIndex;
+	s_Data.InstanceBufferPtr->Tiling = 1.0f;
+	s_Data.InstanceBufferPtr->IsText = 0.0f;
+	s_Data.InstanceBufferPtr++;
+
+	s_Data.QuadCount++;
 }
 
 // -------------------------------------------------------------------------
@@ -637,11 +643,11 @@ void Renderer2D::DrawString(const std::string& text, Text* font, const glm::vec3
 	Texture* atlas = font->GetAtlasTexture();
 	auto& characters = font->GetCharacters();
 
-	if (s_Data.IndexCount >= s_Data.MaxIndices || s_Data.TextureSlotIndex > 31)
+	if (s_Data.QuadCount >= s_Data.MaxInstances || s_Data.TextureSlotIndex > 31)
 		NextBatch();
 
 	float textureIndex = 0.0f;
-	ID3D11ShaderResourceView* srv = atlas->GetSRV();
+	ITextureView* srv = atlas->GetSRV();
 
 	for (uint32_t i = 1; i < s_Data.TextureSlotIndex; i++)
 	{
@@ -670,7 +676,7 @@ void Renderer2D::DrawString(const std::string& text, Text* font, const glm::vec3
 		auto it = characters.find(*c);
 
 		if (it == characters.end())
-			continue; 
+			continue;
 
 		Character ch = it->second;
 
@@ -681,37 +687,24 @@ void Renderer2D::DrawString(const std::string& text, Text* font, const glm::vec3
 
 		if (w > 0.0f && h > 0.0f)
 		{
-			if (s_Data.IndexCount >= s_Data.MaxIndices)
+			if (s_Data.QuadCount >= s_Data.MaxInstances)
 				NextBatch();
 
-			// Quad order: BL, BR, TR, TL
-			glm::vec2 uvs[4] = {
-				{ ch.uvMin.x, ch.uvMax.y }, // BL
-				{ ch.uvMax.x, ch.uvMax.y }, // BR
-				{ ch.uvMax.x, ch.uvMin.y }, // TR
-				{ ch.uvMin.x, ch.uvMin.y }  // TL
-			};
+			// Calculate center position for transform
+			float centerX = xpos + w * 0.5f;
+			float centerY = ypos + h * 0.5f;
 
-			glm::vec3 pos[4] = {
-				{     xpos,     ypos, z },
-                { xpos + w,     ypos, z },
-                { xpos + w, ypos + h, z },
-                {     xpos, ypos + h, z }
-			};
+			glm::mat4 transform = glm::translate(glm::mat4(1.0f), { centerX, centerY, z }) * glm::scale(glm::mat4(1.0f), { w, h, 1.0f });
 
-			for (int i = 0; i < 4; i++)
-			{
-				s_Data.QuadBufferPtr->Position = pos[i];
-				s_Data.QuadBufferPtr->Color = color;
-				s_Data.QuadBufferPtr->TexCoord = uvs[i];
-				s_Data.QuadBufferPtr->TexIndex = textureIndex;
-				s_Data.QuadBufferPtr->TilingFactor = 1.0f;
-				s_Data.QuadBufferPtr->IsText = 1.0f; 
-				s_Data.QuadBufferPtr++;
-			}
+			s_Data.InstanceBufferPtr->Transform = transform;
+			s_Data.InstanceBufferPtr->Color = color;
+			s_Data.InstanceBufferPtr->UVRect = { ch.uvMin.x, ch.uvMin.y, ch.uvMax.x, ch.uvMax.y };
+			s_Data.InstanceBufferPtr->TexIndex = textureIndex;
+			s_Data.InstanceBufferPtr->Tiling = 1.0f;
+			s_Data.InstanceBufferPtr->IsText = 1.0f;
+			s_Data.InstanceBufferPtr++;
 
-			s_Data.IndexCount += 6;
-			s_Data.Stats.QuadCount++;
+			s_Data.QuadCount++;
 		}
 
 		x += (ch.Advance >> 6) * scale;

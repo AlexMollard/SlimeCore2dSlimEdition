@@ -1,4 +1,5 @@
 #include "Scripting/ExportInput.h"
+
 #include "Core/Input.h"
 
 SLIME_EXPORT bool __cdecl Input_GetKeyDown(int key)
@@ -10,6 +11,7 @@ SLIME_EXPORT bool __cdecl Input_GetKeyReleased(int key)
 {
 	return Input::GetInstance()->GetKeyUp(Keycode(key));
 }
+
 /// <summary>
 /// Is the mouse button held down?
 /// </summary>
@@ -17,6 +19,7 @@ SLIME_EXPORT bool __cdecl Input_IsMouseButtonDown(int button)
 {
 	return Input::GetInstance()->GetMouseButton(button);
 }
+
 /// <summary>
 /// Has the mouse button been pressed this frame? (Does not detect held)
 /// </summary>

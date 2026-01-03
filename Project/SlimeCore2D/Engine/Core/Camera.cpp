@@ -29,9 +29,8 @@ void Camera::SetProjection(float orthoSize, float aspectRatio)
 	float orthoTop = m_OrthographicSize * 0.5f * m_ZoomLevel;
 
 	// DX11 uses 0 to 1 depth range and Left-Handed coordinates.
-	// We swap near/far (10, -10) so that higher Z values are "closer" (depth 0) 
-	// and lower Z values are "farther" (depth 1).
-	m_ProjectionMatrix = glm::orthoLH_ZO(orthoLeft, orthoRight, orthoBottom, orthoTop, 10.0f, -10.0f);
+	// We use a range of -10 to 10 to ensure objects at Z=0 are visible and not clipped.
+	m_ProjectionMatrix = glm::orthoLH_ZO(orthoLeft, orthoRight, orthoBottom, orthoTop, -10.0f, 10.0f);
 
 	m_ViewProjectionMatrix = m_ProjectionMatrix * m_ViewMatrix;
 }

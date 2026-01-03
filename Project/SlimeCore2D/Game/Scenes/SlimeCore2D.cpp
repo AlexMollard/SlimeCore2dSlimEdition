@@ -1,22 +1,27 @@
+#include <string>
+
+#include "Core/EngineSettings.h"
+#include "Core/Logger.h"
 #include "Core/Window.h"
 #include "Game2D.h"
-#include "Scripting/DotNetHost.h"
-#include "Core/Logger.h"
-#include "Core/Memory.h"
 #include "Resources/ResourceManager.h"
-#include "Core/EngineSettings.h"
-#include <string>
+#include "Scripting/DotNetHost.h"
+#include "Core/Memory.h"
 
 int main(int argc, char** argv)
 {
-    for (int i = 1; i < argc; ++i) {
-        std::string arg = argv[i];
-        if (arg == "--vulkan" || arg == "-vk") {
-            g_RendererType = RendererType::Vulkan;
-        } else if (arg == "--d3d11" || arg == "-dx11") {
-            g_RendererType = RendererType::D3D11;
-        }
-    }
+	for (int i = 1; i < argc; ++i)
+	{
+		std::string arg = argv[i];
+		if (arg == "--vulkan" || arg == "-vk")
+		{
+			g_RendererType = RendererType::Vulkan;
+		}
+		else if (arg == "--d3d11" || arg == "-dx11")
+		{
+			g_RendererType = RendererType::D3D11;
+		}
+	}
 
 	MemoryAllocator::Init();
 	Logger::Init();
@@ -38,7 +43,7 @@ int main(int argc, char** argv)
 	while (!app->Window_shouldClose())
 	{
 		inputManager->Update();
-		app->Update_Window();
+		app->BeginFrame();
 
 		float dt = app->GetDeltaTime();
 
@@ -46,6 +51,8 @@ int main(int argc, char** argv)
 
 		game->Update(dt);
 		game->Draw();
+
+		app->Update_Window();
 	}
 
 	delete app;
@@ -57,6 +64,6 @@ int main(int argc, char** argv)
 	// Call the resource manager clean up
 	ResourceManager::GetInstance().Clear();
 	MemoryAllocator::PrintLeaks();
-	
+
 	return 0;
 }
