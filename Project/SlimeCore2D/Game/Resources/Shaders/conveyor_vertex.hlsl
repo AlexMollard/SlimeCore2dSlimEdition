@@ -1,9 +1,4 @@
-cbuffer ConstantBuffer : register(b0)
-{
-    matrix u_ViewProjection;
-    float u_Time;
-    float3 padding;
-};
+#include "Structures.fxh"
 
 struct VS_INPUT
 {
@@ -27,7 +22,7 @@ struct PS_INPUT
 PS_INPUT main(VS_INPUT input)
 {
     PS_INPUT output;
-    output.Pos = mul(float4(input.Position, 1.0f), u_ViewProjection);
+    output.Pos = mul(u_ViewProjection, float4(input.Position, 1.0f));
     output.Color = input.Color;
     output.TexCoord = input.TexCoord;
     output.IsBelt = input.IsBelt;

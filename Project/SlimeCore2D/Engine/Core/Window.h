@@ -9,6 +9,7 @@
 #include "RefCntAutoPtr.hpp"
 #include "RenderDevice.h"
 #include "SwapChain.h"
+#include "EngineFactory.h"
 
 using namespace Diligent;
 
@@ -38,6 +39,11 @@ public:
 		return s_Context;
 	}
 
+	static IEngineFactory* GetEngineFactory()
+	{
+		return s_EngineFactory;
+	}
+
 	static ITextureView* GetDepthStencilView()
 	{
 		return m_SwapChain ? m_SwapChain->GetDepthBufferDSV() : nullptr;
@@ -58,6 +64,7 @@ protected:
 	float delta = 1.0f;
 
 	// Diligent Engine
+	static RefCntAutoPtr<IEngineFactory> s_EngineFactory;
 	static RefCntAutoPtr<IRenderDevice> s_Device;
 	static RefCntAutoPtr<IDeviceContext> s_Context;
 	static RefCntAutoPtr<ISwapChain> m_SwapChain;

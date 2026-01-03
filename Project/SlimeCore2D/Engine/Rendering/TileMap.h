@@ -12,14 +12,14 @@ using namespace Diligent;
 class TileMapChunk
 {
 public:
-	struct TileVertex
+	struct TileInstance
 	{
-		glm::vec3 Position;
-		glm::vec4 Color;
-		glm::vec2 TexCoord;
+		float Position[2];
+		float Size[2];
+		float TexRect[4];
+		float Color[4];
 		float TexIndex;
-		float TilingFactor;
-		float IsText;
+		float Rotation;
 	};
 
 	TileMapChunk(int offsetX, int offsetY, int width, int height, float tileSize);
@@ -27,8 +27,7 @@ public:
 
 	void SetTile(int x, int y, int layer, Texture* texturePtr, float u0, float v0, float u1, float v1, float r, float g, float b, float a, float rotation = 0.0f);
 	void UpdateMesh();
-	void Render(const glm::mat4& viewProj);
-	bool IsVisible(const glm::mat4& viewProj);
+	void Render(IBuffer* pConstantBuffer);
 
 private:
 	int m_OffsetX, m_OffsetY;
@@ -47,20 +46,22 @@ private:
 	// 3 Layers: Terrain, Ore, Structure
 	std::vector<TileInfo> m_Layers[3];
 
-	RefCntAutoPtr<IBuffer> m_VertexBuffer;
-	RefCntAutoPtr<IBuffer> m_IndexBuffer;
+	RefCntAutoPtr<IBuffer> m_InstanceBuffer;
 	RefCntAutoPtr<IShaderResourceBinding> m_SRB;
 
-	std::vector<TileVertex> m_Vertices;
-	std::vector<uint32_t> m_Indices;
+	std::vector<TileInstance> m_Instances;
 
 	// Texture management
 	std::vector<ITextureView*> m_TextureSlots;
 
 	bool m_Dirty;
-	uint32_t m_IndexCount;
+	uint32_t m_InstanceCount;
 
 	static RefCntAutoPtr<IPipelineState> s_PSO;
+	static RefCntAutoPtr<IBuffer> s_QuadVB;
+	static RefCntAutoPtr<IBuffer> s_QuadIB;
+
+	static void InitCommonResources();
 };
 
 class TileMap
@@ -84,4 +85,7 @@ private:
 	int m_ChunksY;
 
 	std::vector<TileMapChunk*> m_Chunks;
+
+	RefCntAutoPtr<IBuffer> m_VSConstants;
+	void CreateConstantBuffer();
 };

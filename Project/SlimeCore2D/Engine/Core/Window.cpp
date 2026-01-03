@@ -13,6 +13,7 @@
 
 using namespace Diligent;
 
+RefCntAutoPtr<IEngineFactory> Window::s_EngineFactory;
 RefCntAutoPtr<IRenderDevice> Window::s_Device;
 RefCntAutoPtr<IDeviceContext> Window::s_Context;
 RefCntAutoPtr<ISwapChain> Window::m_SwapChain;
@@ -85,6 +86,7 @@ void Window::InitDiligent(HWND hwnd, int width, int height)
 		case RendererType::D3D11:
 		{
 			auto* pFactoryD3D11 = GetEngineFactoryD3D11();
+			s_EngineFactory = pFactoryD3D11;
 			EngineD3D11CreateInfo EngineCI;
 			EngineCI.Features.SeparablePrograms = DEVICE_FEATURE_STATE_ENABLED;
 #ifdef _DEBUG
@@ -99,6 +101,7 @@ void Window::InitDiligent(HWND hwnd, int width, int height)
 		case RendererType::Vulkan:
 		{
 			auto* pFactoryVk = GetEngineFactoryVk();
+			s_EngineFactory = pFactoryVk;
 			EngineVkCreateInfo EngineCI;
 			EngineCI.Features.SeparablePrograms = DEVICE_FEATURE_STATE_ENABLED;
 #ifdef _DEBUG
@@ -151,6 +154,7 @@ void Window::Window_destroy()
 	m_SwapChain.Release();
 	s_Context.Release();
 	s_Device.Release();
+	s_EngineFactory.Release();
 
 	glfwDestroyWindow(window);
 	glfwTerminate();

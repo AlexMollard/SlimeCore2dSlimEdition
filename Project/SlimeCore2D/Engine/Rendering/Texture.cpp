@@ -5,47 +5,28 @@
 #include "Core/Logger.h"
 #include "Core/Window.h"
 
-#ifndef STB_IMAGE_IMPLEMENTATION
-#	define STB_IMAGE_IMPLEMENTATION
-#endif
-#include "stb_image.h"
+#include "DiligentTools/TextureLoader/interface/TextureUtilities.h"
 
 using namespace Diligent;
 
 Texture::Texture(const std::string& path, Filter filter, Wrap wrap)
       : m_FilePath(path)
 {
-	stbi_set_flip_vertically_on_load(1);
+	TextureLoadInfo loadInfo;
+	loadInfo.IsSRGB = false;
+	loadInfo.FlipVertically = true;
 
-	int width, height, channels;
-	unsigned char* data = stbi_load(path.c_str(), &width, &height, &channels, 4); // Force RGBA
+	auto device = Window::GetDevice();
 
-	if (data)
+	CreateTextureFromFile(path.c_str(), loadInfo, device, &m_Texture);
+
+	if (m_Texture)
 	{
-		m_Width = width;
-		m_Height = height;
-		m_Format = TEX_FORMAT_RGBA8_UNORM;
+		const auto& Desc = m_Texture->GetDesc();
+		m_Width = Desc.Width;
+		m_Height = Desc.Height;
+		m_Format = Desc.Format;
 
-		TextureDesc TexDesc;
-		TexDesc.Name = "Texture";
-		TexDesc.Type = RESOURCE_DIM_TEX_2D;
-		TexDesc.Width = width;
-		TexDesc.Height = height;
-		TexDesc.Format = (TEXTURE_FORMAT) m_Format;
-		TexDesc.Usage = USAGE_IMMUTABLE;
-		TexDesc.BindFlags = BIND_SHADER_RESOURCE;
-		TexDesc.MipLevels = 1;
-
-		TextureSubResData Level0Data;
-		Level0Data.pData = data;
-		Level0Data.Stride = width * 4;
-
-		TextureData InitData;
-		InitData.pSubResources = &Level0Data;
-		InitData.NumSubresources = 1;
-
-		auto device = Window::GetDevice();
-		device->CreateTexture(TexDesc, &InitData, &m_Texture);
 		m_View = m_Texture->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
 
 		// Sampler
@@ -59,8 +40,6 @@ Texture::Texture(const std::string& path, Filter filter, Wrap wrap)
 
 		device->CreateSampler(SampDesc, &m_Sampler);
 		m_View->SetSampler(m_Sampler);
-
-		stbi_image_free(data);
 	}
 	else
 	{

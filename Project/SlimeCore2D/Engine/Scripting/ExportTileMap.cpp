@@ -59,10 +59,10 @@ SLIME_EXPORT void __cdecl TileMap_Render(void* tileMap)
 			float bottom = -orthoSize * zoom * 0.5f;
 			float top = orthoSize * zoom * 0.5f;
 
-			// Match Camera.cpp projection (LH, Zero-to-One depth, Near=-10, Far=10)
-			glm::mat4 proj = glm::orthoLH_ZO(left, right, bottom, top, -10.0f, 10.0f);
+			// Match Camera.cpp projection (LH, Zero-to-One depth, Near=-100, Far=100)
+			glm::mat4 proj = glm::orthoLH_ZO(left, right, bottom, top, -100.0f, 100.0f);
 
-			glm::mat4 transform = glm::translate(glm::mat4(1.0f), tc.Position) * glm::rotate(glm::mat4(1.0f), tc.Rotation, glm::vec3(0, 0, 1));
+			glm::mat4 transform = glm::translate(glm::mat4(1.0f), tc.Position) * glm::rotate(glm::mat4(1.0f), glm::radians(tc.Rotation), glm::vec3(0, 0, 1));
 			glm::mat4 view = glm::inverse(transform);
 
 			// Push TileMap back slightly to ensure it's behind Z=0 entities and ConveyorMap

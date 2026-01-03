@@ -17,78 +17,106 @@ using namespace Diligent;
 // ==========================================
 
 RefCntAutoPtr<IPipelineState> TileMapChunk::s_PSO;
+RefCntAutoPtr<IBuffer> TileMapChunk::s_QuadVB;
+RefCntAutoPtr<IBuffer> TileMapChunk::s_QuadIB;
 
-TileMapChunk::TileMapChunk(int offsetX, int offsetY, int width, int height, float tileSize)
-      : m_OffsetX(offsetX), m_OffsetY(offsetY), m_Width(width), m_Height(height), m_TileSize(tileSize), m_Dirty(true), m_IndexCount(0)
+struct QuadVertex
 {
-	int count = width * height;
-	for (int i = 0; i < 3; i++)
+	float Pos[2];
+	float UV[2];
+};
+
+void TileMapChunk::InitCommonResources()
+{
+	if (s_PSO)
+		return;
+
+	auto device = Window::GetDevice();
+
+	// 1. Create Static Quad VB/IB
 	{
-		m_Layers[i].resize(count);
-		for (auto& tile: m_Layers[i])
-		{
-			tile.Active = false;
-			tile.Texture = nullptr;
-			tile.Color = glm::vec4(1.0f);
-			tile.Rotation = 0.0f;
-		}
+		QuadVertex quadVerts[] = {
+			{ { -0.5f, -0.5f }, { 0.0f, 1.0f } },
+			{ { 0.5f, -0.5f }, { 1.0f, 1.0f } },
+			{ { 0.5f, 0.5f }, { 1.0f, 0.0f } },
+			{ { -0.5f, 0.5f }, { 0.0f, 0.0f } }
+		};
+
+		BufferDesc vbDesc;
+		vbDesc.Name = "TileMap Quad VB";
+		vbDesc.Size = sizeof(quadVerts);
+		vbDesc.Usage = USAGE_IMMUTABLE;
+		vbDesc.BindFlags = BIND_VERTEX_BUFFER;
+		
+		BufferData vbData;
+		vbData.pData = quadVerts;
+		vbData.DataSize = sizeof(quadVerts);
+		
+		device->CreateBuffer(vbDesc, &vbData, &s_QuadVB);
+
+		uint32_t indices[] = { 0, 1, 2, 2, 3, 0 };
+		
+		BufferDesc ibDesc;
+		ibDesc.Name = "TileMap Quad IB";
+		ibDesc.Size = sizeof(indices);
+		ibDesc.Usage = USAGE_IMMUTABLE;
+		ibDesc.BindFlags = BIND_INDEX_BUFFER;
+
+		BufferData ibData;
+		ibData.pData = indices;
+		ibData.DataSize = sizeof(indices);
+
+		device->CreateBuffer(ibDesc, &ibData, &s_QuadIB);
 	}
 
-	// Initialize Static PSO if needed
-	if (!s_PSO)
+	// 2. Create PSO
 	{
-		auto device = Window::GetDevice();
-
 		ShaderCreateInfo ShaderCI;
 		ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
-		// ShaderCI.UseCombinedTextureSamplers = true;
 
 		auto& ResMgr = ResourceManager::GetInstance();
 		std::string vsPath = ResMgr.GetResourcePath("Game/Resources/Shaders/tilemap_vertex.hlsl");
-		std::string psPath = ResMgr.GetResourcePath("Game/Resources/Shaders/BasicPixel.hlsl");
+		
+		// Extract directory for factory
+		std::string shaderDir = vsPath.substr(0, vsPath.find_last_of("/\\"));
+		
+		RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
+		Window::GetEngineFactory()->CreateDefaultShaderSourceStreamFactory(shaderDir.c_str(), &pShaderSourceFactory);
+		ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
 
-		std::string vsCode, psCode;
-
-		auto ReadFile = [](const std::string& path) -> std::string
-		{
-			std::ifstream file(path);
-			if (!file.is_open())
-				return "";
-			std::stringstream ss;
-			ss << file.rdbuf();
-			return ss.str();
-		};
-
-		vsCode = ReadFile(vsPath);
-		psCode = ReadFile(psPath);
-
-		// Create Vertex Shader
 		RefCntAutoPtr<IShader> pVS;
 		{
 			ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
 			ShaderCI.EntryPoint = "main";
 			ShaderCI.Desc.Name = "TileMap VS";
-			ShaderCI.Source = vsCode.c_str();
+			ShaderCI.FilePath = "tilemap_vertex.hlsl";
 			device->CreateShader(ShaderCI, &pVS);
 		}
 
-		// Create Pixel Shader
 		RefCntAutoPtr<IShader> pPS;
 		{
 			ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
 			ShaderCI.EntryPoint = "main";
 			ShaderCI.Desc.Name = "TileMap PS";
-			ShaderCI.Source = psCode.c_str();
+			ShaderCI.FilePath = "tilemap_pixel.hlsl";
 			device->CreateShader(ShaderCI, &pPS);
 		}
 
+		// Input Layout
+		// Slot 0: Per-Vertex (Quad)
+		// Slot 1: Per-Instance (Tile Data)
 		LayoutElement LayoutElems[] = {
-			LayoutElement{ 0, 0, 3, VT_FLOAT32, False }, // Pos
-			LayoutElement{ 1, 0, 4, VT_FLOAT32, False }, // Color
-			LayoutElement{ 2, 0, 2, VT_FLOAT32, False }, // TexCoord
-			LayoutElement{ 3, 0, 1, VT_FLOAT32, False }, // TexIndex
-			LayoutElement{ 4, 0, 1, VT_FLOAT32, False }, // Tiling
-			LayoutElement{ 5, 0, 1, VT_FLOAT32, False }  // IsText
+			// Slot 0 - Static Quad
+			LayoutElement{ 0, 0, 2, VT_FLOAT32, False }, // Pos
+			LayoutElement{ 1, 0, 2, VT_FLOAT32, False }, // UV
+
+			// Slot 1 - Per Instance
+			LayoutElement{ 2, 1, 2, VT_FLOAT32, False, INPUT_ELEMENT_FREQUENCY_PER_INSTANCE }, // TilePos
+			LayoutElement{ 3, 1, 2, VT_FLOAT32, False, INPUT_ELEMENT_FREQUENCY_PER_INSTANCE }, // TileSize
+			LayoutElement{ 4, 1, 4, VT_FLOAT32, False, INPUT_ELEMENT_FREQUENCY_PER_INSTANCE }, // TexRect
+			LayoutElement{ 5, 1, 4, VT_FLOAT32, False, INPUT_ELEMENT_FREQUENCY_PER_INSTANCE }, // Color
+			LayoutElement{ 6, 1, 1, VT_FLOAT32, False, INPUT_ELEMENT_FREQUENCY_PER_INSTANCE }, // TexIndex
+			LayoutElement{ 7, 1, 1, VT_FLOAT32, False, INPUT_ELEMENT_FREQUENCY_PER_INSTANCE }  // Rotation
 		};
 
 		GraphicsPipelineStateCreateInfo PSOCreateInfo;
@@ -101,9 +129,7 @@ TileMapChunk::TileMapChunk(int offsetX, int offsetY, int width, int height, floa
 		PSOCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode = CULL_MODE_NONE;
 		PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable = False;
 		PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthWriteEnable = False;
-		PSOCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthFunc = COMPARISON_FUNC_ALWAYS;
 
-		// Blending
 		PSOCreateInfo.GraphicsPipeline.BlendDesc.RenderTargets[0].BlendEnable = True;
 		PSOCreateInfo.GraphicsPipeline.BlendDesc.RenderTargets[0].SrcBlend = BLEND_FACTOR_SRC_ALPHA;
 		PSOCreateInfo.GraphicsPipeline.BlendDesc.RenderTargets[0].DestBlend = BLEND_FACTOR_INV_SRC_ALPHA;
@@ -116,15 +142,13 @@ TileMapChunk::TileMapChunk(int offsetX, int offsetY, int width, int height, floa
 
 		PSOCreateInfo.PSODesc.ResourceLayout.DefaultVariableType = SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
 
-		// Variables
 		ShaderResourceVariableDesc Vars[] = {
 			{  SHADER_TYPE_PIXEL,     "u_Textures", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE },
-            { SHADER_TYPE_VERTEX, "ConstantBuffer", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE }
+			{ SHADER_TYPE_VERTEX, "ConstantBuffer", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE }
 		};
 		PSOCreateInfo.PSODesc.ResourceLayout.Variables = Vars;
 		PSOCreateInfo.PSODesc.ResourceLayout.NumVariables = _countof(Vars);
 
-		// Samplers
 		SamplerDesc SamPointClamp;
 		SamPointClamp.MinFilter = FILTER_TYPE_POINT;
 		SamPointClamp.MagFilter = FILTER_TYPE_POINT;
@@ -141,15 +165,33 @@ TileMapChunk::TileMapChunk(int offsetX, int offsetY, int width, int height, floa
 
 		ImmutableSamplerDesc ImtblSamplers[] = {
 			{ SHADER_TYPE_PIXEL,       "u_Sampler",  SamPointClamp },
-            { SHADER_TYPE_PIXEL, "u_SamplerLinear", SamLinearClamp }
+			{ SHADER_TYPE_PIXEL, "u_SamplerLinear", SamLinearClamp }
 		};
 		PSOCreateInfo.PSODesc.ResourceLayout.ImmutableSamplers = ImtblSamplers;
 		PSOCreateInfo.PSODesc.ResourceLayout.NumImmutableSamplers = _countof(ImtblSamplers);
 
 		device->CreateGraphicsPipelineState(PSOCreateInfo, &s_PSO);
 	}
+}
 
-	// Create SRB from TileMap PSO
+TileMapChunk::TileMapChunk(int offsetX, int offsetY, int width, int height, float tileSize)
+      : m_OffsetX(offsetX), m_OffsetY(offsetY), m_Width(width), m_Height(height), m_TileSize(tileSize), m_Dirty(true), m_InstanceCount(0)
+{
+	InitCommonResources();
+
+	int count = width * height;
+	for (int i = 0; i < 3; i++)
+	{
+		m_Layers[i].resize(count);
+		for (auto& tile: m_Layers[i])
+		{
+			tile.Active = false;
+			tile.Texture = nullptr;
+			tile.Color = glm::vec4(1.0f);
+			tile.Rotation = 0.0f;
+		}
+	}
+
 	if (s_PSO)
 	{
 		s_PSO->CreateShaderResourceBinding(&m_SRB, true);
@@ -158,8 +200,7 @@ TileMapChunk::TileMapChunk(int offsetX, int offsetY, int width, int height, floa
 
 TileMapChunk::~TileMapChunk()
 {
-	m_VertexBuffer.Release();
-	m_IndexBuffer.Release();
+	m_InstanceBuffer.Release();
 	m_SRB.Release();
 }
 
@@ -185,8 +226,7 @@ void TileMapChunk::UpdateMesh()
 	if (!m_Dirty)
 		return;
 
-	m_Vertices.clear();
-	m_Indices.clear();
+	m_Instances.clear();
 	m_TextureSlots.clear();
 
 	// Always ensure we have at least the white texture at slot 0
@@ -196,7 +236,7 @@ void TileMapChunk::UpdateMesh()
 	}
 	else
 	{
-		m_TextureSlots.push_back(nullptr); // Placeholder
+		m_TextureSlots.push_back(nullptr);
 	}
 
 	for (int l = 0; l < 3; l++)
@@ -229,7 +269,6 @@ void TileMapChunk::UpdateMesh()
 						}
 						else
 						{
-							// Slot overflow, map to 0 (white) or handle differently
 							texIndex = 0.0f;
 						}
 					}
@@ -237,125 +276,67 @@ void TileMapChunk::UpdateMesh()
 
 				float worldX = (m_OffsetX + x) * m_TileSize;
 				float worldY = (m_OffsetY + y) * m_TileSize;
-
-				// Rotate around center
 				float cx = worldX + m_TileSize * 0.5f;
 				float cy = worldY + m_TileSize * 0.5f;
 
-				glm::vec3 p0(-m_TileSize * 0.5f, -m_TileSize * 0.5f, 0.0f);
-				glm::vec3 p1(m_TileSize * 0.5f, -m_TileSize * 0.5f, 0.0f);
-				glm::vec3 p2(m_TileSize * 0.5f, m_TileSize * 0.5f, 0.0f);
-				glm::vec3 p3(-m_TileSize * 0.5f, m_TileSize * 0.5f, 0.0f);
+				TileInstance inst;
+				inst.Position[0] = cx;
+				inst.Position[1] = cy;
+				inst.Size[0] = m_TileSize;
+				inst.Size[1] = m_TileSize;
+				inst.TexRect[0] = tile.TexRect.x;
+				inst.TexRect[1] = tile.TexRect.y;
+				inst.TexRect[2] = tile.TexRect.z;
+				inst.TexRect[3] = tile.TexRect.w;
+				inst.Color[0] = tile.Color.r;
+				inst.Color[1] = tile.Color.g;
+				inst.Color[2] = tile.Color.b;
+				inst.Color[3] = tile.Color.a;
+				inst.TexIndex = texIndex;
+				inst.Rotation = tile.Rotation;
 
-				if (tile.Rotation != 0.0f)
-				{
-					float c = cos(tile.Rotation);
-					float s = sin(tile.Rotation);
-
-					auto Rotate = [&](glm::vec3& p)
-					{
-						float tx = p.x * c - p.y * s;
-						float ty = p.x * s + p.y * c;
-						p.x = tx;
-						p.y = ty;
-					};
-					Rotate(p0);
-					Rotate(p1);
-					Rotate(p2);
-					Rotate(p3);
-				}
-
-				p0 += glm::vec3(cx, cy, 0.0f);
-				p1 += glm::vec3(cx, cy, 0.0f);
-				p2 += glm::vec3(cx, cy, 0.0f);
-				p3 += glm::vec3(cx, cy, 0.0f);
-
-				uint32_t baseIndex = (uint32_t) m_Vertices.size();
-
-				TileVertex v[4];
-				v[0].Position = p0;
-				v[0].TexCoord = glm::vec2(tile.TexRect.x, tile.TexRect.y); // u0, v0
-				v[1].Position = p1;
-				v[1].TexCoord = glm::vec2(tile.TexRect.z, tile.TexRect.y); // u1, v0
-				v[2].Position = p2;
-				v[2].TexCoord = glm::vec2(tile.TexRect.z, tile.TexRect.w); // u1, v1
-				v[3].Position = p3;
-				v[3].TexCoord = glm::vec2(tile.TexRect.x, tile.TexRect.w); // u0, v1
-
-				for (int i = 0; i < 4; i++)
-				{
-					v[i].Color = tile.Color;
-					v[i].TexIndex = texIndex;
-					v[i].TilingFactor = 1.0f;
-					v[i].IsText = 0.0f;
-					m_Vertices.push_back(v[i]);
-				}
-
-				m_Indices.push_back(baseIndex + 0);
-				m_Indices.push_back(baseIndex + 1);
-				m_Indices.push_back(baseIndex + 2);
-				m_Indices.push_back(baseIndex + 2);
-				m_Indices.push_back(baseIndex + 3);
-				m_Indices.push_back(baseIndex + 0);
+				m_Instances.push_back(inst);
 			}
 		}
 	}
 
-	m_IndexCount = (uint32_t) m_Indices.size();
+	m_InstanceCount = (uint32_t) m_Instances.size();
 	m_Dirty = false;
 
-	if (m_Vertices.empty())
+	if (m_Instances.empty())
 		return;
 
 	auto device = Window::GetDevice();
 	auto context = Window::GetContext();
 
-	// Vertex Buffer
-	if (!m_VertexBuffer || m_Vertices.size() * sizeof(TileVertex) > m_VertexBuffer->GetDesc().Size)
+	if (!m_InstanceBuffer || m_Instances.size() * sizeof(TileInstance) > m_InstanceBuffer->GetDesc().Size)
 	{
 		BufferDesc vbDesc;
-		vbDesc.Name = "TileMapChunk VB";
-		vbDesc.Size = (Uint64) (m_Vertices.size() * sizeof(TileVertex) + 1024); // Extra space
+		vbDesc.Name = "TileMapChunk Instance VB";
+		vbDesc.Size = (Uint64) (m_Instances.size() * sizeof(TileInstance) + 4096); // Extra space
 		vbDesc.Usage = USAGE_DYNAMIC;
 		vbDesc.BindFlags = BIND_VERTEX_BUFFER;
 		vbDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
-		device->CreateBuffer(vbDesc, nullptr, &m_VertexBuffer);
+		device->CreateBuffer(vbDesc, nullptr, &m_InstanceBuffer);
 	}
 
 	void* pData;
-	context->MapBuffer(m_VertexBuffer, MAP_WRITE, MAP_FLAG_DISCARD, pData);
-	memcpy(pData, m_Vertices.data(), m_Vertices.size() * sizeof(TileVertex));
-	context->UnmapBuffer(m_VertexBuffer, MAP_WRITE);
-
-	// Index Buffer
-	if (!m_IndexBuffer || m_Indices.size() * sizeof(uint32_t) > m_IndexBuffer->GetDesc().Size)
-	{
-		BufferDesc ibDesc;
-		ibDesc.Name = "TileMapChunk IB";
-		ibDesc.Size = (Uint64) (m_Indices.size() * sizeof(uint32_t) + 1024);
-		ibDesc.Usage = USAGE_DYNAMIC;
-		ibDesc.BindFlags = BIND_INDEX_BUFFER;
-		ibDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
-		device->CreateBuffer(ibDesc, nullptr, &m_IndexBuffer);
-	}
-
-	context->MapBuffer(m_IndexBuffer, MAP_WRITE, MAP_FLAG_DISCARD, pData);
-	memcpy(pData, m_Indices.data(), m_Indices.size() * sizeof(uint32_t));
-	context->UnmapBuffer(m_IndexBuffer, MAP_WRITE);
+	context->MapBuffer(m_InstanceBuffer, MAP_WRITE, MAP_FLAG_DISCARD, pData);
+	memcpy(pData, m_Instances.data(), m_Instances.size() * sizeof(TileInstance));
+	context->UnmapBuffer(m_InstanceBuffer, MAP_WRITE);
 }
 
-void TileMapChunk::Render(const glm::mat4& viewProj)
+void TileMapChunk::Render(IBuffer* pConstantBuffer)
 {
 	if (m_Dirty)
 		UpdateMesh();
-	if (m_IndexCount == 0 || !m_VertexBuffer || !m_IndexBuffer)
+	if (m_InstanceCount == 0 || !m_InstanceBuffer || !s_QuadVB || !s_QuadIB)
 		return;
 
 	auto context = Window::GetContext();
 
 	if (s_PSO && m_SRB)
 	{
-		// Update Textures
 		if (auto* pVar = m_SRB->GetVariableByName(SHADER_TYPE_PIXEL, "u_Textures"))
 		{
 			std::vector<IDeviceObject*> pTexObjs;
@@ -363,34 +344,30 @@ void TileMapChunk::Render(const glm::mat4& viewProj)
 			{
 				pTexObjs.push_back(pView);
 			}
-			// Fill remaining with white texture
 			while (pTexObjs.size() < 32)
 			{
 				pTexObjs.push_back(Renderer2D::GetWhiteTextureSRV());
 			}
-
 			pVar->SetArray(pTexObjs.data(), 0, (Uint32) pTexObjs.size(), SET_SHADER_RESOURCE_FLAG_ALLOW_OVERWRITE);
 		}
 
-		if (auto* pShader = Renderer2D::GetShader())
+		if (pConstantBuffer)
 		{
-			if (auto* pCB = pShader->GetConstantBuffer())
-			{
-				if (auto* pVar = m_SRB->GetVariableByName(SHADER_TYPE_VERTEX, "ConstantBuffer"))
-					pVar->Set(pCB);
-			}
+			if (auto* pVar = m_SRB->GetVariableByName(SHADER_TYPE_VERTEX, "ConstantBuffer"))
+				pVar->Set(pConstantBuffer);
 		}
 
 		context->SetPipelineState(s_PSO);
 		context->CommitShaderResources(m_SRB, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-		IBuffer* pVBs[] = { m_VertexBuffer };
-		Uint64 offsets[] = { 0 };
-		context->SetVertexBuffers(0, 1, pVBs, offsets, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
-		context->SetIndexBuffer(m_IndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+		IBuffer* pVBs[] = { s_QuadVB, m_InstanceBuffer };
+		Uint64 offsets[] = { 0, 0 };
+		context->SetVertexBuffers(0, 2, pVBs, offsets, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
+		context->SetIndexBuffer(s_QuadIB, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
 		DrawIndexedAttribs DrawAttrs;
-		DrawAttrs.NumIndices = m_IndexCount;
+		DrawAttrs.NumIndices = 6;
+		DrawAttrs.NumInstances = m_InstanceCount;
 		DrawAttrs.IndexType = VT_UINT32;
 		DrawAttrs.Flags = DRAW_FLAG_VERIFY_ALL;
 		context->DrawIndexed(DrawAttrs);
@@ -401,9 +378,18 @@ void TileMapChunk::Render(const glm::mat4& viewProj)
 // TileMap
 // ==========================================
 
+struct TileMapConstantBuffer
+{
+	glm::mat4 ViewProjection;
+	float Time;
+	float Padding[3];
+};
+
 TileMap::TileMap(int width, int height, float tileSize)
       : m_Width(width), m_Height(height), m_TileSize(tileSize)
 {
+	CreateConstantBuffer();
+
 	m_ChunksX = (width + m_ChunkWidth - 1) / m_ChunkWidth;
 	m_ChunksY = (height + m_ChunkHeight - 1) / m_ChunkHeight;
 
@@ -418,6 +404,18 @@ TileMap::TileMap(int width, int height, float tileSize)
 			m_Chunks[y * m_ChunksX + x] = new TileMapChunk(x * m_ChunkWidth, y * m_ChunkHeight, cw, ch, tileSize);
 		}
 	}
+}
+
+void TileMap::CreateConstantBuffer()
+{
+	BufferDesc CBDesc;
+	CBDesc.Name = "TileMap Constant Buffer";
+	CBDesc.Size = sizeof(TileMapConstantBuffer);
+	CBDesc.Usage = USAGE_DYNAMIC;
+	CBDesc.BindFlags = BIND_UNIFORM_BUFFER;
+	CBDesc.CPUAccessFlags = CPU_ACCESS_WRITE;
+
+	Window::GetDevice()->CreateBuffer(CBDesc, nullptr, &m_VSConstants);
 }
 
 TileMap::~TileMap()
@@ -451,11 +449,18 @@ void TileMap::UpdateMesh()
 
 void TileMap::Render(const glm::mat4& viewProj)
 {
-	if (auto* pShader = Renderer2D::GetShader())
+	if (m_VSConstants)
 	{
-		pShader->SetMat4("u_ViewProjection", viewProj);
+		TileMapConstantBuffer cb;
+		cb.ViewProjection = viewProj; // Column-major by default in GLM
+		cb.Time = 0.0f; // TODO: Pass time if needed
+
+		void* pData;
+		Window::GetContext()->MapBuffer(m_VSConstants, MAP_WRITE, MAP_FLAG_DISCARD, pData);
+		memcpy(pData, &cb, sizeof(TileMapConstantBuffer));
+		Window::GetContext()->UnmapBuffer(m_VSConstants, MAP_WRITE);
 	}
 
 	for (auto* chunk: m_Chunks)
-		chunk->Render(viewProj);
+		chunk->Render(m_VSConstants);
 }

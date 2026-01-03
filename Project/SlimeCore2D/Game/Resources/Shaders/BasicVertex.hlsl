@@ -1,3 +1,5 @@
+#include "Structures.fxh"
+
 struct VS_INPUT
 {
     float3 Pos : ATTRIB0;
@@ -21,12 +23,6 @@ struct PS_INPUT
     float TexIndex : TEXCOORD1;
     float Tiling : TILING;
     float IsText : ISTEXT;
-};
-
-cbuffer ConstantBuffer : register(b0)
-{
-    float4x4 u_ViewProjection;
-    float u_Time;
 };
 
 PS_INPUT main(VS_INPUT input)

@@ -1,9 +1,4 @@
-cbuffer ConstantBuffer : register(b0)
-{
-    matrix u_ViewProjection;
-    float u_Time;
-    float3 padding;
-};
+#include "Structures.fxh"
 
 struct PS_INPUT
 {

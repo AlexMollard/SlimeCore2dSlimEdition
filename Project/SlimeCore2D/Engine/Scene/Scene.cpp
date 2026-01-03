@@ -1,7 +1,9 @@
 #include "Scene.h"
 
 #include <algorithm>
+#include <string>
 
+#include "Core/Logger.h"
 #include "Core/Input.h"
 #include "Physics/RigidBody.h"
 #include "Rendering/ParticleSystem.h"
@@ -438,17 +440,71 @@ void Scene::Render(Camera& camera)
 
 	Renderer2D::BeginScene(camera);
 
+	static int frameCount = 0;
+	frameCount++;
+	bool doLog = (frameCount % 60 == 0);
+
+	int countTotal = 0;
+	int countComponents = 0;
+	int countVisible = 0;
+	int countDraw = 0;
+
+	if (doLog)
+	{
+		Logger::Info("Scene::Render - Entity Count: " + std::to_string(sortedEntities.size()));
+		if (!sortedEntities.empty())
+		{
+			Entity first = sortedEntities[0];
+			if (m_Registry.HasComponent<TransformComponent>(first))
+			{
+				float z = m_Registry.GetComponent<TransformComponent>(first).Position.z;
+				Logger::Info("First Entity Z: " + std::to_string(z));
+			}
+			if (m_Registry.HasComponent<SpriteComponent>(first))
+			{
+				auto& sprite = m_Registry.GetComponent<SpriteComponent>(first);
+				Logger::Info("First Entity Texture Ptr: " + std::to_string((uint64_t)sprite.Texture));
+                Logger::Info("First Entity Color: " + std::to_string(sprite.Color.r) + ", " + std::to_string(sprite.Color.g) + ", " + std::to_string(sprite.Color.b) + ", " + std::to_string(sprite.Color.a));
+			}
+		}
+	}
+
+	int failures = 0;
 	for (Entity entity: sortedEntities)
 	{
-		if (m_Registry.HasComponent<TransformComponent>(entity) && m_Registry.HasComponent<SpriteComponent>(entity))
+		countTotal++;
+		bool hasTransform = m_Registry.HasComponent<TransformComponent>(entity);
+		bool hasSprite = m_Registry.HasComponent<SpriteComponent>(entity);
+
+		if (!hasTransform || !hasSprite)
 		{
-			auto& transform = m_Registry.GetComponent<TransformComponent>(entity);
-			auto& sprite = m_Registry.GetComponent<SpriteComponent>(entity);
+			if (doLog && failures < 5)
+			{
+				Logger::Warn("Entity " + std::to_string(entity) + " missing components: " + 
+					(hasTransform ? "" : "Transform ") + (hasSprite ? "" : "Sprite"));
+			}
+			failures++;
+			continue;
+		}
 
-			if (!sprite.IsVisible)
-				continue;
+		countComponents++;
+		auto& transform = m_Registry.GetComponent<TransformComponent>(entity);
+		auto& sprite = m_Registry.GetComponent<SpriteComponent>(entity);
 
-			glm::mat4 transformMat = transform.GetTransform();
+		if (!sprite.IsVisible)
+		{
+			if (doLog && failures < 5)
+			{
+				Logger::Warn("Entity " + std::to_string(entity) + " is not visible");
+			}
+			failures++;
+			continue;
+		}
+
+		countVisible++;
+		countDraw++;
+
+		glm::mat4 transformMat = transform.GetTransform();
 
 			if (sprite.Texture)
 			{
@@ -483,6 +539,7 @@ void Scene::Render(Camera& camera)
 
 				if (!hasAnim)
 				{
+					// Logger::Info("Drawing Entity " + std::to_string(entity));
 					Renderer2D::DrawQuad(transformMat, sprite.Texture, sprite.TilingFactor, sprite.Color);
 				}
 			}
@@ -490,11 +547,22 @@ void Scene::Render(Camera& camera)
 			{
 				Renderer2D::DrawQuad(transformMat, sprite.Color);
 			}
-		}
 	}
 
 	for (auto ps: m_ParticleSystems)
 		ps->OnRender();
 
 	Renderer2D::EndScene();
+
+	if (doLog)
+	{
+		Logger::Info("Scene::Render Stats:");
+		Logger::Info("  Total Entities: " + std::to_string(countTotal));
+		Logger::Info("  With Components: " + std::to_string(countComponents));
+		Logger::Info("  Visible: " + std::to_string(countVisible));
+		Logger::Info("  Draw Calls (Quads): " + std::to_string(countDraw));
+
+		auto stats = Renderer2D::GetStats();
+		Logger::Info("  Renderer Stats - Quads: " + std::to_string(stats.QuadCount) + " DrawCalls: " + std::to_string(stats.DrawCalls));
+	}
 }

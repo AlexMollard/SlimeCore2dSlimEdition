@@ -7,47 +7,63 @@
 
 #include "Core/Logger.h"
 #include "Core/Window.h"
+#include "DiligentCore/Graphics/GraphicsTools/interface/MapHelper.hpp"
+#include "EngineFactory.h"
 
 using namespace Diligent;
 
 Shader::Shader(const std::string& name, const char* vertexPath, const char* fragmentPath, const char* geometryPath)
       : m_name(name)
 {
-	// 1. Read files
-	std::string vertexCode;
-	std::string fragmentCode;
-	std::ifstream vShaderFile;
-	std::ifstream fShaderFile;
-
-	vShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-	fShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-
-	try
-	{
-		vShaderFile.open(vertexPath);
-		fShaderFile.open(fragmentPath);
-		std::stringstream vShaderStream, fShaderStream;
-		vShaderStream << vShaderFile.rdbuf();
-		fShaderStream << fShaderFile.rdbuf();
-		vShaderFile.close();
-		fShaderFile.close();
-		vertexCode = vShaderStream.str();
-		fragmentCode = fShaderStream.str();
-	}
-	catch (std::ifstream::failure& e)
-	{
-		Logger::Error("ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ: " + std::string(e.what()));
-	}
-
 	auto device = Window::GetDevice();
+	auto factory = Window::GetEngineFactory();
+
+	// Extract directory from vertexPath
+	std::string vPathStr(vertexPath);
+	std::string vDirectory;
+	std::string vFileName;
+	size_t vLastSlash = vPathStr.find_last_of("/\\");
+	if (vLastSlash != std::string::npos)
+	{
+		vDirectory = vPathStr.substr(0, vLastSlash);
+		vFileName = vPathStr.substr(vLastSlash + 1);
+	}
+	else
+	{
+		vFileName = vPathStr;
+	}
+
+	// Extract filename from fragmentPath
+	std::string fPathStr(fragmentPath);
+	std::string fDirectory;
+	std::string fFileName;
+	size_t fLastSlash = fPathStr.find_last_of("/\\");
+	if (fLastSlash != std::string::npos)
+	{
+		fDirectory = fPathStr.substr(0, fLastSlash);
+		fFileName = fPathStr.substr(fLastSlash + 1);
+	}
+	else
+	{
+		fFileName = fPathStr;
+	}
+
+	std::string searchDirs = vDirectory;
+	if (!fDirectory.empty() && fDirectory != vDirectory)
+	{
+		searchDirs += ";" + fDirectory;
+	}
+
+	RefCntAutoPtr<IShaderSourceInputStreamFactory> pShaderSourceFactory;
+	factory->CreateDefaultShaderSourceStreamFactory(searchDirs.c_str(), &pShaderSourceFactory);
 
 	ShaderCreateInfo ShaderCI;
+	ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
 	ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
 	// ShaderCI.UseCombinedTextureSamplers = true;
 
 	// Check for GLSL extension
-	std::string vPath(vertexPath);
-	if (vPath.find(".glsl") != std::string::npos || vPath.find(".vert") != std::string::npos)
+	if (vPathStr.find(".glsl") != std::string::npos || vPathStr.find(".vert") != std::string::npos)
 	{
 		ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_GLSL;
 		// ShaderCI.UseCombinedTextureSamplers = true; // Keep false to allow separate samplers
@@ -57,16 +73,26 @@ Shader::Shader(const std::string& name, const char* vertexPath, const char* frag
 	// Create Vertex Shader
 	ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
 	ShaderCI.Desc.Name = "Vertex Shader";
-	ShaderCI.Source = vertexCode.c_str();
+	ShaderCI.FilePath = vFileName.c_str();
 	ShaderCI.EntryPoint = "main";
 	device->CreateShader(ShaderCI, &m_VertexShader);
+
+	if (!m_VertexShader)
+	{
+		Logger::Error("Failed to create vertex shader: " + vFileName);
+	}
 
 	// Create Pixel Shader
 	ShaderCI.Desc.ShaderType = SHADER_TYPE_PIXEL;
 	ShaderCI.Desc.Name = "Pixel Shader";
-	ShaderCI.Source = fragmentCode.c_str();
+	ShaderCI.FilePath = fFileName.c_str();
 	ShaderCI.EntryPoint = "main";
 	device->CreateShader(ShaderCI, &m_PixelShader);
+
+	if (!m_PixelShader)
+	{
+		Logger::Error("Failed to create pixel shader: " + fFileName);
+	}
 
 	CreateConstantBuffer();
 }
@@ -109,10 +135,8 @@ void Shader::CreateConstantBuffer()
 
 void Shader::UpdateConstantBuffer() const
 {
-	void* pData;
-	Window::GetContext()->MapBuffer(m_ConstantBuffer, MAP_WRITE, MAP_FLAG_DISCARD, pData);
-	memcpy(pData, &m_CBufferData, sizeof(ConstantBuffer));
-	Window::GetContext()->UnmapBuffer(m_ConstantBuffer, MAP_WRITE);
+	MapHelper<ConstantBuffer> CBData(Window::GetContext(), m_ConstantBuffer, MAP_WRITE, MAP_FLAG_DISCARD);
+	*CBData = m_CBufferData;
 }
 
 void Shader::Use() const

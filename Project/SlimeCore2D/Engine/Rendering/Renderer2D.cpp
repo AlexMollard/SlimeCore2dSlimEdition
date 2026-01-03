@@ -8,6 +8,7 @@
 #include "Core/Window.h"
 #include "Resources/ResourceManager.h"
 #include "Text.h"
+#include "DiligentCore/Graphics/GraphicsTools/interface/MapHelper.hpp"
 
 using namespace Diligent;
 
@@ -270,22 +271,28 @@ void Renderer2D::StartBatch()
 	s_Data.QuadCount = 0;
 	s_Data.InstanceBufferPtr = s_Data.InstanceBuffer;
 	s_Data.TextureSlotIndex = 1;
+	// Logger::Info("Renderer2D::StartBatch - Reset QuadCount");
 }
 
 void Renderer2D::Flush()
 {
 	if (s_Data.QuadCount == 0)
+	{
+		// Logger::Info("Renderer2D::Flush - QuadCount is 0, skipping");
 		return;
+	}
+
+	static int frameCount = 0;
+	frameCount++;
+	if (frameCount % 60 == 0) Logger::Info("Renderer2D::Flush - QuadCount: " + std::to_string(s_Data.QuadCount));
 
 	auto context = Window::GetContext();
 
 	// 1. Update Instance Buffer
 	uint32_t dataSize = (uint32_t) ((uint8_t*) s_Data.InstanceBufferPtr - (uint8_t*) s_Data.InstanceBuffer);
 
-	void* pData;
-	context->MapBuffer(s_Data.InstanceVB, MAP_WRITE, MAP_FLAG_DISCARD, pData);
-	memcpy(pData, s_Data.InstanceBuffer, dataSize);
-	context->UnmapBuffer(s_Data.InstanceVB, MAP_WRITE);
+	MapHelper<Renderer2DData::InstanceData> InstanceData(context, s_Data.InstanceVB, MAP_WRITE, MAP_FLAG_DISCARD);
+	memcpy(InstanceData, s_Data.InstanceBuffer, dataSize);
 
 	// 2. Bind States
 	context->SetPipelineState(s_Data.PSO);
@@ -486,6 +493,9 @@ void Renderer2D::DrawQuad(const glm::mat4& transform, const glm::vec4& color)
 	s_Data.InstanceBufferPtr++;
 
 	s_Data.QuadCount++;
+
+	static int logCount = 0;
+	if (logCount++ < 5) Logger::Info("Renderer2D::DrawQuad (Color) - Count: " + std::to_string(s_Data.QuadCount));
 }
 
 void Renderer2D::DrawQuad(const glm::mat4& transform, Texture* texture, float tiling, const glm::vec4& tintColor)
@@ -494,6 +504,12 @@ void Renderer2D::DrawQuad(const glm::mat4& transform, Texture* texture, float ti
 		NextBatch();
 
 	float textureIndex = 0.0f;
+	if (texture == nullptr)
+	{
+		Logger::Error("Renderer2D::DrawQuad - Texture is null!");
+		return;
+	}
+
 	ITextureView* srv = texture->GetSRV();
 
 	for (uint32_t i = 1; i < s_Data.TextureSlotIndex; i++)
@@ -523,6 +539,9 @@ void Renderer2D::DrawQuad(const glm::mat4& transform, Texture* texture, float ti
 	s_Data.InstanceBufferPtr++;
 
 	s_Data.QuadCount++;
+	
+	static int logCount = 0;
+	if (logCount++ < 5) Logger::Info("Renderer2D::DrawQuad (Tex) - Count: " + std::to_string(s_Data.QuadCount));
 }
 
 void Renderer2D::DrawQuadUV(const glm::mat4& transform, Texture* texture, const glm::vec2 uv[], const glm::vec4& tintColor)
@@ -531,6 +550,12 @@ void Renderer2D::DrawQuadUV(const glm::mat4& transform, Texture* texture, const 
 		NextBatch();
 
 	float textureIndex = 0.0f;
+	if (texture == nullptr)
+	{
+		Logger::Error("Renderer2D::DrawQuadUV - Texture is null!");
+		return;
+	}
+
 	ITextureView* srv = texture->GetSRV();
 
 	for (uint32_t i = 1; i < s_Data.TextureSlotIndex; i++)
@@ -574,6 +599,9 @@ void Renderer2D::DrawQuadUV(const glm::mat4& transform, Texture* texture, const 
 	s_Data.InstanceBufferPtr++;
 
 	s_Data.QuadCount++;
+
+	static int logCount = 0;
+	if (logCount++ < 5) Logger::Info("Renderer2D::DrawQuadUV - Count: " + std::to_string(s_Data.QuadCount));
 }
 
 void Renderer2D::DrawQuadUV(const glm::vec3& position, const glm::vec2& size, Texture* texture, const glm::vec2 uv[], const glm::vec4& tintColor)

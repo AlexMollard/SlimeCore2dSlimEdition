@@ -6,6 +6,7 @@
 #include "gtc/matrix_transform.hpp"
 #include "Scripting/DotNetHost.h"
 
+#include "Core/Logger.h"
 #include "Core/Memory.h"
 
 Game2D::Game2D()
@@ -73,6 +74,10 @@ void Game2D::Draw()
 
 	// Draw Managed World (TileMap, etc)
 	DotNetHost::GetInstance()->CallDraw();
+	
+	static int frameCount = 0;
+	frameCount++;
+	if (frameCount % 60 == 0) Logger::Info("Game2D::Draw - After CallDraw");
 
 	// Render Scene Graph
 	if (m_scene)
@@ -84,10 +89,15 @@ void Game2D::Draw()
 			auto& tc = m_scene->GetRegistry().GetComponent<TransformComponent>(camEntity);
 			auto& cc = m_scene->GetRegistry().GetComponent<CameraComponent>(camEntity);
 
+			auto viewport = Input::GetInstance()->GetViewportRect();
+			float width = (float) viewport.z;
+			float height = (float) viewport.w;
+			float aspect = (height > 0) ? width / height : 16.0f / 9.0f;
+
 			m_camera->SetPosition(tc.Position);
 			m_camera->SetRotation(tc.Rotation);
 			m_camera->SetZoom(cc.ZoomLevel);
-			m_camera->SetProjection(cc.OrthographicSize, m_camera->GetAspectRatio()); // Keep window aspect
+			m_camera->SetProjection(cc.OrthographicSize, aspect);
 		}
 
 		m_scene->Render(*m_camera);
