@@ -77,7 +77,7 @@ ConveyorMap::ConveyorMap(int width, int height, float tileSize)
 
 		ShaderResourceVariableDesc Vars[] = {
 			{			          SHADER_TYPE_PIXEL,     "g_Textures", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC },
-            { SHADER_TYPE_VERTEX | SHADER_TYPE_PIXEL, "ConstantBuffer", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE }
+            { SHADER_TYPE_VERTEX | SHADER_TYPE_PIXEL, "GlobalConstants", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE }
 		};
 		PSOCreateInfo.PSODesc.ResourceLayout.Variables = Vars;
 		PSOCreateInfo.PSODesc.ResourceLayout.NumVariables = _countof(Vars);
@@ -756,9 +756,9 @@ void ConveyorMap::Render(const glm::mat4& viewProj, float time)
 		// Update Constant Buffer in SRB
 		if (auto* pCB = m_Shader->GetConstantBuffer())
 		{
-			if (auto* pVar = m_SRB->GetVariableByName(SHADER_TYPE_VERTEX, "ConstantBuffer"))
+			if (auto* pVar = m_SRB->GetVariableByName(SHADER_TYPE_VERTEX, "GlobalConstants"))
 				pVar->Set(pCB);
-			if (auto* pVar = m_SRB->GetVariableByName(SHADER_TYPE_PIXEL, "ConstantBuffer"))
+			if (auto* pVar = m_SRB->GetVariableByName(SHADER_TYPE_PIXEL, "GlobalConstants"))
 				pVar->Set(pCB);
 		}
 

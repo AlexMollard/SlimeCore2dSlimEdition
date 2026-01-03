@@ -144,7 +144,7 @@ void TileMapChunk::InitCommonResources()
 
 		ShaderResourceVariableDesc Vars[] = {
 			{  SHADER_TYPE_PIXEL,     "u_Textures", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE },
-			{ SHADER_TYPE_VERTEX, "ConstantBuffer", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE }
+			{ SHADER_TYPE_VERTEX, "GlobalConstants", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE }
 		};
 		PSOCreateInfo.PSODesc.ResourceLayout.Variables = Vars;
 		PSOCreateInfo.PSODesc.ResourceLayout.NumVariables = _countof(Vars);
@@ -353,7 +353,7 @@ void TileMapChunk::Render(IBuffer* pConstantBuffer)
 
 		if (pConstantBuffer)
 		{
-			if (auto* pVar = m_SRB->GetVariableByName(SHADER_TYPE_VERTEX, "ConstantBuffer"))
+			if (auto* pVar = m_SRB->GetVariableByName(SHADER_TYPE_VERTEX, "GlobalConstants"))
 				pVar->Set(pConstantBuffer);
 		}
 

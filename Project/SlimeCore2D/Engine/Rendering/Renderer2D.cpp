@@ -188,7 +188,7 @@ void Renderer2D::Init()
 	// Shader Variables
 	ShaderResourceVariableDesc Vars[] = {
 		{		              SHADER_TYPE_PIXEL,     "u_Textures", SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC },
-        { SHADER_TYPE_VERTEX | SHADER_TYPE_PIXEL, "ConstantBuffer", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE }
+        { SHADER_TYPE_VERTEX | SHADER_TYPE_PIXEL, "GlobalConstants", SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE }
 	};
 	PSOCreateInfo.PSODesc.ResourceLayout.Variables = Vars;
 	PSOCreateInfo.PSODesc.ResourceLayout.NumVariables = _countof(Vars);
@@ -225,9 +225,9 @@ void Renderer2D::Init()
 	// Bind Constant Buffer
 	if (auto* pCB = s_Data.TextureShader->GetConstantBuffer())
 	{
-		if (auto* pVar = s_Data.SRB->GetVariableByName(SHADER_TYPE_VERTEX, "ConstantBuffer"))
+		if (auto* pVar = s_Data.SRB->GetVariableByName(SHADER_TYPE_VERTEX, "GlobalConstants"))
 			pVar->Set(pCB);
-		if (auto* pVar = s_Data.SRB->GetVariableByName(SHADER_TYPE_PIXEL, "ConstantBuffer"))
+		if (auto* pVar = s_Data.SRB->GetVariableByName(SHADER_TYPE_PIXEL, "GlobalConstants"))
 			pVar->Set(pCB);
 	}
 }
