@@ -35,16 +35,18 @@ namespace SlimeCore.GameModes.Idle
         private UIText _cpsText;
         private double _cps;
 
+
+        //private int _menuTopIndex;
         public void Enter(IdleGame game)
         {
-            _coins = 150;
+            _coins = 0;
 
-            _storeMenu = UIScrollPanel.Create(13.5f, 0.0f, 8, 19.5f, 50, false);
+            _storeMenu = UIScrollPanel.Create(13.5f, 0.0f, 8, 19.5f, 1, false);
             _storeMenu.Background.Color(0.1f, 0.1f, 0.15f); // Dark Blue-ish background
             _storeMenu.SetBorder(0.2f, 0.4f, 0.5f, 0.6f); // Light Blue-Grey Border
             _storeMenu.SetVisible(false); // Start hidden
 
-            _storeToggle = UIButton.Create("<", 17.0f, -0.0f, 2.0f, 2.0f, 0.2f, 0.2f, 0.2f, 49, 1, false);
+            _storeToggle = UIButton.Create("<", 17.0f, -0.0f, 2.0f, 2.0f, 0.2f, 0.2f, 0.2f, 1, 1, false);
             _storeToggle.Clicked += () =>
             {
                 _storeMenu.SetVisible(!_storeMenu.IsVisible);
@@ -68,11 +70,14 @@ namespace SlimeCore.GameModes.Idle
             _cpsText.Layer(100);
             _cpsText.Color(1.0f, 1.0f, 1.0f);
 
-            _clickButton = UIButton.Create("Rock", -8.0f, -0.0f, 8.0f, 8.0f, 0.2f, 0.2f, 0.2f, 100, 1, false);
-            _clickButton.Label.Color(0.1f, 0.1f, 0.1f);
-            
+            _clickButton = UIButton.Create("", -8.0f, -0.0f, 8.0f, 8.0f, 1f, 1f, 1f, 1, 1, false);
+            _clickButton.Label.Color(1f, 1f, 1f);
+            _clickButton.SetTexture(IdleResources.TexIron);
+
             _clickButton.Clicked += () =>
             {
+                var (mx, my) = Input.GetMousePos();
+                game.ClickEffect(new Vec2(mx, my), 1);
                 _coins += _clickAmoutPerClick * _clickAmoutPerClickMult;
                 UpdateText();
             };
@@ -80,12 +85,18 @@ namespace SlimeCore.GameModes.Idle
 
             var store = StoreRegistry.GetAll().ToList();
 
-            float xPos = 8.0f;
+            float yPos = 8.0f;
             foreach (var item in store)
             {
-                var btn = UIButton.Create(string.Format("{0}", item.BaseCost), 08.0f, -0.0f, 7.0f, 2.0f, 0.2f, 0.2f, 0.2f, 100, 1, false);
+                var btn = UIButton.Create(string.Format("{0}", item.BaseCost), 08.0f, -0.0f, 7.0f, 4.0f, 1f, 1f, 1f, 2, 1, false);
                 _storeButtons.Add(item.Id, btn);
-                btn.Label.Color(0.1f, 0.1f, 0.1f);
+                btn.Label.Color(0.8f, 0.8f, 0.8f);
+
+                if (item.Texture != IntPtr.Zero)
+                {
+                    btn.SetTexture(item.Texture);
+                }
+
                 btn.Clicked += () =>
                 {
                     if (_coins >= item.Cost)
@@ -106,8 +117,9 @@ namespace SlimeCore.GameModes.Idle
                     }
                 };
 
-                _storeMenu.AddChild(btn, 0, xPos);
-                xPos -= 2.5f;
+                _storeMenu.AddChild(btn, 0, yPos);
+                _storeMenu.ContentHeight += 4.5f;
+                yPos -= 4.5f;
             }
         }
 
@@ -119,7 +131,7 @@ namespace SlimeCore.GameModes.Idle
         }
 
 
-        public int CalcNewPrice(int baseCost, int amountOwned, int freeAmount) 
+        public int CalcNewPrice(int baseCost, int amountOwned, int freeAmount)
         {
             return (int)Math.Ceiling(baseCost * Math.Pow(1.15, amountOwned - freeAmount));
         }
@@ -140,6 +152,7 @@ namespace SlimeCore.GameModes.Idle
                 _coinsAmount.Text(string.Format("{0}", (int)_coins));
                 secondCounter = 0.0f;
             }
+            UISystem.Update();
         }
 
         public void Draw(IdleGame game) { }

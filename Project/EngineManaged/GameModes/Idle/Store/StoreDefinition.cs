@@ -14,5 +14,8 @@ public class StoreDefinition
     public float ClickMult { get; set; }
     public int Cost { get; set; }
     public int Owned { get; set; }
+    public string? TexturePath { get; set; }
+    [JsonIgnore]
+    public IntPtr Texture { get; set; } = IntPtr.Zero;
 }
 

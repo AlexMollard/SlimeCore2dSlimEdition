@@ -2,19 +2,29 @@
   {
     "Id": "stones",
     "Name": "Stones",
+    "TexturePath": "Textures/Idle/rock.png",
     "BaseCost": 15,
-    "ClickAdd": 1    
+    "CPS": 0.1    
   },
   {
-    "Id": "factory",
-    "Name": "factory",
-    "BaseCost": 50,
-    "CPS": 0.1
+    "Id": "childLabor",
+    "Name": "Child Labor",
+    "TexturePath": "Textures/Idle/ChildLabor.png",
+    "BaseCost": 100,
+    "CPS": 1
   },
   {
     "Id": "pickaxe",
     "Name": "Pickaxe",
-    "BaseCost": 150,
-    "ClickAdd": 2
+    "TexturePath": "Textures/Idle/pickaxe.png",
+    "BaseCost": 1100,
+    "CPS": 2
+  },
+  {
+    "Id": "mine",
+    "Name": "Mine",
+    "TexturePath": "Textures/Idle/mine.png",
+    "BaseCost": 1200,
+    "CPS": 3
   }
 ]
