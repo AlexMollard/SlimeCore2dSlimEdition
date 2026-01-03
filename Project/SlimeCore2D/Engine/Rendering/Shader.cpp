@@ -208,13 +208,7 @@ void Shader::setMat4(const std::string& name, const glm::mat4& mat) const
 {
 	if (name == "u_ViewProjection")
 	{
-		// In Diligent/HLSL, matrices are column-major by default (like glm).
-		// We should NOT transpose them if we use mul(Matrix, Vector).
-		// However, if the shader expects Row-Major (e.g. mul(v, M)), we might need to transpose.
-		// But our shaders use mul(M, v).
-
-		// Try transposing again, just in case Diligent defaults to Row-Major packing for cbuffers.
-		m_CBufferData.ViewProjection = glm::transpose(mat);
+		m_CBufferData.ViewProjection = mat;
 
 		UpdateConstantBuffer();
 	}

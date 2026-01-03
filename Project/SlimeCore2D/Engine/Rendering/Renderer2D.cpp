@@ -29,22 +29,22 @@ void Renderer2D::Init()
 		-0.5f,
 		0.0f,
 		0.0f,
-		1.0f, // BL
+		0.0f, // BL
 		0.5f,
 		-0.5f,
 		0.0f,
 		1.0f,
-		1.0f, // BR
+		0.0f, // BR
 		0.5f,
 		0.5f,
 		0.0f,
 		1.0f,
-		0.0f, // TR
+		1.0f, // TR
 		-0.5f,
 		0.5f,
 		0.0f,
 		0.0f,
-		0.0f // TL
+		1.0f // TL
 	};
 
 	Diligent::BufferDesc QuadVBDesc;
@@ -726,7 +726,7 @@ void Renderer2D::DrawString(const std::string& text, Text* font, const glm::vec3
 
 			s_Data.InstanceBufferPtr->Transform = transform;
 			s_Data.InstanceBufferPtr->Color = color;
-			s_Data.InstanceBufferPtr->UVRect = { ch.uvMin.x, ch.uvMin.y, ch.uvMax.x, ch.uvMax.y };
+			s_Data.InstanceBufferPtr->UVRect = { ch.uvMin.x, ch.uvMax.y, ch.uvMax.x, ch.uvMin.y };
 			s_Data.InstanceBufferPtr->TexIndex = textureIndex;
 			s_Data.InstanceBufferPtr->Tiling = 1.0f;
 			s_Data.InstanceBufferPtr->IsText = 1.0f;
