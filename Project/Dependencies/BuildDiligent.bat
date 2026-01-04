@@ -3,7 +3,7 @@ pushd %~dp0\DiligentEngine
 if not exist Build mkdir Build
 cd Build
 echo Configuring Diligent Engine...
-cmake .. -A x64 -DCMAKE_INSTALL_PREFIX=../Install -DDILIGENT_BUILD_SAMPLES=OFF -DDILIGENT_BUILD_TOOLS=ON -DDILIGENT_NO_GLSLANG=OFF
+cmake .. -A x64 -T v145 -DCMAKE_INSTALL_PREFIX=../Install -DDILIGENT_BUILD_SAMPLES=OFF -DDILIGENT_BUILD_TOOLS=ON -DDILIGENT_NO_GLSLANG=OFF
 if %errorlevel% neq 0 exit /b %errorlevel%
 
 echo Building Debug...

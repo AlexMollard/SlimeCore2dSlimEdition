@@ -17,8 +17,7 @@
   </PropertyGroup>
 
 	<Target Name="StageForNativeHostBuild"
-	        AfterTargets="Build"
-	        Condition="'$(Configuration)'=='Debug'">
+	        AfterTargets="Build">
 
 		<MakeDir Directories="$(ScriptPublishDir)" />
 
