@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 [System.Diagnostics.CodeAnalysis.SuppressMessage(
     "Interoperability", "CA2101:Specify marshaling for P/Invoke string arguments",
     Justification = "UTF-8 via MarshalAs(UnmanagedType.LPUTF8Str) is explicit")]
-internal static partial class Native
+internal static partial class NativeMethods
 {
     [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
     internal static extern uint Text_CreateTextureFromFontFile([MarshalAs(UnmanagedType.LPUTF8Str)] string fontPath, [MarshalAs(UnmanagedType.LPUTF8Str)] string text, int pixelHeight, out int outWidth, out int outHeight);

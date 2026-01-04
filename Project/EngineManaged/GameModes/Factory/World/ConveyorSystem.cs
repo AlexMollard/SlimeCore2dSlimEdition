@@ -8,7 +8,6 @@ namespace SlimeCore.GameModes.Factory.World;
 
 public class ConveyorSystem : IDisposable
 {
-    private ConveyorMap _map;
     private int _width;
     private int _height;
     
@@ -26,7 +25,6 @@ public class ConveyorSystem : IDisposable
     {
         _width = width;
         _height = height;
-        _map = new ConveyorMap(width, height, tileSize);
         _grid = new ConveyorData[width * height];
     }
 
@@ -38,10 +36,6 @@ public class ConveyorSystem : IDisposable
 
     protected virtual void Dispose(bool disposing)
     {
-        if (disposing)
-        {
-            _map.Dispose();
-        }
     }
 
     ~ConveyorSystem()
@@ -82,15 +76,12 @@ public class ConveyorSystem : IDisposable
         if (_grid[idx].Active)
         {
             _grid[idx].Active = false;
-            _map.RemoveConveyor(x, y);
             UpdateNeighbors(x, y);
-            _map.UpdateMesh();
         }
     }
 
     public void Render(float time)
     {
-        _map.Render(time);
     }
 
     private bool IsValid(int x, int y)
@@ -104,7 +95,6 @@ public class ConveyorSystem : IDisposable
         UpdateConveyor(x + 1, y);
         UpdateConveyor(x, y - 1);
         UpdateConveyor(x - 1, y);
-        _map.UpdateMesh();
     }
 
     private void UpdateConveyor(int x, int y)
@@ -115,8 +105,6 @@ public class ConveyorSystem : IDisposable
         var data = _grid[idx];
         
         if (!data.Active) return;
-        
-        _map.SetConveyor(x, y, data.Tier, data.Direction);
     }
 }
 

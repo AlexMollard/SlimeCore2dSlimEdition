@@ -1,4 +1,4 @@
-#include "Text.h"
+#include "Font.h"
 
 #include <algorithm>
 #include <iostream>
@@ -9,9 +9,9 @@ using namespace Diligent;
 
 // Note: Ensure you are linking against FreeType 2.11+ for SDF support.
 // If your FreeType is older, remove 'FT_RENDER_MODE_SDF' and standard aliasing will apply,
-// though the shader logic in Renderer2D will need to know it's not an SDF.
+// though the shader logic in Renderer will need to know it's not an SDF.
 
-Text::Text(const std::string& fontPath, unsigned int fontSize)
+Font::Font(const std::string& fontPath, unsigned int fontSize)
       : m_FontSize(fontSize)
 {
 	FT_Library ft;
@@ -41,7 +41,7 @@ Text::Text(const std::string& fontPath, unsigned int fontSize)
 	FT_Done_FreeType(ft);
 }
 
-Text::~Text()
+Font::~Font()
 {
 	if (m_AtlasTexture)
 	{
@@ -50,7 +50,7 @@ Text::~Text()
 	}
 }
 
-void Text::GenerateAtlas(FT_Face face)
+void Font::GenerateAtlas(FT_Face face)
 {
 	// 1. Setup Atlas Dimensions
 	// 1024x1024 is generally large enough for standard ASCII + some extras at 48px
@@ -155,13 +155,13 @@ void Text::GenerateAtlas(FT_Face face)
 	m_AtlasTexture->SetData(atlasData.data(), (uint32_t) atlasData.size());
 }
 
-glm::vec2 Text::CalculateSize(const std::string& text, float scale)
+glm::vec2 Font::CalculateSize(const std::string& text, float scale)
 {
 	glm::vec3 result = CalculateSizeWithBaseline(text, scale);
 	return glm::vec2(result.x, result.y);
 }
 
-glm::vec3 Text::CalculateSizeWithBaseline(const std::string& text, float scale)
+glm::vec3 Font::CalculateSizeWithBaseline(const std::string& text, float scale)
 {
 	glm::vec3 result(0.0f);
 	float x = 0.0f;

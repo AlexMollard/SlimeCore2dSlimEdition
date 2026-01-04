@@ -12,7 +12,7 @@ public record Entity
     }
 
     // Valid check
-    public bool IsAlive => Id != 0 && Native.Entity_IsAlive(Id);
+    public bool IsAlive => Id != 0 && NativeMethods.Entity_IsAlive(Id);
 
     // ---------------------------------------------------------------------
     // Lifecycle
@@ -20,7 +20,7 @@ public record Entity
 
     public static Entity Create()
     {
-        return new Entity(Native.Entity_Create());
+        return new Entity(NativeMethods.Entity_Create());
     }
 
     /// <summary>
@@ -28,7 +28,7 @@ public record Entity
     /// </summary>
     public void Destroy()
     {
-        if (Id != 0) Native.Scene_Destroy(Id);
+        if (Id != 0) NativeMethods.Scene_Destroy(Id);
     }
 
     // ---------------------------------------------------------------------
@@ -46,48 +46,48 @@ public record Entity
     public void AddComponent<T>() where T : IComponent
     {
         var type = typeof(T);
-        if (type == typeof(TransformComponent)) Native.Entity_AddComponent_Transform(Id);
-        else if (type == typeof(SpriteComponent)) Native.Entity_AddComponent_Sprite(Id);
-        else if (type == typeof(AnimationComponent)) Native.Entity_AddComponent_Animation(Id);
-        else if (type == typeof(TagComponent)) Native.Entity_AddComponent_Tag(Id);
-        else if (type == typeof(RelationshipComponent)) Native.Entity_AddComponent_Relationship(Id);
-        else if (type == typeof(RigidBodyComponent)) Native.Entity_AddComponent_RigidBody(Id);
-        else if (type == typeof(BoxColliderComponent)) Native.Entity_AddComponent_BoxCollider(Id);
-        else if (type == typeof(CircleColliderComponent)) Native.Entity_AddComponent_CircleCollider(Id);
-        else if (type == typeof(CameraComponent)) Native.Entity_AddComponent_Camera(Id);
-        else if (type == typeof(AudioSourceComponent)) Native.Entity_AddComponent_AudioSource(Id);
+        if (type == typeof(TransformComponent)) NativeMethods.Entity_AddComponent_Transform(Id);
+        else if (type == typeof(SpriteComponent)) NativeMethods.Entity_AddComponent_Sprite(Id);
+        else if (type == typeof(AnimationComponent)) NativeMethods.Entity_AddComponent_Animation(Id);
+        else if (type == typeof(TagComponent)) NativeMethods.Entity_AddComponent_Tag(Id);
+        else if (type == typeof(RelationshipComponent)) NativeMethods.Entity_AddComponent_Relationship(Id);
+        else if (type == typeof(RigidBodyComponent)) NativeMethods.Entity_AddComponent_RigidBody(Id);
+        else if (type == typeof(BoxColliderComponent)) NativeMethods.Entity_AddComponent_BoxCollider(Id);
+        else if (type == typeof(CircleColliderComponent)) NativeMethods.Entity_AddComponent_CircleCollider(Id);
+        else if (type == typeof(CameraComponent)) NativeMethods.Entity_AddComponent_Camera(Id);
+        else if (type == typeof(AudioSourceComponent)) NativeMethods.Entity_AddComponent_AudioSource(Id);
         else throw new ArgumentException($"Component type {type.Name} is not supported.");
     }
 
     public bool HasComponent<T>() where T : IComponent
     {
         var type = typeof(T);
-        if (type == typeof(TransformComponent)) return Native.Entity_HasComponent_Transform(Id);
-        else if (type == typeof(SpriteComponent)) return Native.Entity_HasComponent_Sprite(Id);
-        else if (type == typeof(AnimationComponent)) return Native.Entity_HasComponent_Animation(Id);
-        else if (type == typeof(TagComponent)) return Native.Entity_HasComponent_Tag(Id);
-        else if (type == typeof(RelationshipComponent)) return Native.Entity_HasComponent_Relationship(Id);
-        else if (type == typeof(RigidBodyComponent)) return Native.Entity_HasComponent_RigidBody(Id);
-        else if (type == typeof(BoxColliderComponent)) return Native.Entity_HasComponent_BoxCollider(Id);
-        else if (type == typeof(CircleColliderComponent)) return Native.Entity_HasComponent_CircleCollider(Id);
-        else if (type == typeof(CameraComponent)) return Native.Entity_HasComponent_Camera(Id);
-        else if (type == typeof(AudioSourceComponent)) return Native.Entity_HasComponent_AudioSource(Id);
+        if (type == typeof(TransformComponent)) return NativeMethods.Entity_HasComponent_Transform(Id);
+        else if (type == typeof(SpriteComponent)) return NativeMethods.Entity_HasComponent_Sprite(Id);
+        else if (type == typeof(AnimationComponent)) return NativeMethods.Entity_HasComponent_Animation(Id);
+        else if (type == typeof(TagComponent)) return NativeMethods.Entity_HasComponent_Tag(Id);
+        else if (type == typeof(RelationshipComponent)) return NativeMethods.Entity_HasComponent_Relationship(Id);
+        else if (type == typeof(RigidBodyComponent)) return NativeMethods.Entity_HasComponent_RigidBody(Id);
+        else if (type == typeof(BoxColliderComponent)) return NativeMethods.Entity_HasComponent_BoxCollider(Id);
+        else if (type == typeof(CircleColliderComponent)) return NativeMethods.Entity_HasComponent_CircleCollider(Id);
+        else if (type == typeof(CameraComponent)) return NativeMethods.Entity_HasComponent_Camera(Id);
+        else if (type == typeof(AudioSourceComponent)) return NativeMethods.Entity_HasComponent_AudioSource(Id);
         else throw new ArgumentException($"Component type {type.Name} is not supported.");
     }
 
     public void RemoveComponent<T>() where T : IComponent
     {
         var type = typeof(T);
-        if (type == typeof(TransformComponent)) Native.Entity_RemoveComponent_Transform(Id);
-        else if (type == typeof(SpriteComponent)) Native.Entity_RemoveComponent_Sprite(Id);
-        else if (type == typeof(AnimationComponent)) Native.Entity_RemoveComponent_Animation(Id);
-        else if (type == typeof(TagComponent)) Native.Entity_RemoveComponent_Tag(Id);
-        else if (type == typeof(RelationshipComponent)) Native.Entity_RemoveComponent_Relationship(Id);
-        else if (type == typeof(RigidBodyComponent)) Native.Entity_RemoveComponent_RigidBody(Id);
-        else if (type == typeof(BoxColliderComponent)) Native.Entity_RemoveComponent_BoxCollider(Id);
-        else if (type == typeof(CircleColliderComponent)) Native.Entity_RemoveComponent_CircleCollider(Id);
-        else if (type == typeof(CameraComponent)) Native.Entity_RemoveComponent_Camera(Id);
-        else if (type == typeof(AudioSourceComponent)) Native.Entity_RemoveComponent_AudioSource(Id);
+        if (type == typeof(TransformComponent)) NativeMethods.Entity_RemoveComponent_Transform(Id);
+        else if (type == typeof(SpriteComponent)) NativeMethods.Entity_RemoveComponent_Sprite(Id);
+        else if (type == typeof(AnimationComponent)) NativeMethods.Entity_RemoveComponent_Animation(Id);
+        else if (type == typeof(TagComponent)) NativeMethods.Entity_RemoveComponent_Tag(Id);
+        else if (type == typeof(RelationshipComponent)) NativeMethods.Entity_RemoveComponent_Relationship(Id);
+        else if (type == typeof(RigidBodyComponent)) NativeMethods.Entity_RemoveComponent_RigidBody(Id);
+        else if (type == typeof(BoxColliderComponent)) NativeMethods.Entity_RemoveComponent_BoxCollider(Id);
+        else if (type == typeof(CircleColliderComponent)) NativeMethods.Entity_RemoveComponent_CircleCollider(Id);
+        else if (type == typeof(CameraComponent)) NativeMethods.Entity_RemoveComponent_Camera(Id);
+        else if (type == typeof(AudioSourceComponent)) NativeMethods.Entity_RemoveComponent_AudioSource(Id);
         else throw new ArgumentException($"Component type {type.Name} is not supported.");
     }
 }

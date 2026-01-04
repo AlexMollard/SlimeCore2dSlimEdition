@@ -37,6 +37,8 @@ public:
 		Log(LogLevel::Error, message);
 	}
 
+	static void LogCustom(const std::string& tag, int color, const std::string& message);
+
 private:
 	static std::ofstream s_FileStream;
 	static std::mutex s_Mutex;

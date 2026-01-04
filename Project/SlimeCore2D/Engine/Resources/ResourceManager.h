@@ -6,7 +6,7 @@
 // Forward declarations to avoid including full headers here
 class Shader;
 class Texture;
-class Text;
+class Font;
 
 class ResourceManager
 {
@@ -49,10 +49,10 @@ public:
 	// 'name': The unique key.
 	// 'relativePath': File path.
 	// 'fontSize': The size to render the SDF atlas (default 48).
-	Text* LoadFont(const std::string& name, const std::string& relativePath = "", int fontSize = 48);
+	Font* LoadFont(const std::string& name, const std::string& relativePath = "", int fontSize = 48);
 
 	// Retrieve a loaded font by name.
-	Text* GetFont(const std::string& name);
+	Font* GetFont(const std::string& name);
 
 	// -------------------------------------------------------------------------
 	// TEXT DATA MANAGEMENT
@@ -91,6 +91,6 @@ private:
 	// Resource Storage (Keys are stored in lowercase)
 	std::unordered_map<std::string, Shader*> m_shaders;
 	std::unordered_map<std::string, Texture*> m_textures;
-	std::unordered_map<std::string, Text*> m_fonts;
+	std::unordered_map<std::string, Font*> m_fonts;
 	std::unordered_map<std::string, std::string> m_textFiles;
 };

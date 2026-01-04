@@ -17,9 +17,9 @@ int main(int argc, char** argv)
 		{
 			g_RendererType = RendererType::Vulkan;
 		}
-		else if (arg == "--d3d11" || arg == "-dx11")
+		else if (arg == "--d3d12" || arg == "-dx12")
 		{
-			g_RendererType = RendererType::D3D11;
+			g_RendererType = RendererType::D3D12;
 		}
 	}
 

@@ -50,6 +50,8 @@ public:
 		setMat4(name, mat);
 	}
 
+	void UploadConstants() const;
+
 	IShader* GetVertexShader() const
 	{
 		return m_VertexShader;

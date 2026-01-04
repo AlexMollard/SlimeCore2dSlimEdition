@@ -134,7 +134,7 @@ public class DudeGame : GameMode<DudeGame>, IGameMode, IDisposable
         ContentRegistry.Init();
 
         // Set Gravity to Zero for Top-Down Game
-        Native.Scene_SetGravity(0, 0);
+        NativeMethods.Scene_SetGravity(0, 0);
 
         // Load Textures (Using debug.png as placeholder for now)
         TexPlayer = NativeMethods.Resources_LoadTexture("Player", "Game/Resources/Textures/debug.png");

@@ -7,7 +7,9 @@
 #include "Core/Input.h"
 #include "Physics/RigidBody.h"
 #include "Rendering/ParticleSystem.h"
-#include "Rendering/Renderer2D.h"
+#include "Rendering/Renderer.h"
+
+#define ENABLE_SCENE_LOGGING 0
 
 Scene* Scene::s_ActiveScene = nullptr;
 
@@ -254,7 +256,7 @@ void Scene::RenderUI(float uiHeight)
 				finalPos.y = baselineForCenter * (1.0f - t) + baselineForTop * t;
 			}
 
-			Renderer2D::DrawString(element.TextContent, element.Font, finalPos, element.Scale.x, element.Color);
+			Renderer::DrawString(element.TextContent, element.Font, finalPos, element.Scale.x, element.Color);
 		}
 		else if (!element.IsText)
 		{
@@ -267,11 +269,11 @@ void Scene::RenderUI(float uiHeight)
 
 			if (element.Image)
 			{
-				Renderer2D::DrawQuad(finalPos, { size.x, -size.y }, element.Image, 1.0f, element.Color);
+				Renderer::DrawQuad(finalPos, { size.x, -size.y }, element.Image, 1.0f, element.Color);
 			}
 			else
 			{
-				Renderer2D::DrawQuad(finalPos, size, element.Color);
+				Renderer::DrawQuad(finalPos, size, element.Color);
 			}
 		}
 	}
@@ -438,11 +440,15 @@ void Scene::Render(Camera& camera)
 		        return zA < zB;
 	        });
 
-	Renderer2D::BeginScene(camera);
+	Renderer::BeginScene(camera);
 
 	static int frameCount = 0;
 	frameCount++;
+#if ENABLE_SCENE_LOGGING
 	bool doLog = (frameCount % 60 == 0);
+#else
+	bool doLog = false;
+#endif
 
 	int countTotal = 0;
 	int countComponents = 0;
@@ -533,26 +539,26 @@ void Scene::Render(Camera& camera)
 							{ u0, v1 }  // TL
 						};
 
-						Renderer2D::DrawQuadUV(transformMat, sprite.Texture, uvs, sprite.Color);
+						Renderer::DrawQuadUV(transformMat, sprite.Texture, uvs, sprite.Color);
 					}
 				}
 
 				if (!hasAnim)
 				{
 					// Logger::Info("Drawing Entity " + std::to_string(entity));
-					Renderer2D::DrawQuad(transformMat, sprite.Texture, sprite.TilingFactor, sprite.Color);
+					Renderer::DrawQuad(transformMat, sprite.Texture, sprite.TilingFactor, sprite.Color);
 				}
 			}
 			else
 			{
-				Renderer2D::DrawQuad(transformMat, sprite.Color);
+				Renderer::DrawQuad(transformMat, sprite.Color);
 			}
 	}
 
 	for (auto ps: m_ParticleSystems)
 		ps->OnRender();
 
-	Renderer2D::EndScene();
+	Renderer::EndScene();
 
 	if (doLog)
 	{
@@ -562,7 +568,7 @@ void Scene::Render(Camera& camera)
 		Logger::Info("  Visible: " + std::to_string(countVisible));
 		Logger::Info("  Draw Calls (Quads): " + std::to_string(countDraw));
 
-		auto stats = Renderer2D::GetStats();
+		auto stats = Renderer::GetStats();
 		Logger::Info("  Renderer Stats - Quads: " + std::to_string(stats.QuadCount) + " DrawCalls: " + std::to_string(stats.DrawCalls));
 	}
 }

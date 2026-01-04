@@ -60,15 +60,9 @@ Shader::Shader(const std::string& name, const char* vertexPath, const char* frag
 	ShaderCreateInfo ShaderCI;
 	ShaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
 	ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_HLSL;
-	// ShaderCI.UseCombinedTextureSamplers = true;
-
-	// Check for GLSL extension
-	if (vPathStr.find(".glsl") != std::string::npos || vPathStr.find(".vert") != std::string::npos)
-	{
-		ShaderCI.SourceLanguage = SHADER_SOURCE_LANGUAGE_GLSL;
-		// ShaderCI.UseCombinedTextureSamplers = true; // Keep false to allow separate samplers
-		m_IsGLSL = true;
-	}
+	
+	// We only support DX12 and Vulkan, which use separate texture samplers.
+	ShaderCI.Desc.UseCombinedTextureSamplers = false;
 
 	// Create Vertex Shader
 	ShaderCI.Desc.ShaderType = SHADER_TYPE_VERTEX;
@@ -164,7 +158,6 @@ void Shader::setFloat(const std::string& name, float value) const
 	if (name == "u_Time")
 	{
 		m_CBufferData.Time = value;
-		UpdateConstantBuffer();
 	}
 }
 
@@ -209,7 +202,10 @@ void Shader::setMat4(const std::string& name, const glm::mat4& mat) const
 	if (name == "u_ViewProjection")
 	{
 		m_CBufferData.ViewProjection = mat;
-
-		UpdateConstantBuffer();
 	}
+}
+
+void Shader::UploadConstants() const
+{
+	UpdateConstantBuffer();
 }

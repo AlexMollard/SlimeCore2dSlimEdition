@@ -2,7 +2,7 @@
 #include "Core/Camera.h"
 #include "Core/Input.h"
 #include "Physics/PhysicsScene.h"
-#include "Rendering/Renderer2D.h"
+#include "Rendering/Renderer.h"
 #include "Scene/Scene.h"
 
 class Game2D

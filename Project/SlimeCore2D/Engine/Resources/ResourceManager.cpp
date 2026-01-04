@@ -2,7 +2,7 @@
 
 #include "Core/Logger.h"
 #include "Rendering/Shader.h"
-#include "Rendering/Text.h"
+#include "Rendering/Font.h"
 #include "Rendering/Texture.h"
 //#include "Core/Memory.h"
 
@@ -386,7 +386,7 @@ Texture* ResourceManager::GetTexture(const std::string& name)
 // FONTS (SDF)
 // -----------------------------------------------------------------------------
 
-Text* ResourceManager::LoadFont(const std::string& name, const std::string& relativePath, int fontSize)
+Font* ResourceManager::LoadFont(const std::string& name, const std::string& relativePath, int fontSize)
 {
 	std::string key = ToLower(name);
 
@@ -409,7 +409,7 @@ Text* ResourceManager::LoadFont(const std::string& name, const std::string& rela
 
 	// 3. Load Font
 	// This generates the SDF atlas
-	Text* font = new Text(fullPath, fontSize);
+	Font* font = new Font(fullPath, fontSize);
 
 	// 4. Store
 	m_fonts[key] = font;
@@ -418,7 +418,7 @@ Text* ResourceManager::LoadFont(const std::string& name, const std::string& rela
 	return font;
 }
 
-Text* ResourceManager::GetFont(const std::string& name)
+Font* ResourceManager::GetFont(const std::string& name)
 {
 	std::string key = ToLower(name);
 	auto it = m_fonts.find(key);

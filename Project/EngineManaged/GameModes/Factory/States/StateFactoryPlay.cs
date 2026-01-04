@@ -33,11 +33,11 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         game.World?.Initialize(FactoryGame.MAX_VIEW_W, FactoryGame.MAX_VIEW_H);
 
         // Create Camera
-        _cameraEntity = Native.Entity_Create();
-        Native.Entity_AddComponent_Transform(_cameraEntity);
-        Native.Entity_AddComponent_Camera(_cameraEntity);
-        Native.Entity_SetPrimaryCamera(_cameraEntity, true);
-        Native.Entity_SetCameraSize(_cameraEntity, FactoryGame.VIEW_H);
+        _cameraEntity = NativeMethods.Entity_Create();
+        NativeMethods.Entity_AddComponent_Transform(_cameraEntity);
+        NativeMethods.Entity_AddComponent_Camera(_cameraEntity);
+        NativeMethods.Entity_SetPrimaryCamera(_cameraEntity, true);
+        NativeMethods.Entity_SetCameraSize(_cameraEntity, FactoryGame.VIEW_H);
 
         _interaction.Initialize();
 
@@ -49,11 +49,6 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
             //Generate terrain
             gen.Generate(game.World);
             game.World.CalculateAllBitmasks();
-            UnsafeNativeMethods.Memory_PopContext();
-
-            // Create TileMap
-            UnsafeNativeMethods.Memory_PushContext("TileMap::Create");
-            game.TileMap = Native.TileMap_Create(game.World.Width(), game.World.Height(), 1.0f);
             UnsafeNativeMethods.Memory_PopContext();
 
             //Create Systems
@@ -99,11 +94,6 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         UISystem.Clear();
         game.World?.Destroy();
         game.ActorManager?.Destroy();
-        if (game.TileMap != IntPtr.Zero)
-        {
-            Native.TileMap_Destroy(game.TileMap);
-            game.TileMap = IntPtr.Zero;
-        }
 
         if (game.ConveyorSystem != null)
         {
@@ -154,8 +144,8 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
         // Update Camera Entity
         if (_cameraEntity != 0)
         {
-            Native.Entity_SetPosition(_cameraEntity, game.Camera.X, game.Camera.Y);
-            Native.Entity_SetCameraZoom(_cameraEntity, 1.0f / game.World.Zoom);
+            NativeMethods.Entity_SetPosition(_cameraEntity, game.Camera.X, game.Camera.Y);
+            NativeMethods.Entity_SetCameraZoom(_cameraEntity, 1.0f / game.World.Zoom);
         }
 
         _interaction.Update(game, dt, _ui, _player, game.Camera);
@@ -169,11 +159,6 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
 
     private void Render(FactoryGame game)
     {
-        if (game.TileMap != IntPtr.Zero)
-        {
-            Native.TileMap_Render(game.TileMap);
-        }
-        
         if (game.ConveyorSystem != null)
         {
             game.ConveyorSystem.Render(_time);
@@ -204,7 +189,7 @@ public class StateFactoryPlay : IGameState<FactoryGame>, IDisposable
 
         if (_cameraEntity != 0)
         {
-            Native.Entity_Destroy(_cameraEntity);
+            NativeMethods.Entity_Destroy(_cameraEntity);
             _cameraEntity = 0;
         }
     }

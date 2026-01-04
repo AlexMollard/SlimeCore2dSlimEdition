@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-internal static partial class Native
+internal static partial class NativeMethods
 {
     [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
     internal static extern ulong Scene_CreateGameObject(float px, float py, float sx, float sy, float r, float g, float b);

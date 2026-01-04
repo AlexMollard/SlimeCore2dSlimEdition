@@ -35,30 +35,30 @@ public class FactoryInteractionManager : IDisposable
     public void Initialize()
     {
         // Create Cursor
-        _cursorEntity = Native.Entity_Create();
-        Native.Entity_AddComponent_Transform(_cursorEntity);
-        Native.Entity_AddComponent_Sprite(_cursorEntity);
-        Native.Entity_SetColor(_cursorEntity, 1.0f, 1.0f, 0.0f); // Yellow highlight
-        Native.Entity_SetAlpha(_cursorEntity, 0.4f);
-        Native.Entity_SetSize(_cursorEntity, 1.0f, 1.0f);
-        Native.Entity_SetLayer(_cursorEntity, 100); // Ensure it's on top
+        _cursorEntity = NativeMethods.Entity_Create();
+        NativeMethods.Entity_AddComponent_Transform(_cursorEntity);
+        NativeMethods.Entity_AddComponent_Sprite(_cursorEntity);
+        NativeMethods.Entity_SetColor(_cursorEntity, 1.0f, 1.0f, 0.0f); // Yellow highlight
+        NativeMethods.Entity_SetAlpha(_cursorEntity, 0.4f);
+        NativeMethods.Entity_SetSize(_cursorEntity, 1.0f, 1.0f);
+        NativeMethods.Entity_SetLayer(_cursorEntity, 100); // Ensure it's on top
 
         // Create Cursor Direction Indicator
-        _cursorDirectionEntity = Native.Entity_Create();
-        Native.Entity_AddComponent_Transform(_cursorDirectionEntity);
-        Native.Entity_AddComponent_Sprite(_cursorDirectionEntity);
-        Native.Entity_SetColor(_cursorDirectionEntity, 1.0f, 1.0f, 0.0f); // Yellow
-        Native.Entity_SetSize(_cursorDirectionEntity, 0.2f, 0.2f);
-        Native.Entity_SetLayer(_cursorDirectionEntity, 101); // Above cursor
+        _cursorDirectionEntity = NativeMethods.Entity_Create();
+        NativeMethods.Entity_AddComponent_Transform(_cursorDirectionEntity);
+        NativeMethods.Entity_AddComponent_Sprite(_cursorDirectionEntity);
+        NativeMethods.Entity_SetColor(_cursorDirectionEntity, 1.0f, 1.0f, 0.0f); // Yellow
+        NativeMethods.Entity_SetSize(_cursorDirectionEntity, 0.2f, 0.2f);
+        NativeMethods.Entity_SetLayer(_cursorDirectionEntity, 101); // Above cursor
 
         // Create Selection Box
-        _selectionBoxEntity = Native.Entity_Create();
-        Native.Entity_AddComponent_Transform(_selectionBoxEntity);
-        Native.Entity_AddComponent_Sprite(_selectionBoxEntity);
-        Native.Entity_SetColor(_selectionBoxEntity, 1.0f, 0.0f, 0.0f); // Red
-        Native.Entity_SetAlpha(_selectionBoxEntity, 0.3f);
-        Native.Entity_SetLayer(_selectionBoxEntity, 102); // Top
-        Native.Entity_SetRender(_selectionBoxEntity, false);
+        _selectionBoxEntity = NativeMethods.Entity_Create();
+        NativeMethods.Entity_AddComponent_Transform(_selectionBoxEntity);
+        NativeMethods.Entity_AddComponent_Sprite(_selectionBoxEntity);
+        NativeMethods.Entity_SetColor(_selectionBoxEntity, 1.0f, 0.0f, 0.0f); // Red
+        NativeMethods.Entity_SetAlpha(_selectionBoxEntity, 0.3f);
+        NativeMethods.Entity_SetLayer(_selectionBoxEntity, 102); // Top
+        NativeMethods.Entity_SetRender(_selectionBoxEntity, false);
     }
 
     public void Update(FactoryGame game, float dt, FactoryGameUI ui, Player? player, Vec2 camPos)
@@ -132,11 +132,11 @@ public class FactoryInteractionManager : IDisposable
         // Update Cursor Position
         if (_cursorEntity != 0)
         {
-            Native.Entity_SetPosition(_cursorEntity, gridX + 0.5f, gridY + 0.5f);
+            NativeMethods.Entity_SetPosition(_cursorEntity, gridX + 0.5f, gridY + 0.5f);
 
             // Hide cursor if out of bounds
             bool inBounds = gridX >= 0 && gridX < game.World.Width() && gridY >= 0 && gridY < game.World.Height();
-            Native.Entity_SetRender(_cursorEntity, inBounds);
+            NativeMethods.Entity_SetRender(_cursorEntity, inBounds);
 
             // Ghost Visuals
             if (inBounds)
@@ -145,9 +145,9 @@ public class FactoryInteractionManager : IDisposable
                 {
                     if (ui.DeleteMode)
                     {
-                        Native.Entity_SetColor(_cursorEntity, 1.0f, 0.0f, 0.0f); // Red for delete
-                        Native.Entity_SetAlpha(_cursorEntity, 0.5f);
-                        Native.Entity_SetTexturePtr(_cursorEntity, IntPtr.Zero); // No texture, just color overlay
+                        NativeMethods.Entity_SetColor(_cursorEntity, 1.0f, 0.0f, 0.0f); // Red for delete
+                        NativeMethods.Entity_SetAlpha(_cursorEntity, 0.5f);
+                        NativeMethods.Entity_SetTexturePtr(_cursorEntity, IntPtr.Zero); // No texture, just color overlay
                     }
                     else
                     {
@@ -187,35 +187,35 @@ public class FactoryInteractionManager : IDisposable
                         nint tex = def?.Texture ?? IntPtr.Zero;
                         
                         // Reset size
-                        Native.Entity_SetSize(_cursorEntity, 1.0f, 1.0f);
+                        NativeMethods.Entity_SetSize(_cursorEntity, 1.0f, 1.0f);
 
                         if (ui.SelectedBuildingId == "conveyor")
                         {
                             // Procedural Conveyor Ghost (Default)
-                            Native.Entity_SetTexturePtr(_cursorEntity, IntPtr.Zero);
-                            Native.Entity_SetSize(_cursorEntity, 0.4f, 0.9f); // Vertical strip to indicate direction
+                            NativeMethods.Entity_SetTexturePtr(_cursorEntity, IntPtr.Zero);
+                            NativeMethods.Entity_SetSize(_cursorEntity, 0.4f, 0.9f); // Vertical strip to indicate direction
                             
                             if (isValid)
-                                Native.Entity_SetColor(_cursorEntity, 0.2f, 0.2f, 0.2f); // Dark Grey
+                                NativeMethods.Entity_SetColor(_cursorEntity, 0.2f, 0.2f, 0.2f); // Dark Grey
                             else
-                                Native.Entity_SetColor(_cursorEntity, 1.0f, 0.0f, 0.0f); // Red invalid
+                                NativeMethods.Entity_SetColor(_cursorEntity, 1.0f, 0.0f, 0.0f); // Red invalid
                         }
                         else if (tex != IntPtr.Zero)
                         {
-                            Native.Entity_SetTexturePtr(_cursorEntity, tex);
+                            NativeMethods.Entity_SetTexturePtr(_cursorEntity, tex);
                             if (isValid)
-                                Native.Entity_SetColor(_cursorEntity, 1.0f, 1.0f, 1.0f); // Reset color
+                                NativeMethods.Entity_SetColor(_cursorEntity, 1.0f, 1.0f, 1.0f); // Reset color
                             else
-                                Native.Entity_SetColor(_cursorEntity, 1.0f, 0.0f, 0.0f); // Red invalid
+                                NativeMethods.Entity_SetColor(_cursorEntity, 1.0f, 0.0f, 0.0f); // Red invalid
                         }
                         else
                         {
                             // Fallback
-                            Native.Entity_SetTexturePtr(_cursorEntity, IntPtr.Zero);
+                            NativeMethods.Entity_SetTexturePtr(_cursorEntity, IntPtr.Zero);
                             if (!isValid)
-                                Native.Entity_SetColor(_cursorEntity, 1.0f, 0.0f, 0.0f);
+                                NativeMethods.Entity_SetColor(_cursorEntity, 1.0f, 0.0f, 0.0f);
                             else
-                                Native.Entity_SetColor(_cursorEntity, 1.0f, 1.0f, 0.0f); // Default yellow
+                                NativeMethods.Entity_SetColor(_cursorEntity, 1.0f, 1.0f, 0.0f); // Default yellow
                         }
 
                         // Rotation
@@ -226,18 +226,18 @@ public class FactoryInteractionManager : IDisposable
                             case Direction.South: rot = 180.0f; break;
                             case Direction.West: rot = 90.0f; break;
                         }
-                        Native.Entity_SetRotation(_cursorEntity, rot);
-                        Native.Entity_SetAlpha(_cursorEntity, 0.6f); // Ghost transparency
+                        NativeMethods.Entity_SetRotation(_cursorEntity, rot);
+                        NativeMethods.Entity_SetAlpha(_cursorEntity, 0.6f); // Ghost transparency
                     }
                 }
                 else
                 {
                     // Default Cursor (Yellow Highlight)
-                    Native.Entity_SetTexturePtr(_cursorEntity, IntPtr.Zero);
-                    Native.Entity_SetColor(_cursorEntity, 1.0f, 1.0f, 0.0f);
-                    Native.Entity_SetAlpha(_cursorEntity, 0.4f);
-                    Native.Entity_SetSize(_cursorEntity, 1.0f, 1.0f);
-                    Native.Entity_SetRotation(_cursorEntity, 0.0f);
+                    NativeMethods.Entity_SetTexturePtr(_cursorEntity, IntPtr.Zero);
+                    NativeMethods.Entity_SetColor(_cursorEntity, 1.0f, 1.0f, 0.0f);
+                    NativeMethods.Entity_SetAlpha(_cursorEntity, 0.4f);
+                    NativeMethods.Entity_SetSize(_cursorEntity, 1.0f, 1.0f);
+                    NativeMethods.Entity_SetRotation(_cursorEntity, 0.0f);
                 }
             }
 
@@ -245,7 +245,7 @@ public class FactoryInteractionManager : IDisposable
             if (_cursorDirectionEntity != 0)
             {
                 bool showArrow = inBounds && ui.SelectedBuildingId == "conveyor" && !ui.DeleteMode;
-                Native.Entity_SetRender(_cursorDirectionEntity, showArrow);
+                NativeMethods.Entity_SetRender(_cursorDirectionEntity, showArrow);
                 
                 if (showArrow)
                 {
@@ -259,7 +259,7 @@ public class FactoryInteractionManager : IDisposable
                         case Direction.West: dx = -offset; break;
                     }
                     
-                    Native.Entity_SetPosition(_cursorDirectionEntity, gridX + 0.5f + dx, gridY + 0.5f + dy);
+                    NativeMethods.Entity_SetPosition(_cursorDirectionEntity, gridX + 0.5f + dx, gridY + 0.5f + dy);
                 }
             }
         }
@@ -490,9 +490,9 @@ public class FactoryInteractionManager : IDisposable
                     
                     if (_selectionBoxEntity != 0)
                     {
-                        Native.Entity_SetPosition(_selectionBoxEntity, cx, cy);
-                        Native.Entity_SetSize(_selectionBoxEntity, w, h);
-                        Native.Entity_SetRender(_selectionBoxEntity, true);
+                        NativeMethods.Entity_SetPosition(_selectionBoxEntity, cx, cy);
+                        NativeMethods.Entity_SetSize(_selectionBoxEntity, w, h);
+                        NativeMethods.Entity_SetRender(_selectionBoxEntity, true);
                     }
                 }
             }
@@ -565,7 +565,7 @@ public class FactoryInteractionManager : IDisposable
                 // Hide Selection Box
                 if (_selectionBoxEntity != 0)
                 {
-                    Native.Entity_SetRender(_selectionBoxEntity, false);
+                    NativeMethods.Entity_SetRender(_selectionBoxEntity, false);
                 }
                 
                 _isRightClickDragging = false;
@@ -585,19 +585,19 @@ public class FactoryInteractionManager : IDisposable
     {
         if (_cursorEntity != 0)
         {
-            Native.Entity_Destroy(_cursorEntity);
+            NativeMethods.Entity_Destroy(_cursorEntity);
             _cursorEntity = 0;
         }
 
         if (_cursorDirectionEntity != 0)
         {
-            Native.Entity_Destroy(_cursorDirectionEntity);
+            NativeMethods.Entity_Destroy(_cursorDirectionEntity);
             _cursorDirectionEntity = 0;
         }
 
         if (_selectionBoxEntity != 0)
         {
-            Native.Entity_Destroy(_selectionBoxEntity);
+            NativeMethods.Entity_Destroy(_selectionBoxEntity);
             _selectionBoxEntity = 0;
         }
     }

@@ -2,6 +2,8 @@
 
 #include "Camera.h"
 #include "EngineFactoryD3D11.h"
+#include "EngineFactoryD3D12.h"
+#include "EngineFactoryOpenGL.h"
 #include "EngineFactoryVk.h"
 #include "EngineSettings.h"
 #include "Input.h"
@@ -19,6 +21,39 @@ RefCntAutoPtr<IDeviceContext> Window::s_Context;
 RefCntAutoPtr<ISwapChain> Window::m_SwapChain;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+
+void DiligentMessageCallback(DEBUG_MESSAGE_SEVERITY Severity, const Char* Message, const Char* Function, const Char* File, int Line)
+{
+	// Filter out verbose Vulkan extension logs
+	if (Message && (strstr(Message, "Available Vulkan instance layers") || strstr(Message, "Supported Vulkan instance extensions") || strstr(Message, "Extensions supported")))
+		return;
+
+	if (Message && strstr(Message, "Allocated new descriptor pool"))
+	{
+		int x = 0;
+	}
+
+	std::string msg = "";
+	if (Function)
+		msg += std::string(Function) + " ";
+	msg += Message;
+	if (File)
+		msg += " (" + std::string(File) + ":" + std::to_string(Line) + ")";
+
+	switch (Severity)
+	{
+		case DEBUG_MESSAGE_SEVERITY_INFO:
+			Logger::LogCustom("DILIGENT", 11, msg); // 11 = Light Cyan
+			break;
+		case DEBUG_MESSAGE_SEVERITY_WARNING:
+			Logger::LogCustom("DILIGENT", 14, "WARNING: " + msg); // 14 = Yellow
+			break;
+		case DEBUG_MESSAGE_SEVERITY_ERROR:
+		case DEBUG_MESSAGE_SEVERITY_FATAL_ERROR:
+			Logger::LogCustom("DILIGENT", 12, "ERROR: " + msg); // 12 = Light Red
+			break;
+	}
+}
 
 Window::Window(int width, int height, char* name)
 {
@@ -83,35 +118,58 @@ void Window::InitDiligent(HWND hwnd, int width, int height)
 
 	switch (g_RendererType)
 	{
-		case RendererType::D3D11:
+		case RendererType::D3D12:
 		{
-			auto* pFactoryD3D11 = GetEngineFactoryD3D11();
-			s_EngineFactory = pFactoryD3D11;
-			EngineD3D11CreateInfo EngineCI;
+			auto* pFactoryD3D12 = GetEngineFactoryD3D12();
+			pFactoryD3D12->SetMessageCallback(DiligentMessageCallback);
+			s_EngineFactory = pFactoryD3D12;
+
+			EngineD3D12CreateInfo EngineCI;
 			EngineCI.Features.SeparablePrograms = DEVICE_FEATURE_STATE_ENABLED;
-#ifdef _DEBUG
-// EngineCI.DebugFlags |= D3D11_DEBUG_FLAG_CREATE_DEVICE_DEBUG;
-#endif
-			pFactoryD3D11->CreateDeviceAndContextsD3D11(EngineCI, &s_Device, &s_Context);
+			EngineCI.Features.BindlessResources = DEVICE_FEATURE_STATE_ENABLED;
+
+			// Increase GPU descriptor heap size for D3D12 to handle large texture arrays
+			// We need a large dynamic heap because we are using DYNAMIC shader variables for texture arrays (1024 slots)
+			EngineCI.GPUDescriptorHeapSize[0] = 65536;         // 64k descriptors (CBV/SRV/UAV)
+			EngineCI.GPUDescriptorHeapDynamicSize[0] = 32768;  // 32k for dynamic allocations
+			EngineCI.DynamicDescriptorAllocationChunkSize[0] = 2048; // Ensure chunks are large enough for our 1024 array
+
+			EngineCI.GPUDescriptorHeapSize[1] = 2048;          // Samplers
+			EngineCI.GPUDescriptorHeapDynamicSize[1] = 1024; 
+			EngineCI.DynamicDescriptorAllocationChunkSize[1] = 64;
+
+			Logger::Info("Initializing D3D12 Device...");
+			pFactoryD3D12->CreateDeviceAndContextsD3D12(EngineCI, &s_Device, &s_Context);
+			Logger::Info("D3D12 Device Initialized.");
 			NativeWindow WindowAttribs(hwnd);
-			pFactoryD3D11->CreateSwapChainD3D11(s_Device, s_Context, SCDesc, FullScreenModeDesc{}, WindowAttribs, &m_SwapChain);
+			pFactoryD3D12->CreateSwapChainD3D12(s_Device, s_Context, SCDesc, FullScreenModeDesc{}, WindowAttribs, &m_SwapChain);
 		}
 		break;
 
 		case RendererType::Vulkan:
 		{
 			auto* pFactoryVk = GetEngineFactoryVk();
+			pFactoryVk->SetMessageCallback(DiligentMessageCallback);
 			s_EngineFactory = pFactoryVk;
 			EngineVkCreateInfo EngineCI;
 			EngineCI.Features.SeparablePrograms = DEVICE_FEATURE_STATE_ENABLED;
-#ifdef _DEBUG
-			EngineCI.EnableValidation = true;
-#endif
+			EngineCI.Features.BindlessResources = DEVICE_FEATURE_STATE_ENABLED;
+
+			// Increase descriptor pool size to avoid frequent reallocations with many TileMap chunks
+			EngineCI.MainDescriptorPoolSize.MaxDescriptorSets = 32768;
+			EngineCI.MainDescriptorPoolSize.NumSeparateSamplerDescriptors = 32768;
+			EngineCI.MainDescriptorPoolSize.NumSampledImageDescriptors = 32768 * 32; // 32 textures per chunk
+			EngineCI.MainDescriptorPoolSize.NumUniformBufferDescriptors = 32768;
+
 			pFactoryVk->CreateDeviceAndContextsVk(EngineCI, &s_Device, &s_Context);
 			NativeWindow WindowAttribs(hwnd);
 			pFactoryVk->CreateSwapChainVk(s_Device, s_Context, SCDesc, WindowAttribs, &m_SwapChain);
 		}
 		break;
+		
+		default:
+			Logger::Error("Unsupported Renderer Type");
+			break;
 	}
 }
 
@@ -132,7 +190,8 @@ void Window::BeginFrame()
 {
 	auto* pRTV = m_SwapChain->GetCurrentBackBufferRTV();
 	auto* pDSV = m_SwapChain->GetDepthBufferDSV();
-	if (!pRTV) Logger::Error("Window::BeginFrame: RTV is null!");
+	if (!pRTV)
+		Logger::Error("Window::BeginFrame: RTV is null!");
 	s_Context->SetRenderTargets(1, &pRTV, pDSV, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
 	// Clear

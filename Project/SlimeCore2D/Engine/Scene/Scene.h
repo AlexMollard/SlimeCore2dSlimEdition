@@ -7,7 +7,7 @@
 #include "Core/Camera.h"
 #include "Physics/PhysicsScene.h"
 #include "Registry.h"
-#include "Rendering/Text.h"
+#include "Rendering/Font.h"
 
 class ParticleSystem;
 
@@ -30,7 +30,7 @@ struct PersistentUIElement
 
 	// Content
 	std::string TextContent;
-	Text* Font = nullptr;     // Pointer to SDF Atlas
+	Font* Font = nullptr;     // Pointer to SDF Atlas
 	Texture* Image = nullptr; // Pointer to standard Texture
 };
 

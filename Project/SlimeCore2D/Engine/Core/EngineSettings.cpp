@@ -1,3 +1,3 @@
 #include "EngineSettings.h"
 
-RendererType g_RendererType = RendererType::Vulkan;
+RendererType g_RendererType = RendererType::D3D12;

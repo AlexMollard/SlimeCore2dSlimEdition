@@ -20,7 +20,7 @@ public sealed class IdleGame : GameMode<IdleGame>, IGameMode, IDisposable
     public override Random? Rng { get; set; } = new();
 
     internal ParticleSystem? ParticleSys;
-    internal IntPtr TexParticle;
+    // internal IntPtr TexParticle;
     public override void Init()
     {
 
@@ -43,7 +43,7 @@ public sealed class IdleGame : GameMode<IdleGame>, IGameMode, IDisposable
         cam.Zoom = 1.0f;
         cam.Size = 20.0f; // Zoom out to see the whole arena
 
-        TexParticle = NativeMethods.Resources_LoadTexture("Particle", "Game/Resources/Textures/idle/spark.png");
+        // TexParticle = NativeMethods.Resources_LoadTexture("Particle", "Game/Resources/Textures/idle/spark.png");
         ParticleSys = new ParticleSystem(100);
     }
     public override void Shutdown()

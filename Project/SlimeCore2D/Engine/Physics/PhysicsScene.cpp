@@ -6,7 +6,7 @@
 #include <unordered_map>
 
 #include "Core/Logger.h"
-#include "Rendering/Renderer2D.h"
+#include "Rendering/Renderer.h"
 
 PhysicsScene::PhysicsScene()
       : timeStep(0.01f), gravity(glm::vec2(0, -3.24f))

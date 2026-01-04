@@ -16,10 +16,6 @@ public sealed class FactoryGame : GameMode<FactoryGame>, IGameMode, IDisposable
     public FactorySettings Settings { get; set; }
 
     public FactoryWorld? World { get; set; }
-    /// <summary>
-    /// The Map of tiles used for rendering
-    /// </summary>
-    public IntPtr TileMap { get; set; }
 
     public FactoryActorManager? ActorManager { get; set; }
 
@@ -92,17 +88,6 @@ public sealed class FactoryGame : GameMode<FactoryGame>, IGameMode, IDisposable
         World?.Destroy();
         ActorManager?.Destroy();
         FactoryResources.Unload();
-        
-        if (TileMap != IntPtr.Zero)
-        {
-			Logger.Info($"Destroying TileMap: {TileMap}");
-            Native.TileMap_Destroy(TileMap);
-            TileMap = IntPtr.Zero;
-        }
-        else
-        {
-			Logger.Warn("TileMap was Zero in Shutdown, when??????");
-        }
     }
 
     public override void Update(float dt)

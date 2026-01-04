@@ -6,9 +6,9 @@ struct PS_INPUT
     float4 Pos : SV_POSITION;
     float4 Color : COLOR;
     float2 TexCoord : TEXCOORD0;
-    float TexIndex : TEXCOORD1;
-    float Tiling : TILING;
-    float IsText : ISTEXT;
+    nointerpolation float TexIndex : TEXCOORD1;
+    nointerpolation float Tiling : TILING;
+    nointerpolation float IsText : ISTEXT;
 };
 
 float4 main(PS_INPUT input) : SV_TARGET
@@ -17,11 +17,14 @@ float4 main(PS_INPUT input) : SV_TARGET
     int index = (int)(input.TexIndex + 0.5);
     
     float4 sampled = float4(1.0, 1.0, 1.0, 1.0);
+    float2 uv = input.TexCoord * input.Tiling;
+    float2 dx = ddx(uv);
+    float2 dy = ddy(uv);
     
     if (input.IsText > 0.5)
     {
         // Text (SDF) - Linear Sampling
-        sampled = SampleTexture(index, u_SamplerLinear, input.TexCoord * input.Tiling);
+        sampled = SampleTexture(index, u_SamplerLinear, uv, dx, dy);
         
         float distance = sampled.r;
         float smoothing = fwidth(distance);
@@ -31,7 +34,7 @@ float4 main(PS_INPUT input) : SV_TARGET
     else
     {
         // Sprites - Point Sampling
-        sampled = SampleTexture(index, u_Sampler, input.TexCoord * input.Tiling);
+        sampled = SampleTexture(index, u_Sampler, uv, dx, dy);
         texColor *= sampled;
     }
     

@@ -111,7 +111,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>PLATFORM_WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\glew\include;$(SolutionDir)Dependencies\glfw\include;$(SolutionDir)Dependencies\glm;$(SolutionDir)Dependencies\stb;$(SolutionDir)Dependencies\DotNet\Hosting\include;$(SolutionDir)Dependencies\fType;$(SolutionDir)SlimeCore2D\Engine;$(SolutionDir)SlimeCore2D\Game;$(SolutionDir)Dependencies\DiligentEngine\Install\include;$(SolutionDir)Dependencies\DiligentEngine\Install\include\DiligentCore\Graphics\GraphicsEngine\interface;$(SolutionDir)Dependencies\DiligentEngine\Install\include\DiligentCore\Graphics\GraphicsEngineD3D11\interface;$(SolutionDir)Dependencies\DiligentEngine\Install\include\DiligentCore\Graphics\GraphicsEngineVulkan\interface;$(SolutionDir)Dependencies\DiligentEngine\Install\include\DiligentCore\Common\interface;$(SolutionDir)Dependencies\DiligentEngine\Install\include\DiligentCore\Primitives\interface;$(SolutionDir)Dependencies\DiligentEngine\Install\include\DiligentCore\Platforms\Win32\interface;$(SolutionDir)Dependencies\DiligentEngine\Install\include\DiligentCore\Graphics\GraphicsTools\interface</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\glew\include;$(SolutionDir)Dependencies\glfw\include;$(SolutionDir)Dependencies\glm;$(SolutionDir)Dependencies\stb;$(SolutionDir)Dependencies\DotNet\Hosting\include;$(SolutionDir)Dependencies\fType;$(SolutionDir)SlimeCore2D\Engine;$(SolutionDir)SlimeCore2D\Game;$(SolutionDir)Dependencies\DiligentEngine\Install\include;$(SolutionDir)Dependencies\DiligentEngine\Install\include\DiligentCore\Graphics\GraphicsEngine\interface;$(SolutionDir)Dependencies\DiligentEngine\Install\include\DiligentCore\Graphics\GraphicsEngineD3D11\interface;$(SolutionDir)Dependencies\DiligentEngine\Install\include\DiligentCore\Graphics\GraphicsEngineD3D12\interface;$(SolutionDir)Dependencies\DiligentEngine\Install\include\DiligentCore\Graphics\GraphicsEngineOpenGL\interface;$(SolutionDir)Dependencies\DiligentEngine\Install\include\DiligentCore\Graphics\GraphicsEngineVulkan\interface;$(SolutionDir)Dependencies\DiligentEngine\Install\include\DiligentCore\Common\interface;$(SolutionDir)Dependencies\DiligentEngine\Install\include\DiligentCore\Primitives\interface;$(SolutionDir)Dependencies\DiligentEngine\Install\include\DiligentCore\Platforms\Win32\interface;$(SolutionDir)Dependencies\DiligentEngine\Install\include\DiligentCore\Graphics\GraphicsTools\interface</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdclatest</LanguageStandard_C>
     </ClCompile>
@@ -119,7 +119,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)Dependencies\glew;$(SolutionDir)Dependencies\glfw;$(SolutionDir)Dependencies\fType;C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Host.win-x64\10.0.1\runtimes\win-x64\native;C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\um\x64;$(SolutionDir)Dependencies\DiligentEngine\Install\lib\DiligentCore\Debug;$(SolutionDir)Dependencies\DiligentEngine\Install\lib\DiligentTools\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glfw3.lib;nethost.lib;Shlwapi.lib;Pathcch.lib;Kernel32.lib;Ole32.lib;freetype.lib;d3d11.lib;dxgi.lib;d3dcompiler.lib;DiligentCore.lib;DiligentTools.lib;GraphicsEngineD3D11_64d.lib;GraphicsEngineVk_64d.lib;GraphicsEngineOpenGL_64d.lib;Archiver_64d.lib;volk.lib;glslangd.lib;SPIRVd.lib;MachineIndependentd.lib;OSDependentd.lib;GenericCodeGend.lib;spirv-cross-cored.lib;spirv-cross-glsld.lib;SPIRV-Tools.lib;SPIRV-Tools-opt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;nethost.lib;Shlwapi.lib;Pathcch.lib;Kernel32.lib;Ole32.lib;freetype.lib;d3d11.lib;dxgi.lib;d3dcompiler.lib;d3d12.lib;opengl32.lib;glew-static.lib;DiligentCore.lib;DiligentTools.lib;GraphicsEngineD3D11_64d.lib;GraphicsEngineD3D12_64d.lib;GraphicsEngineVk_64d.lib;GraphicsEngineOpenGL_64d.lib;Archiver_64d.lib;volk.lib;glslangd.lib;SPIRVd.lib;MachineIndependentd.lib;OSDependentd.lib;GenericCodeGend.lib;spirv-cross-cored.lib;spirv-cross-glsld.lib;SPIRV-Tools.lib;SPIRV-Tools-opt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy /Y "C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Host.win-x64\10.0.1\runtimes\win-x64\native\nethost.dll" "$(TargetDir)" ;
@@ -158,7 +158,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>PLATFORM_WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\glew\include;$(SolutionDir)Dependencies\glfw\include;$(SolutionDir)Dependencies\glm;$(SolutionDir)Dependencies\stb;$(SolutionDir)Dependencies\DotNet\Hosting\include;$(SolutionDir)Dependencies\fType;$(SolutionDir)SlimeCore2D\Engine;$(SolutionDir)SlimeCore2D\Game;$(SolutionDir)Dependencies\DiligentEngine\Install\include;$(SolutionDir)Dependencies\DiligentEngine\Install\include\DiligentCore\Graphics\GraphicsEngine\interface;$(SolutionDir)Dependencies\DiligentEngine\Install\include\DiligentCore\Graphics\GraphicsEngineD3D11\interface;$(SolutionDir)Dependencies\DiligentEngine\Install\include\DiligentCore\Graphics\GraphicsEngineVulkan\interface;$(SolutionDir)Dependencies\DiligentEngine\Install\include\DiligentCore\Common\interface;$(SolutionDir)Dependencies\DiligentEngine\Install\include\DiligentCore\Primitives\interface;$(SolutionDir)Dependencies\DiligentEngine\Install\include\DiligentCore\Platforms\Win32\interface;$(SolutionDir)Dependencies\DiligentEngine\Install\include\DiligentCore\Graphics\GraphicsTools\interface</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\glew\include;$(SolutionDir)Dependencies\glfw\include;$(SolutionDir)Dependencies\glm;$(SolutionDir)Dependencies\stb;$(SolutionDir)Dependencies\DotNet\Hosting\include;$(SolutionDir)Dependencies\fType;$(SolutionDir)SlimeCore2D\Engine;$(SolutionDir)SlimeCore2D\Game;$(SolutionDir)Dependencies\DiligentEngine\Install\include;$(SolutionDir)Dependencies\DiligentEngine\Install\include\DiligentCore\Graphics\GraphicsEngine\interface;$(SolutionDir)Dependencies\DiligentEngine\Install\include\DiligentCore\Graphics\GraphicsEngineD3D11\interface;$(SolutionDir)Dependencies\DiligentEngine\Install\include\DiligentCore\Graphics\GraphicsEngineD3D12\interface;$(SolutionDir)Dependencies\DiligentEngine\Install\include\DiligentCore\Graphics\GraphicsEngineOpenGL\interface;$(SolutionDir)Dependencies\DiligentEngine\Install\include\DiligentCore\Graphics\GraphicsEngineVulkan\interface;$(SolutionDir)Dependencies\DiligentEngine\Install\include\DiligentCore\Common\interface;$(SolutionDir)Dependencies\DiligentEngine\Install\include\DiligentCore\Primitives\interface;$(SolutionDir)Dependencies\DiligentEngine\Install\include\DiligentCore\Platforms\Win32\interface;$(SolutionDir)Dependencies\DiligentEngine\Install\include\DiligentCore\Graphics\GraphicsTools\interface</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdclatest</LanguageStandard_C>
     </ClCompile>
@@ -168,7 +168,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)Dependencies\glew;$(SolutionDir)Dependencies\glfw;$(SolutionDir)Dependencies\fType;C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Host.win-x64\10.0.1\runtimes\win-x64\native;C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\um\x64;$(SolutionDir)Dependencies\DiligentEngine\Install\lib\DiligentCore\Release;$(SolutionDir)Dependencies\DiligentEngine\Install\lib\DiligentTools\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glfw3.lib;nethost.lib;Shlwapi.lib;Pathcch.lib;Kernel32.lib;Ole32.lib;freetype.lib;d3d11.lib;dxgi.lib;d3dcompiler.lib;DiligentCore.lib;DiligentTools.lib;GraphicsEngineD3D11_64r.lib;GraphicsEngineVk_64r.lib;GraphicsEngineOpenGL_64r.lib;Archiver_64r.lib;volk.lib;glslang.lib;SPIRV.lib;MachineIndependent.lib;OSDependent.lib;GenericCodeGen.lib;spirv-cross-core.lib;spirv-cross-glsl.lib;SPIRV-Tools.lib;SPIRV-Tools-opt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;nethost.lib;Shlwapi.lib;Pathcch.lib;Kernel32.lib;Ole32.lib;freetype.lib;d3d11.lib;dxgi.lib;d3dcompiler.lib;d3d12.lib;opengl32.lib;glew-static.lib;DiligentCore.lib;DiligentTools.lib;GraphicsEngineD3D11_64r.lib;GraphicsEngineD3D12_64r.lib;GraphicsEngineVk_64r.lib;GraphicsEngineOpenGL_64r.lib;Archiver_64r.lib;volk.lib;glslang.lib;SPIRV.lib;MachineIndependent.lib;OSDependent.lib;GenericCodeGen.lib;spirv-cross-core.lib;spirv-cross-glsl.lib;SPIRV-Tools.lib;SPIRV-Tools-opt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy /Y "C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Host.win-x64\10.0.1\runtimes\win-x64\native\nethost.dll" "$(TargetDir)" ;
@@ -182,6 +182,8 @@
     <ClCompile Include="Engine\Core\Logger.cpp" />
     <ClCompile Include="Engine\Core\EngineSettings.cpp" />
     <ClCompile Include="Engine\Core\Memory.cpp" />
+    <ClCompile Include="Engine\Rendering\Font.cpp" />
+    <ClCompile Include="Engine\Rendering\Renderer.cpp" />
     <ClCompile Include="Engine\Scene\Components.cpp" />
     <ClCompile Include="Engine\Scripting\DotNetHost.cpp" />
     <ClCompile Include="Engine\Scripting\ExportCore.cpp" />
@@ -192,10 +194,6 @@
     <ClCompile Include="Engine\Scripting\ExportScene.cpp" />
     <ClCompile Include="Engine\Scripting\ExportParticles.cpp" />
     <ClCompile Include="Engine\Scripting\ExportText.cpp" />
-    <ClCompile Include="Engine\Rendering\TileMap.cpp" />
-    <ClCompile Include="Engine\Rendering\ConveyorMap.cpp" />
-    <ClCompile Include="Engine\Scripting\ExportTileMap.cpp" />
-    <ClCompile Include="Engine\Scripting\ExportConveyorMap.cpp" />
     <ClCompile Include="Engine\Scripting\ExportUI.cpp" />
     <ClCompile Include="Engine\Scripting\ExportRenderer.cpp" />
     <ClCompile Include="Engine\Physics\CollisionManager.cpp" />
@@ -206,7 +204,6 @@
     <ClCompile Include="Game\Scenes\Game2D.cpp" />
     <ClCompile Include="Engine\Entities\GameObject.cpp" />
     <ClCompile Include="Engine\Physics\PhysicsScene.cpp" />
-    <ClCompile Include="Engine\Rendering\Renderer2D.cpp" />
     <ClCompile Include="Engine\Rendering\ParticleSystem.cpp" />
     <ClCompile Include="Engine\Scene\Scene.cpp" />
     <ClCompile Include="Engine\Physics\RigidBody.cpp" />
@@ -214,7 +211,6 @@
     <ClCompile Include="Engine\Resources\ResourceManager.cpp" />
     <ClCompile Include="Game\Scenes\SlimeCore2D.cpp" />
     <ClCompile Include="Engine\Rendering\Sprite.cpp" />
-    <ClCompile Include="Engine\Rendering\Text.cpp" />
     <ClCompile Include="Engine\Rendering\Texture.cpp" />
     <ClCompile Include="Engine\Core\Window.cpp" />
     <ClCompile Include="Game\Scenes\World.cpp" />
@@ -225,6 +221,8 @@
     <ClInclude Include="Engine\Core\Logger.h" />
     <ClInclude Include="Engine\Core\EngineSettings.h" />
     <ClInclude Include="Engine\Core\Memory.h" />
+    <ClInclude Include="Engine\Rendering\Font.h" />
+    <ClInclude Include="Engine\Rendering\Renderer.h" />
     <ClInclude Include="Engine\Scene\Components.h" />
     <ClInclude Include="Engine\Scene\Registry.h" />
     <ClInclude Include="Engine\Scripting\DotNetHost.h" />
@@ -236,10 +234,6 @@
     <ClInclude Include="Engine\Scripting\ExportScene.h" />
     <ClInclude Include="Engine\Scripting\ExportParticles.h" />
     <ClInclude Include="Engine\Scripting\ExportText.h" />
-    <ClInclude Include="Engine\Rendering\TileMap.h" />
-    <ClInclude Include="Engine\Rendering\ConveyorMap.h" />
-    <ClInclude Include="Engine\Scripting\ExportTileMap.h" />
-    <ClInclude Include="Engine\Scripting\ExportConveyorMap.h" />
     <ClInclude Include="Engine\Scripting\ExportUI.h" />
     <ClInclude Include="Engine\Scripting\ExportRenderer.h" />
     <ClInclude Include="Engine\Physics\CollisionManager.h" />
@@ -251,7 +245,6 @@
     <ClInclude Include="Game\Scenes\Game2D.h" />
     <ClInclude Include="Engine\Entities\GameObject.h" />
     <ClInclude Include="Engine\Physics\PhysicsScene.h" />
-    <ClInclude Include="Engine\Rendering\Renderer2D.h" />
     <ClInclude Include="Engine\Rendering\ParticleSystem.h" />
     <ClInclude Include="Engine\Scene\Scene.h" />
     <ClInclude Include="Engine\Physics\RigidBody.h" />
@@ -259,7 +252,6 @@
     <ClInclude Include="Engine\Resources\ResourceManager.h" />
     <ClInclude Include="Engine\Core\Math.h" />
     <ClInclude Include="Engine\Rendering\Sprite.h" />
-    <ClInclude Include="Engine\Rendering\Text.h" />
     <ClInclude Include="Engine\Rendering\Texture.h" />
     <ClInclude Include="Engine\Core\Window.h" />
     <ClInclude Include="Game\Scenes\World.h" />
@@ -269,6 +261,8 @@
     <None Include="cpp.hint" />
     <None Include="Game\Resources\Shaders\BasicPixel.hlsl" />
     <None Include="Game\Resources\Shaders\BasicVertex.hlsl" />
+    <None Include="Game\Resources\Shaders\Basic3DPixel.hlsl" />
+    <None Include="Game\Resources\Shaders\Basic3DVertex.hlsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

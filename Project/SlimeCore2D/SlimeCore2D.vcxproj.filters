@@ -51,9 +51,6 @@
     <ClCompile Include="Engine\Rendering\Quad.cpp">
       <Filter>Source Files\EngineCore</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Rendering\Renderer2D.cpp">
-      <Filter>Source Files\EngineCore</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\Scene\Scene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -80,9 +77,6 @@
     </ClCompile>
     <ClCompile Include="Engine\Rendering\Sprite.cpp">
       <Filter>Source Files\EngineCore</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Rendering\Text.cpp">
-      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Game\Scenes\Dialogue.cpp">
       <Filter>Source Files</Filter>
@@ -114,12 +108,6 @@
     <ClCompile Include="Engine\Scripting\ExportText.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Rendering\TileMap.cpp">
-      <Filter>Source Files\EngineCore</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Scripting\ExportTileMap.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\Scripting\ExportUI.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -135,13 +123,16 @@
     <ClCompile Include="Engine\Scripting\ExportParticles.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Rendering\ConveyorMap.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Scripting\ExportConveyorMap.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\Rendering\ParticleSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Core\EngineSettings.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Rendering\Renderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Rendering\Font.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -173,9 +164,6 @@
     <ClInclude Include="Engine\Rendering\Quad.h">
       <Filter>Header Files\EngineCore</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Rendering\Renderer2D.h">
-      <Filter>Header Files\EngineCore</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Scene\Scene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -204,9 +192,6 @@
       <Filter>Header Files\EngineCore</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Core\Math.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Rendering\Text.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Game\Scenes\Dialogue.h">
@@ -251,12 +236,6 @@
     <ClInclude Include="Engine\Scripting\ExportText.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Rendering\TileMap.h">
-      <Filter>Header Files\EngineCore</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Scripting\ExportTileMap.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Scripting\ExportUI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -266,13 +245,16 @@
     <ClInclude Include="Engine\Scripting\ExportParticles.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Rendering\ConveyorMap.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Scripting\ExportConveyorMap.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Rendering\ParticleSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Core\EngineSettings.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Rendering\Renderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Rendering\Font.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

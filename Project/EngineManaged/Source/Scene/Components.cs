@@ -13,32 +13,32 @@ public record TransformComponent : IComponent
 
     public (float x, float y) Position
     {
-        get { Native.Entity_GetPosition(EntityId, out float x, out float y); return (x, y); }
-        set => Native.Entity_SetPosition(EntityId, value.x, value.y);
+        get { NativeMethods.Entity_GetPosition(EntityId, out float x, out float y); return (x, y); }
+        set => NativeMethods.Entity_SetPosition(EntityId, value.x, value.y);
     }
 
     public (float w, float h) Scale
     {
-        get { Native.Entity_GetSize(EntityId, out float w, out float h); return (w, h); }
-        set => Native.Entity_SetSize(EntityId, value.w, value.h);
+        get { NativeMethods.Entity_GetSize(EntityId, out float w, out float h); return (w, h); }
+        set => NativeMethods.Entity_SetSize(EntityId, value.w, value.h);
     }
 
     public float Rotation
     {
-        get => Native.Entity_GetRotation(EntityId);
-        set => Native.Entity_SetRotation(EntityId, value);
+        get => NativeMethods.Entity_GetRotation(EntityId);
+        set => NativeMethods.Entity_SetRotation(EntityId, value);
     }
 
     public (float x, float y) Anchor
     {
-        get { Native.Entity_GetAnchor(EntityId, out float x, out float y); return (x, y); }
-        set => Native.Entity_SetAnchor(EntityId, value.x, value.y);
+        get { NativeMethods.Entity_GetAnchor(EntityId, out float x, out float y); return (x, y); }
+        set => NativeMethods.Entity_SetAnchor(EntityId, value.x, value.y);
     }
 
     public int Layer
     {
-        get => Native.Entity_GetLayer(EntityId);
-        set => Native.Entity_SetLayer(EntityId, value);
+        get => NativeMethods.Entity_GetLayer(EntityId);
+        set => NativeMethods.Entity_SetLayer(EntityId, value);
     }
 }
 
@@ -48,27 +48,27 @@ public record SpriteComponent : IComponent
 
     public (float r, float g, float b) Color
     {
-        get { Native.Entity_GetColor(EntityId, out float r, out float g, out float b); return (r, g, b); }
-        set => Native.Entity_SetColor(EntityId, value.r, value.g, value.b);
+        get { NativeMethods.Entity_GetColor(EntityId, out float r, out float g, out float b); return (r, g, b); }
+        set => NativeMethods.Entity_SetColor(EntityId, value.r, value.g, value.b);
     }
 
     public float Alpha
     {
-        get => Native.Entity_GetAlpha(EntityId);
-        set => Native.Entity_SetAlpha(EntityId, value);
+        get => NativeMethods.Entity_GetAlpha(EntityId);
+        set => NativeMethods.Entity_SetAlpha(EntityId, value);
     }
 
     public bool IsVisible
     {
-        get => Native.Entity_GetRender(EntityId);
-        set => Native.Entity_SetRender(EntityId, value);
+        get => NativeMethods.Entity_GetRender(EntityId);
+        set => NativeMethods.Entity_SetRender(EntityId, value);
     }
 
-    public void SetTexture(uint texId, int width, int height) => Native.Entity_SetTexture(EntityId, texId, width, height);
+    public void SetTexture(uint texId, int width, int height) => NativeMethods.Entity_SetTexture(EntityId, texId, width, height);
     public IntPtr TexturePtr
     {
-        get => Native.Entity_GetTexturePtr(EntityId);
-        set => Native.Entity_SetTexturePtr(EntityId, value);
+        get => NativeMethods.Entity_GetTexturePtr(EntityId);
+        set => NativeMethods.Entity_SetTexturePtr(EntityId, value);
     }
 }
 
@@ -78,23 +78,23 @@ public record AnimationComponent : IComponent
 
     public int Frame
     {
-        get => Native.Entity_GetFrame(EntityId);
-        set => Native.Entity_SetFrame(EntityId, value);
+        get => NativeMethods.Entity_GetFrame(EntityId);
+        set => NativeMethods.Entity_SetFrame(EntityId, value);
     }
 
     public float FrameRate
     {
-        get => Native.Entity_GetFrameRate(EntityId);
-        set => Native.Entity_SetFrameRate(EntityId, value);
+        get => NativeMethods.Entity_GetFrameRate(EntityId);
+        set => NativeMethods.Entity_SetFrameRate(EntityId, value);
     }
 
     public int SpriteWidth
     {
-        get => Native.Entity_GetSpriteWidth(EntityId);
-        set => Native.Entity_SetSpriteWidth(EntityId, value);
+        get => NativeMethods.Entity_GetSpriteWidth(EntityId);
+        set => NativeMethods.Entity_SetSpriteWidth(EntityId, value);
     }
 
-    public void HasAnimation(bool val) => Native.Entity_SetHasAnimation(EntityId, val);
+    public void HasAnimation(bool val) => NativeMethods.Entity_SetHasAnimation(EntityId, val);
 }
 
 public record RigidBodyComponent : IComponent
@@ -103,26 +103,26 @@ public record RigidBodyComponent : IComponent
 
     public (float x, float y) Velocity
     {
-        get { Native.Entity_GetVelocity(EntityId, out float x, out float y); return (x, y); }
-        set => Native.Entity_SetVelocity(EntityId, value.x, value.y);
+        get { NativeMethods.Entity_GetVelocity(EntityId, out float x, out float y); return (x, y); }
+        set => NativeMethods.Entity_SetVelocity(EntityId, value.x, value.y);
     }
 
     public float Mass
     {
-        get => Native.Entity_GetMass(EntityId);
-        set => Native.Entity_SetMass(EntityId, value);
+        get => NativeMethods.Entity_GetMass(EntityId);
+        set => NativeMethods.Entity_SetMass(EntityId, value);
     }
 
     public bool IsKinematic
     {
-        get => Native.Entity_GetKinematic(EntityId);
-        set => Native.Entity_SetKinematic(EntityId, value);
+        get => NativeMethods.Entity_GetKinematic(EntityId);
+        set => NativeMethods.Entity_SetKinematic(EntityId, value);
     }
 
     public bool FixedRotation
     {
-        get => Native.Entity_GetFixedRotation(EntityId);
-        set => Native.Entity_SetFixedRotation(EntityId, value);
+        get => NativeMethods.Entity_GetFixedRotation(EntityId);
+        set => NativeMethods.Entity_SetFixedRotation(EntityId, value);
     }
 }
 
@@ -132,20 +132,20 @@ public record BoxColliderComponent : IComponent
 
     public (float w, float h) Size
     {
-        get { Native.Entity_GetColliderSize(EntityId, out float w, out float h); return (w, h); }
-        set => Native.Entity_SetColliderSize(EntityId, value.w, value.h);
+        get { NativeMethods.Entity_GetColliderSize(EntityId, out float w, out float h); return (w, h); }
+        set => NativeMethods.Entity_SetColliderSize(EntityId, value.w, value.h);
     }
 
     public (float x, float y) Offset
     {
-        get { Native.Entity_GetColliderOffset(EntityId, out float x, out float y); return (x, y); }
-        set => Native.Entity_SetColliderOffset(EntityId, value.x, value.y);
+        get { NativeMethods.Entity_GetColliderOffset(EntityId, out float x, out float y); return (x, y); }
+        set => NativeMethods.Entity_SetColliderOffset(EntityId, value.x, value.y);
     }
 
     public bool IsTrigger
     {
-        get => Native.Entity_GetTrigger(EntityId);
-        set => Native.Entity_SetTrigger(EntityId, value);
+        get => NativeMethods.Entity_GetTrigger(EntityId);
+        set => NativeMethods.Entity_SetTrigger(EntityId, value);
     }
 }
 
@@ -155,20 +155,20 @@ public record CameraComponent : IComponent
 
     public float Size
     {
-        get => Native.Entity_GetCameraSize(EntityId);
-        set => Native.Entity_SetCameraSize(EntityId, value);
+        get => NativeMethods.Entity_GetCameraSize(EntityId);
+        set => NativeMethods.Entity_SetCameraSize(EntityId, value);
     }
 
     public float Zoom
     {
-        get => Native.Entity_GetCameraZoom(EntityId);
-        set => Native.Entity_SetCameraZoom(EntityId, value);
+        get => NativeMethods.Entity_GetCameraZoom(EntityId);
+        set => NativeMethods.Entity_SetCameraZoom(EntityId, value);
     }
 
     public bool IsPrimary
     {
-        get => Native.Entity_GetPrimaryCamera(EntityId);
-        set => Native.Entity_SetPrimaryCamera(EntityId, value);
+        get => NativeMethods.Entity_GetPrimaryCamera(EntityId);
+        set => NativeMethods.Entity_SetPrimaryCamera(EntityId, value);
     }
 }
 

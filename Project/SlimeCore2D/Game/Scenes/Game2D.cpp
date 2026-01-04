@@ -29,13 +29,13 @@ Game2D::~Game2D()
 	m_scene = nullptr;
 
 	// Cleanup Singletons
-	Renderer2D::Shutdown();
+	Renderer::Shutdown();
 }
 
 void Game2D::Init()
 {
 	// 1. Initialize Static Renderer
-	Renderer2D::Init();
+	Renderer::Init();
 
 	// 2. Setup Camera
 	// Adjust these values based on your desired aspect ratio / zoom
@@ -70,14 +70,10 @@ void Game2D::Draw()
 	// PASS 1: WORLD RENDERING
 	// -----------------------------------------------------------
 	// Reset stats for the new frame
-	Renderer2D::ResetStats();
+	Renderer::ResetStats();
 
 	// Draw Managed World (TileMap, etc)
 	DotNetHost::GetInstance()->CallDraw();
-	
-	static int frameCount = 0;
-	frameCount++;
-	if (frameCount % 60 == 0) Logger::Info("Game2D::Draw - After CallDraw");
 
 	// Render Scene Graph
 	if (m_scene)
@@ -117,8 +113,8 @@ void Game2D::Draw()
 		// Clear Depth Buffer for UI overlay
 		Window::GetContext()->ClearDepthStencil(Window::GetDepthStencilView(), CLEAR_DEPTH_FLAG, 1.0f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
-		Renderer2D::BeginScene(uiCamera);
+		Renderer::BeginScene(uiCamera);
 		m_scene->RenderUI(m_camera->GetOrthographicSize());
-		Renderer2D::EndScene();
+		Renderer::EndScene();
 	}
 }

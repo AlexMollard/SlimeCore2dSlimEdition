@@ -80,7 +80,6 @@ public class FactoryWorld : GridSystem<FactoryGame, FactoryTerrain, FactoryTileO
 		if (ShouldRender)
 		{
 			//Logger.Trace($"RENDER COMPLETE");
-			Native.TileMap_UpdateMesh(mode.TileMap);
 		}
 	}
 

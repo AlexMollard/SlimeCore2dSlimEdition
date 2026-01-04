@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "Rendering/Text.h"
+#include "Rendering/Font.h"
 #include "Resources/ResourceManager.h"
 #include "Scene/Scene.h"
 
@@ -22,7 +22,7 @@ SLIME_EXPORT EntityId __cdecl UI_CreateText(const char* text, int fontSize, floa
 	float scale = (float) fontSize / 48.0f;
 	el->Scale = { scale, scale };
 
-	Text* defaultFont = ResourceManager::GetInstance().GetFont("DefaultFont");
+	Font* defaultFont = ResourceManager::GetInstance().GetFont("DefaultFont");
 	if (!defaultFont)
 	{
 		defaultFont = ResourceManager::GetInstance().LoadFont("DefaultFont", "Fonts/Chilanka-Regular.ttf", 48);

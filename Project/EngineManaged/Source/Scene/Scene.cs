@@ -13,7 +13,7 @@ public static class Scene
     {
         if (e.Id != 0)
         {
-            Native.Scene_Destroy(e.Id);
+            NativeMethods.Scene_Destroy(e.Id);
         }
     }
 
@@ -22,7 +22,7 @@ public static class Scene
     /// </summary>
     public static bool IsAlive(Entity e)
     {
-        return e.Id != 0 && Native.Scene_IsAlive(e.Id);
+        return e.Id != 0 && NativeMethods.Scene_IsAlive(e.Id);
     }
 
     // ---------------------------------------------------------------------
@@ -32,14 +32,14 @@ public static class Scene
     /// <summary>
     /// Gets the total count of native objects currently active.
     /// </summary>
-    public static int Count => Native.Scene_GetEntityCount();
+    public static int Count => NativeMethods.Scene_GetEntityCount();
 
     /// <summary>
     /// Gets an entity wrapper for the object at the specific native index.
     /// </summary>
     public static Entity GetAt(int index)
     {
-        ulong id = Native.Scene_GetEntityIdAtIndex(index);
+        ulong id = NativeMethods.Scene_GetEntityIdAtIndex(index);
         return new Entity(id);
     }
 
@@ -59,7 +59,7 @@ public static class Scene
         public EntityEnumerator()
         {
             _index = -1;
-            _count = Native.Scene_GetEntityCount();
+            _count = NativeMethods.Scene_GetEntityCount();
         }
 
         public Entity Current => Scene.GetAt(_index);

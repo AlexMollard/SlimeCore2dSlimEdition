@@ -65,3 +65,32 @@ void Logger::Log(LogLevel level, const std::string& message)
 		s_FileStream.flush();
 	}
 }
+
+void Logger::LogCustom(const std::string& tag, int color, const std::string& message)
+{
+	std::lock_guard<std::mutex> lock(s_Mutex);
+
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+
+	// Time
+	std::time_t t = std::time(nullptr);
+	std::tm tm;
+	localtime_s(&tm, &t);
+
+	// Print to Console
+	SetConsoleTextAttribute(hConsole, 8); // Gray for time
+	std::cout << "[" << std::put_time(&tm, "%H:%M:%S") << "] ";
+
+	SetConsoleTextAttribute(hConsole, color);
+	std::cout << "[" << tag << "] ";
+
+	SetConsoleTextAttribute(hConsole, 7); // Reset to white
+	std::cout << message << "\n";
+
+	// Print to File
+	if (s_FileStream.is_open())
+	{
+		s_FileStream << "[" << std::put_time(&tm, "%H:%M:%S") << "] [" << tag << "] " << message << std::endl;
+		s_FileStream.flush();
+	}
+}

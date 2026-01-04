@@ -217,32 +217,16 @@ public class FactoryTile : Tile<FactoryGame, FactoryTerrain, FactoryTileOptions>
 
     public void UpdateTile(FactoryGame game)
     {
-        if (game.TileMap == IntPtr.Zero || game.World == null) return;
+        if (game.World == null) return;
 
         // Layer 0: Terrain
         GetTerrainUVs(Bitmask, out float u0, out float v0, out float u1, out float v1);
-        Native.TileMap_SetTile(game.TileMap, PositionX, PositionY, 0, FactoryResources.GetTerrainTexture(Type), u0, v0, u1, v1, 1, 1, 1, 1, 0);
 
         // Layer 1: Ore
         nint oreTex = FactoryResources.GetOreTexture(OreType);
-        if (oreTex != IntPtr.Zero)
-            Native.TileMap_SetTile(game.TileMap, PositionX, PositionY, 1, oreTex, 0, 0, 1, 1, 1, 1, 1, 1, 0);
-        else
-            Native.TileMap_SetTile(game.TileMap, PositionX, PositionY, 1, IntPtr.Zero, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
         // Layer 2: Structure
         nint structTex = IntPtr.Zero;
-        float rotation = 0.0f;
-
-        if (!string.IsNullOrEmpty(BuildingId) && BuildingId == "wall")
-        {
-            switch (Direction)
-            {
-                case Direction.East: rotation = -1.5708f; break;
-                case Direction.South: rotation = 3.14159f; break;
-                case Direction.West: rotation = 1.5708f; break;
-            }
-        }
 
         if (!string.IsNullOrEmpty(BuildingId))
         {
@@ -256,19 +240,11 @@ public class FactoryTile : Tile<FactoryGame, FactoryTerrain, FactoryTileOptions>
                     // Use ConveyorSystem
                     game.ConveyorSystem.PlaceConveyor(PositionX, PositionY, def.Tier, Direction);
                     game.BuildingSystem.RemoveBuilding(PositionX, PositionY); // Ensure no building
-
-                    // Don't render in TileMap
-                    Native.TileMap_SetTile(game.TileMap, PositionX, PositionY, 2, IntPtr.Zero, 0, 0, 0, 0, 0, 0, 0, 0, 0);
                 }
                 else
                 {
                     game.BuildingSystem.PlaceBuilding(PositionX, PositionY, BuildingId, Direction);
                     game.ConveyorSystem.RemoveConveyor(PositionX, PositionY);
-                    
-                    if (structTex != IntPtr.Zero)
-                        Native.TileMap_SetTile(game.TileMap, PositionX, PositionY, 2, structTex, 0, 0, 1, 1, 1, 1, 1, 1, rotation);
-                    else
-                        Native.TileMap_SetTile(game.TileMap, PositionX, PositionY, 2, IntPtr.Zero, 0, 0, 0, 0, 0, 0, 0, 0, 0);
                 }
             }
         }
@@ -277,8 +253,6 @@ public class FactoryTile : Tile<FactoryGame, FactoryTerrain, FactoryTileOptions>
             // Remove from systems
             game.ConveyorSystem.RemoveConveyor(PositionX, PositionY);
             game.BuildingSystem.RemoveBuilding(PositionX, PositionY);
-
-            Native.TileMap_SetTile(game.TileMap, PositionX, PositionY, 2, IntPtr.Zero, 0, 0, 0, 0, 0, 0, 0, 0, 0);
         }
 
         game.World.ShouldRender = true;

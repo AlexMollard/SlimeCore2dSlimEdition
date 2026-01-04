@@ -1,7 +1,7 @@
 #include "ExportRenderer.h"
 
 #include "Core/Input.h"
-#include "Rendering/Renderer2D.h"
+#include "Rendering/Renderer.h"
 #include "Rendering/Texture.h"
 #include "Scene/Scene.h"
 
@@ -20,11 +20,11 @@ SLIME_EXPORT void __cdecl Renderer_DrawBatch(BatchQuad* quads, int count)
 
 		if (q.texture)
 		{
-			Renderer2D::DrawQuad(pos, size, (Texture*) q.texture, 1.0f, color);
+			Renderer::DrawQuad(pos, size, (Texture*) q.texture, 1.0f, color);
 		}
 		else
 		{
-			Renderer2D::DrawQuad(pos, size, color);
+			Renderer::DrawQuad(pos, size, color);
 		}
 	}
 }
@@ -63,12 +63,12 @@ SLIME_EXPORT void __cdecl Renderer_BeginScenePrimary()
 
 			glm::mat4 viewProj = proj * view;
 
-			Renderer2D::BeginScene(viewProj);
+			Renderer::BeginScene(viewProj);
 		}
 	}
 }
 
 SLIME_EXPORT void __cdecl Renderer_EndScene()
 {
-	Renderer2D::EndScene();
+	Renderer::EndScene();
 }

@@ -33,7 +33,6 @@ public class StateFactoryMenu : IGameState<FactoryGame>
     
     // Background World
     private Vec2 _cam;
-    private IntPtr _tileMap;
     private ulong _cameraEntity;
     private Entity? _menuBg;
     
@@ -49,11 +48,11 @@ public class StateFactoryMenu : IGameState<FactoryGame>
         game.World?.Initialize(FactoryGame.MAX_VIEW_W, FactoryGame.MAX_VIEW_H);
         
         // Create Camera
-        _cameraEntity = Native.Entity_Create();
-        Native.Entity_AddComponent_Transform(_cameraEntity);
-        Native.Entity_AddComponent_Camera(_cameraEntity);
-        Native.Entity_SetPrimaryCamera(_cameraEntity, true);
-        Native.Entity_SetCameraSize(_cameraEntity, FactoryGame.VIEW_H);
+        _cameraEntity = NativeMethods.Entity_Create();
+        NativeMethods.Entity_AddComponent_Transform(_cameraEntity);
+        NativeMethods.Entity_AddComponent_Camera(_cameraEntity);
+        NativeMethods.Entity_SetPrimaryCamera(_cameraEntity, true);
+        NativeMethods.Entity_SetCameraSize(_cameraEntity, FactoryGame.VIEW_H);
         
         // Generate World
         var gen = new FactoryWorldGenerator(Environment.TickCount);
@@ -61,15 +60,6 @@ public class StateFactoryMenu : IGameState<FactoryGame>
         {
             gen.Generate(game.World);
             game.World.CalculateAllBitmasks();
-            _tileMap = Native.TileMap_Create(game.World.Width(), game.World.Height(), 1.0f);
-            for (int x = 0; x < game.World.Width(); x++)
-            {
-                for (int y = 0; y < game.World.Height(); y++)
-                {
-                    UpdateTile(game, x, y);
-                }
-            }
-            Native.TileMap_UpdateMesh(_tileMap);
         }
         
         // Center camera initially
@@ -176,40 +166,6 @@ public class StateFactoryMenu : IGameState<FactoryGame>
         _zoomSlider?.SetVisible(_showSettings);
     }
 
-    private void UpdateTile(FactoryGame game, int x, int y)
-    {
-        if (_tileMap == IntPtr.Zero || game.World == null) return;
-
-        var tile = game.World[x, y];
-
-        // Layer 0: Terrain
-        FactoryTile.GetTerrainUVs(tile.Bitmask, out float u0, out float v0, out float u1, out float v1);
-        Native.TileMap_SetTile(_tileMap, x, y, 0, FactoryResources.GetTerrainTexture(tile.Type), u0, v0, u1, v1, 1, 1, 1, 1, 0);
-
-        // Layer 1: Ore
-        nint oreTex = FactoryResources.GetOreTexture(tile.OreType);
-        if (oreTex != IntPtr.Zero)
-            Native.TileMap_SetTile(_tileMap, x, y, 1, oreTex, 0, 0, 1, 1, 1, 1, 1, 1, 0);
-        else
-            Native.TileMap_SetTile(_tileMap, x, y, 1, IntPtr.Zero, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-
-        // Layer 2: Structure
-        nint structTex = IntPtr.Zero;
-        if (!string.IsNullOrEmpty(tile.BuildingId))
-        {
-            var def = BuildingRegistry.Get(tile.BuildingId);
-            if (def != null)
-            {
-                structTex = def.Texture;
-            }
-        }
-
-        if (structTex != IntPtr.Zero)
-            Native.TileMap_SetTile(_tileMap, x, y, 2, structTex, 0, 0, 1, 1, 1, 1, 1, 1, 0);
-        else
-            Native.TileMap_SetTile(_tileMap, x, y, 2, IntPtr.Zero, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-    }
-
     public void Exit(FactoryGame game)
     {
         foreach (var d in _decorations) d.Destroy();
@@ -227,15 +183,9 @@ public class StateFactoryMenu : IGameState<FactoryGame>
         
         _menuBg?.Destroy();
         
-        if (_tileMap != IntPtr.Zero)
-        {
-            Native.TileMap_Destroy(_tileMap);
-            _tileMap = IntPtr.Zero;
-        }
-
         if (_cameraEntity != 0)
         {
-            Native.Entity_Destroy(_cameraEntity);
+            NativeMethods.Entity_Destroy(_cameraEntity);
             _cameraEntity = 0;
         }
     }
@@ -248,10 +198,10 @@ public class StateFactoryMenu : IGameState<FactoryGame>
 
         if (_cameraEntity != 0)
         {
-            Native.Entity_SetPosition(_cameraEntity, _cam.X, _cam.Y);
+            NativeMethods.Entity_SetPosition(_cameraEntity, _cam.X, _cam.Y);
             if (game.World != null)
             {
-                 Native.Entity_SetCameraZoom(_cameraEntity, 1.0f / game.World.Zoom);
+                 NativeMethods.Entity_SetCameraZoom(_cameraEntity, 1.0f / game.World.Zoom);
             }
         }
 
@@ -297,10 +247,6 @@ public class StateFactoryMenu : IGameState<FactoryGame>
 
     public void Draw(FactoryGame game)
     {
-        if (_tileMap != IntPtr.Zero)
-        {
-            Native.TileMap_Render(_tileMap);
-        }
     }
 
     private void SpawnDecorations(FactoryGame game)
@@ -320,7 +266,7 @@ public class StateFactoryMenu : IGameState<FactoryGame>
             if (tex != IntPtr.Zero)
             {
                 var ent = SceneFactory.CreateQuad(x, y, 1.0f, 1.0f, 1, 1, 1, 40);
-                Native.Entity_SetTexturePtr(ent.Id, tex);
+                NativeMethods.Entity_SetTexturePtr(ent.Id, tex);
                 _decorations.Add(ent);
             }
         }

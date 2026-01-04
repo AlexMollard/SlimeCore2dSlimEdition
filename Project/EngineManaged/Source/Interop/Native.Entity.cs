@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-internal static partial class Native
+internal static partial class NativeMethods
 {
     // -----------------------------
     // Entity lifecycle (Object-level)

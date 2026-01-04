@@ -1,4 +1,5 @@
 #include "ParticleSystem.h"
+#include "Rendering/Renderer.h"
 
 #include <random>
 
@@ -63,7 +64,7 @@ void ParticleSystem::OnRender()
 
 		float size = glm::lerp(particle.SizeEnd, particle.SizeBegin, life);
 
-		Renderer2D::DrawRotatedQuad({ particle.Position.x, particle.Position.y, -0.01f }, { size, size }, particle.Rotation, color);
+		Renderer::DrawRotatedQuad({ particle.Position.x, particle.Position.y, -0.01f }, { size, size }, particle.Rotation, color);
 	}
 }
 
