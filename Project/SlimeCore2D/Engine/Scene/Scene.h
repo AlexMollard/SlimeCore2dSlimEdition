@@ -27,6 +27,7 @@ struct PersistentUIElement
 	glm::vec2 Anchor = { 0.5f, 0.5f }; // 0.0 = top-left, 0.5 = center, 1.0 = bottom-right
 	glm::vec4 Color = { 1.0f, 1.0f, 1.0f, 1.0f };
 	int Layer = 0;
+	float WrapWidth = 0.0f;
 
 	// Content
 	std::string TextContent;

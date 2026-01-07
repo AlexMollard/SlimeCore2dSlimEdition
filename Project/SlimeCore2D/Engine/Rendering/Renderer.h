@@ -59,7 +59,7 @@ public:
     static void DrawQuad(const glm::mat4& transform, Texture* texture, float tiling = 1.0f, const glm::vec4& tintColor = glm::vec4(1.0f));
     static void DrawQuadUV(const glm::mat4& transform, Texture* texture, const glm::vec2 uvs[4], const glm::vec4& tintColor = glm::vec4(1.0f));
 
-    static void DrawString(const std::string& text, Font* font, const glm::vec3& position, float scale, const glm::vec4& color);
+    static void DrawString(const std::string& text, Font* font, const glm::vec3& position, float scale, const glm::vec4& color, float wrapWidth = 0.0f);
 
     // ==============================================================================================
     // 3D Rendering (Forward)

@@ -19,6 +19,7 @@ SLIME_EXPORT void __cdecl UI_SetVisible(EntityId id, bool visible);
 SLIME_EXPORT void __cdecl UI_SetLayer(EntityId id, int layer);
 SLIME_EXPORT void __cdecl UI_SetTexture(EntityId id, void* texturePtr);
 SLIME_EXPORT void __cdecl UI_SetUseScreenSpace(EntityId id, bool useScreenSpace);
+SLIME_EXPORT void __cdecl UI_SetWrapWidth(EntityId id, float wrapWidth);
 SLIME_EXPORT void __cdecl UI_GetTextSize(EntityId id, float* outWidth, float* outHeight);
 SLIME_EXPORT float __cdecl UI_GetTextWidth(EntityId id);
 SLIME_EXPORT float __cdecl UI_GetTextHeight(EntityId id);

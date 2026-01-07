@@ -155,39 +155,121 @@ void Font::GenerateAtlas(FT_Face face)
 	m_AtlasTexture->SetData(atlasData.data(), (uint32_t) atlasData.size());
 }
 
-glm::vec2 Font::CalculateSize(const std::string& text, float scale)
+glm::vec2 Font::CalculateSize(const std::string& text, float scale, float wrapWidth)
 {
-	glm::vec3 result = CalculateSizeWithBaseline(text, scale);
+	glm::vec3 result = CalculateSizeWithBaseline(text, scale, wrapWidth);
 	return glm::vec2(result.x, result.y);
 }
 
-glm::vec3 Font::CalculateSizeWithBaseline(const std::string& text, float scale)
+glm::vec3 Font::CalculateSizeWithBaseline(const std::string& text, float scale, float wrapWidth)
 {
 	glm::vec3 result(0.0f);
-	float x = 0.0f;
-	float maxY = 0.0f;
-	float minY = 0.0f;
 
-	std::string::const_iterator c;
-	for (c = text.begin(); c != text.end(); c++)
+	float currentLineX = 0.0f;
+	float maxLineWidth = 0.0f;
+	
+	float currentLineMaxY = 0.0f;
+	float currentLineMinY = 0.0f;
+
+	float firstLineMaxY = 0.0f;
+	bool isFirstLine = true;
+	int lineCount = 1;
+
+	float lineSpacing = m_FontSize * scale; 
+
+	auto it = text.begin();
+	while (it != text.end())
 	{
-		Character ch = m_Characters[*c];
+		// Identify a word
+		auto wordStart = it;
+		float wordWidth = 0.0f;
+		float wordMaxY = 0.0f;
+		float wordMinY = 0.0f;
 
-		float h = ch.Size.y * scale;
-		float bearingY = ch.Bearing.y * scale;
+		// Calculate word dimensions
+		while (it != text.end())
+		{
+			char c = *it;
+			if (c == ' ' || c == '\n') break;
 
-		// Track height bounds
-		if (bearingY > maxY)
-			maxY = bearingY;
-		if ((h - bearingY) > minY)
-			minY = (h - bearingY);
+			if (m_Characters.find(c) != m_Characters.end())
+			{
+				Character ch = m_Characters[c];
+				float h = ch.Size.y * scale;
+				float bearingY = ch.Bearing.y * scale;
 
-		x += (ch.Advance >> 6) * scale;
+				if (bearingY > wordMaxY) wordMaxY = bearingY;
+				if ((h - bearingY) > wordMinY) wordMinY = (h - bearingY);
+
+				wordWidth += (ch.Advance >> 6) * scale;
+			}
+			it++;
+		}
+
+		// Check for wrap (if not first word on line)
+		if (wrapWidth > 0.0f && currentLineX > 0.0f && (currentLineX + wordWidth > wrapWidth))
+		{
+			// Wrap
+			if (currentLineX > maxLineWidth) maxLineWidth = currentLineX;
+			
+			if (isFirstLine)
+			{
+				firstLineMaxY = currentLineMaxY;
+				isFirstLine = false;
+			}
+
+			lineCount++;
+
+			currentLineX = 0.0f;
+			currentLineMaxY = 0.0f;
+			currentLineMinY = 0.0f;
+		}
+
+		// Add word to current line
+		currentLineX += wordWidth;
+		if (wordMaxY > currentLineMaxY) currentLineMaxY = wordMaxY;
+		if (wordMinY > currentLineMinY) currentLineMinY = wordMinY;
+
+		// Handle delimiter
+		if (it != text.end())
+		{
+			char c = *it;
+			if (c == '\n')
+			{
+				if (currentLineX > maxLineWidth) maxLineWidth = currentLineX;
+				
+				if (isFirstLine)
+				{
+					firstLineMaxY = currentLineMaxY;
+					isFirstLine = false;
+				}
+
+				lineCount++;
+				currentLineX = 0.0f;
+				currentLineMaxY = 0.0f;
+				currentLineMinY = 0.0f;
+			}
+			else if (c == ' ' && m_Characters.find(' ') != m_Characters.end())
+			{
+				float spaceW = (m_Characters[' '].Advance >> 6) * scale;
+				currentLineX += spaceW;
+			}
+			it++;
+		}
 	}
 
-	result.x = x;           // width
-	result.y = maxY + minY; // total height
-	result.z = maxY;        // baseline offset (how far above baseline)
+	// Finalize
+	if (currentLineX > maxLineWidth) maxLineWidth = currentLineX;
+	if (isFirstLine) firstLineMaxY = currentLineMaxY;
+
+	// Calculate total height
+	if (lineCount > 1)
+		result.y = firstLineMaxY + (float)(lineCount - 1) * lineSpacing + currentLineMinY;
+	else
+		result.y = firstLineMaxY + currentLineMinY;
+
+	result.x = maxLineWidth;
+	result.z = firstLineMaxY;
 
 	return result;
 }

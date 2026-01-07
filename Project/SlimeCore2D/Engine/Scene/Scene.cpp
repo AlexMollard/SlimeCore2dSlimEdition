@@ -232,7 +232,7 @@ void Scene::RenderUI(float uiHeight)
 
 		if (element.IsText && element.Font)
 		{
-			glm::vec3 textInfo = element.Font->CalculateSizeWithBaseline(element.TextContent, element.Scale.x);
+			glm::vec3 textInfo = element.Font->CalculateSizeWithBaseline(element.TextContent, element.Scale.x, element.WrapWidth);
 			float textWidth = textInfo.x;
 			float textHeight = textInfo.y;
 			float maxY = textInfo.z;
@@ -256,7 +256,7 @@ void Scene::RenderUI(float uiHeight)
 				finalPos.y = baselineForCenter * (1.0f - t) + baselineForTop * t;
 			}
 
-			Renderer::DrawString(element.TextContent, element.Font, finalPos, element.Scale.x, element.Color);
+			Renderer::DrawString(element.TextContent, element.Font, finalPos, element.Scale.x, element.Color, element.WrapWidth);
 		}
 		else if (!element.IsText)
 		{

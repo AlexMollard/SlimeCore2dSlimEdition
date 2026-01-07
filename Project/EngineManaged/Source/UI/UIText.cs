@@ -36,8 +36,11 @@ public readonly struct UIText
 
     public void Layer(int val) => NativeMethods.UI_SetLayer(Id, val);
 
+    public void Scale(float scale) => NativeMethods.UI_SetSize(Id, scale, scale);
 
     public void UseScreenSpace(bool val) => NativeMethods.UI_SetUseScreenSpace(Id, val);
+
+    public void WrapWidth(float width) => NativeMethods.UI_SetWrapWidth(Id, width);
 
 
     /// <summary>

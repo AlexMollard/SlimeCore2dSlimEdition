@@ -51,6 +51,9 @@ internal static partial class NativeMethods
     internal static extern void UI_SetUseScreenSpace(ulong id, bool useScreenSpace);
 
     [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+    internal static extern void UI_SetWrapWidth(ulong id, float wrapWidth);
+
+    [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
     internal static extern void UI_GetTextSize(ulong id, out float width, out float height);
 
     [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]

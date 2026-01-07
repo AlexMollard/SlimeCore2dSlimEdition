@@ -785,7 +785,7 @@ void Renderer::DrawRotatedQuad(const glm::vec3& position, const glm::vec2& size,
     s_Data.Stats.QuadCount++;
 }
 
-void Renderer::DrawString(const std::string& text, Font* font, const glm::vec3& position, float scale, const glm::vec4& color)
+void Renderer::DrawString(const std::string& text, Font* font, const glm::vec3& position, float scale, const glm::vec4& color, float wrapWidth)
 {
     if (!font) return;
 
@@ -817,63 +817,114 @@ void Renderer::DrawString(const std::string& text, Font* font, const glm::vec3& 
         s_Data.TextureSlotIndex++;
     }
 
-    float x = position.x;
-    float y = position.y;
+    float startX = position.x;
+    float currentX = 0.0f;
+    float currentY = position.y;
     float z = position.z;
 
-    for (char c : text)
+    float lineSpacing = font->GetFontSize() * scale;
+
+    auto it = text.begin();
+    while (it != text.end())
     {
-        if (characters.find(c) == characters.end())
-            continue;
+        // Identify word
+        float wordWidth = 0.0f;
+        std::vector<char> wordChars;
+        auto wordStart = it;
 
-        const Character& ch = characters.at(c);
+        while (it != text.end())
+        {
+            char c = *it;
+            if (c == ' ' || c == '\n') break;
+            if (characters.find(c) != characters.end())
+            {
+                wordChars.push_back(c);
+                wordWidth += (characters.at(c).Advance >> 6) * scale;
+            }
+            it++;
+        }
 
-        float xpos = x + ch.Bearing.x * scale;
-        float ypos = y - (ch.Size.y - ch.Bearing.y) * scale;
+        // Check wrap
+        if (wrapWidth > 0.0f && currentX > 0.0f && (currentX + wordWidth > wrapWidth))
+        {
+            currentX = 0.0f;
+            currentY -= lineSpacing;
+        }
 
-        float w = ch.Size.x * scale;
-        float h = ch.Size.y * scale;
+        // Draw word
+        for (char c : wordChars)
+        {
+            const Character& ch = characters.at(c);
 
-        // Check batch capacity
-        if (s_Data.QuadIndexCount >= s_Data.MaxIndices)
-            NextBatch();
+            float xpos = startX + currentX + ch.Bearing.x * scale;
+            float ypos = currentY - (ch.Size.y - ch.Bearing.y) * scale;
 
-        s_Data.QuadBufferPtr->Position = { xpos, ypos, z };
-        s_Data.QuadBufferPtr->Color = color;
-        s_Data.QuadBufferPtr->TexCoord = { ch.uvMin.x, ch.uvMax.y }; // BL
-        s_Data.QuadBufferPtr->TexIndex = textureIndex;
-        s_Data.QuadBufferPtr->Tiling = 1.0f;
-        s_Data.QuadBufferPtr->IsText = 1.0f;
-        s_Data.QuadBufferPtr++;
+            float w = ch.Size.x * scale;
+            float h = ch.Size.y * scale;
 
-        s_Data.QuadBufferPtr->Position = { xpos + w, ypos, z };
-        s_Data.QuadBufferPtr->Color = color;
-        s_Data.QuadBufferPtr->TexCoord = { ch.uvMax.x, ch.uvMax.y }; // BR
-        s_Data.QuadBufferPtr->TexIndex = textureIndex;
-        s_Data.QuadBufferPtr->Tiling = 1.0f;
-        s_Data.QuadBufferPtr->IsText = 1.0f;
-        s_Data.QuadBufferPtr++;
+            // Check batch capacity
+            if (s_Data.QuadIndexCount >= s_Data.MaxIndices)
+                NextBatch();
 
-        s_Data.QuadBufferPtr->Position = { xpos + w, ypos + h, z };
-        s_Data.QuadBufferPtr->Color = color;
-        s_Data.QuadBufferPtr->TexCoord = { ch.uvMax.x, ch.uvMin.y }; // TR
-        s_Data.QuadBufferPtr->TexIndex = textureIndex;
-        s_Data.QuadBufferPtr->Tiling = 1.0f;
-        s_Data.QuadBufferPtr->IsText = 1.0f;
-        s_Data.QuadBufferPtr++;
+            s_Data.QuadBufferPtr->Position = { xpos, ypos, z };
+            s_Data.QuadBufferPtr->Color = color;
+            s_Data.QuadBufferPtr->TexCoord = { ch.uvMin.x, ch.uvMax.y }; // BL
+            s_Data.QuadBufferPtr->TexIndex = textureIndex;
+            s_Data.QuadBufferPtr->Tiling = 1.0f;
+            s_Data.QuadBufferPtr->IsText = 1.0f;
+            s_Data.QuadBufferPtr++;
 
-        s_Data.QuadBufferPtr->Position = { xpos, ypos + h, z };
-        s_Data.QuadBufferPtr->Color = color;
-        s_Data.QuadBufferPtr->TexCoord = { ch.uvMin.x, ch.uvMin.y }; // TL
-        s_Data.QuadBufferPtr->TexIndex = textureIndex;
-        s_Data.QuadBufferPtr->Tiling = 1.0f;
-        s_Data.QuadBufferPtr->IsText = 1.0f;
-        s_Data.QuadBufferPtr++;
+            s_Data.QuadBufferPtr->Position = { xpos + w, ypos, z };
+            s_Data.QuadBufferPtr->Color = color;
+            s_Data.QuadBufferPtr->TexCoord = { ch.uvMax.x, ch.uvMax.y }; // BR
+            s_Data.QuadBufferPtr->TexIndex = textureIndex;
+            s_Data.QuadBufferPtr->Tiling = 1.0f;
+            s_Data.QuadBufferPtr->IsText = 1.0f;
+            s_Data.QuadBufferPtr++;
 
-        s_Data.QuadIndexCount += 6;
-        s_Data.Stats.QuadCount++;
+            s_Data.QuadBufferPtr->Position = { xpos + w, ypos + h, z };
+            s_Data.QuadBufferPtr->Color = color;
+            s_Data.QuadBufferPtr->TexCoord = { ch.uvMax.x, ch.uvMin.y }; // TR
+            s_Data.QuadBufferPtr->TexIndex = textureIndex;
+            s_Data.QuadBufferPtr->Tiling = 1.0f;
+            s_Data.QuadBufferPtr->IsText = 1.0f;
+            s_Data.QuadBufferPtr++;
 
-        x += (ch.Advance >> 6) * scale;
+            s_Data.QuadBufferPtr->Position = { xpos, ypos + h, z };
+            s_Data.QuadBufferPtr->Color = color;
+            s_Data.QuadBufferPtr->TexCoord = { ch.uvMin.x, ch.uvMin.y }; // TL
+            s_Data.QuadBufferPtr->TexIndex = textureIndex;
+            s_Data.QuadBufferPtr->Tiling = 1.0f;
+            s_Data.QuadBufferPtr->IsText = 1.0f;
+            s_Data.QuadBufferPtr++;
+
+            s_Data.QuadIndexCount += 6;
+            s_Data.Stats.QuadCount++;
+
+            currentX += (ch.Advance >> 6) * scale;
+        }
+
+        // Handle separators
+        if (it != text.end())
+        {
+            char c = *it;
+            if (c == '\n')
+            {
+                currentX = 0.0f;
+                currentY -= lineSpacing;
+            }
+            else if (c == ' ')
+            {
+                if (characters.find(' ') != characters.end())
+                {
+                    float spaceW = (characters.at(' ').Advance >> 6) * scale;
+                    // Note: Spaces at end of line might cause wrap on next word, but space itself usually renders.
+                    // If space is at exact wrap edge, it might be weird, but usually acceptable.
+                    currentX += spaceW;
+                }
+            }
+            it++;
+        }
     }
 }
 

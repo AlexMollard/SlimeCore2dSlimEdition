@@ -88,9 +88,19 @@ namespace SlimeCore.GameModes.Idle
             float yPos = 8.0f;
             foreach (var item in store)
             {
-                var btn = UIButton.Create(string.Format("{0}", item.BaseCost), 08.0f, -0.0f, 7.0f, 4.0f, 1f, 1f, 1f, 2, 1, false);
+                var btn = UIButton.Create("", 08.0f, -0.0f, 7.0f, 4.0f, 0.9f, 0.9f, 0.9f, 2, 1, false);
                 _storeButtons.Add(item.Id, btn);
-                btn.Label.Color(0.8f, 0.8f, 0.8f);
+                btn.Label.Color(0.1f, 0.1f, 0.1f);
+                btn.Label.Scale(0.015f); // Smaller text
+                btn.Label.WrapWidth(6.5f); // Wrap text
+
+                void UpdateButtonText()
+                {
+                    string text = $"{item.Name}\n${item.Cost}\n+{item.ClickAdd} Click\n+{item.CPS} CPS";
+                    btn.SetText(text);
+                }
+
+                UpdateButtonText();
 
                 if (item.Texture != IntPtr.Zero)
                 {
@@ -113,7 +123,7 @@ namespace SlimeCore.GameModes.Idle
                         item.Cost = CalcNewPrice(item.BaseCost, item.Owned, 0);
 
                         UpdateText();
-                        btn.SetText(string.Format("{0}", item.Cost));
+                        UpdateButtonText();
                     }
                 };
 

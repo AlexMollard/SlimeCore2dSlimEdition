@@ -184,6 +184,16 @@ SLIME_EXPORT void __cdecl UI_SetUseScreenSpace(EntityId id, bool useScreenSpace)
 	}
 }
 
+SLIME_EXPORT void __cdecl UI_SetWrapWidth(EntityId id, float wrapWidth)
+{
+	if (!Scene::GetActiveScene() || id == 0)
+		return;
+	if (PersistentUIElement* el = Scene::GetActiveScene()->GetUIElement((ObjectId) id))
+	{
+		el->WrapWidth = wrapWidth;
+	}
+}
+
 SLIME_EXPORT void __cdecl UI_GetTextSize(EntityId id, float* outWidth, float* outHeight)
 {
 	if (!Scene::GetActiveScene() || id == 0 || (!outWidth && !outHeight))
@@ -192,7 +202,7 @@ SLIME_EXPORT void __cdecl UI_GetTextSize(EntityId id, float* outWidth, float* ou
 	{
 		if (el->IsText && el->Font)
 		{
-			glm::vec2 size = el->Font->CalculateSize(el->TextContent, el->Scale.x);
+			glm::vec2 size = el->Font->CalculateSize(el->TextContent, el->Scale.x, el->WrapWidth);
 			if (outWidth)
 				*outWidth = size.x;
 			if (outHeight)
@@ -209,7 +219,7 @@ SLIME_EXPORT float __cdecl UI_GetTextWidth(EntityId id)
 	{
 		if (el->IsText && el->Font)
 		{
-			return el->Font->CalculateSize(el->TextContent, el->Scale.x).x;
+			return el->Font->CalculateSize(el->TextContent, el->Scale.x, el->WrapWidth).x;
 		}
 	}
 	return 0.0f;
@@ -223,7 +233,7 @@ SLIME_EXPORT float __cdecl UI_GetTextHeight(EntityId id)
 	{
 		if (el->IsText && el->Font)
 		{
-			return el->Font->CalculateSize(el->TextContent, el->Scale.x).y;
+			return el->Font->CalculateSize(el->TextContent, el->Scale.x, el->WrapWidth).y;
 		}
 	}
 	return 0.0f;
