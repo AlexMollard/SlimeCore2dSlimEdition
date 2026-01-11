@@ -25,7 +25,7 @@ SLIME_EXPORT EntityId __cdecl UI_CreateText(const char* text, int fontSize, floa
 	Font* defaultFont = ResourceManager::GetInstance().GetFont("DefaultFont");
 	if (!defaultFont)
 	{
-		defaultFont = ResourceManager::GetInstance().LoadFont("DefaultFont", "Fonts/Chilanka-Regular.ttf", 48);
+		defaultFont = ResourceManager::GetInstance().LoadFont("DefaultFont", "Fonts/Overpass.ttf", 48);
 	}
 	el->Font = defaultFont;
 
