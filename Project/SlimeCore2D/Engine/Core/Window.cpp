@@ -154,6 +154,7 @@ void Window::InitDiligent(HWND hwnd, int width, int height)
 			EngineVkCreateInfo EngineCI;
 			EngineCI.Features.SeparablePrograms = DEVICE_FEATURE_STATE_ENABLED;
 			EngineCI.Features.BindlessResources = DEVICE_FEATURE_STATE_ENABLED;
+			EngineCI.DynamicHeapSize = 256 * 1024 * 1024; // 256 MB
 
 			// Increase descriptor pool size to avoid frequent reallocations with many TileMap chunks
 			EngineCI.MainDescriptorPoolSize.MaxDescriptorSets = 32768;

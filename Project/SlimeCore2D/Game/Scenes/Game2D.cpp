@@ -111,7 +111,7 @@ void Game2D::Draw()
 		Camera uiCamera(m_camera->GetOrthographicSize(), m_camera->GetAspectRatio());
 
 		// Clear Depth Buffer for UI overlay
-		Window::GetContext()->ClearDepthStencil(Window::GetDepthStencilView(), CLEAR_DEPTH_FLAG, 1.0f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+		Window::GetContext()->ClearDepthStencil(Window::GetDepthStencilView(), CLEAR_DEPTH_FLAG | CLEAR_STENCIL_FLAG, 1.0f, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
 		Renderer::BeginScene(uiCamera);
 		m_scene->RenderUI(m_camera->GetOrthographicSize());
