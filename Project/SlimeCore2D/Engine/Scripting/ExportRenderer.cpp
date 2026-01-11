@@ -72,3 +72,13 @@ SLIME_EXPORT void __cdecl Renderer_EndScene()
 {
 	Renderer::EndScene();
 }
+
+SLIME_EXPORT void __cdecl Renderer_EnableScissor(float x, float y, float w, float h)
+{
+    Renderer::EnableScissor(x, y, w, h);
+}
+
+SLIME_EXPORT void __cdecl Renderer_DisableScissor()
+{
+    Renderer::DisableScissor();
+}

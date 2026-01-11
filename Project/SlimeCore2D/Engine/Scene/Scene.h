@@ -28,6 +28,7 @@ struct PersistentUIElement
 	glm::vec4 Color = { 1.0f, 1.0f, 1.0f, 1.0f };
 	int Layer = 0;
 	float WrapWidth = 0.0f;
+    glm::vec4 ClipRect = { 0.0f, 0.0f, 0.0f, 0.0f }; // x,y,w,h. If w<=0 or h<=0, no clip.
 
 	// Content
 	std::string TextContent;

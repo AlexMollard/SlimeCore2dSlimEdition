@@ -144,14 +144,19 @@ namespace SlimeCore.GameModes.Idle
             var store = StoreRegistry.GetAll().ToList();
 
             float yPos = 5.5f; // Start below header
+            float btnHeight = 4.5f; 
+            float btnSpacing = 5.2f;
+
             foreach (var item in store)
             {
-                var btn = UIButton.Create("", 0.0f, 0.0f, 7.5f, 3.5f, 0.15f, 0.15f, 0.2f, 95, 1, false);
+                var btn = UIButton.Create("", 0.0f, 0.0f, 7.5f, btnHeight, 0.15f, 0.15f, 0.2f, 95, 1, false);
                 _storeButtons.Add(item.Id, btn);
                 
+                bool hasIcon = item.Texture != IntPtr.Zero;
+                
                 btn.Label.Color(0.9f, 0.9f, 0.9f);
-                btn.Label.Scale(0.018f); 
-                btn.Label.WrapWidth(7.0f); 
+                btn.Label.Scale(0.016f); 
+                btn.Label.WrapWidth(hasIcon ? 3.8f : 7.0f); 
                 btn.Label.Anchor(0.5f, 0.5f);
 
                 void UpdateButtonText()
@@ -169,7 +174,7 @@ namespace SlimeCore.GameModes.Idle
 
                 UpdateButtonText();
 
-                if (item.Texture != IntPtr.Zero)
+                if (hasIcon)
                 {
                     btn.SetIcon(item.Texture);
                     btn.IconCentered = false; 
@@ -197,8 +202,7 @@ namespace SlimeCore.GameModes.Idle
                 };
 
                 _storeMenu.AddChild(btn, 0, yPos);
-                _storeMenu.ContentHeight += 4.0f;
-                yPos -= 4.0f;
+                yPos -= btnSpacing;
             }
             
             _storeMenu.ContentHeight = Math.Max(19.5f, 8.5f - yPos + 2.0f);

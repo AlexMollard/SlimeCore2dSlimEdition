@@ -71,6 +71,17 @@ public static class StoreRegistry
         }
     
         Console.WriteLine("Warning: idleStore.json not found.");
+
+        // Fallback / Hardcoded upgrades
+        Register(new StoreDefinition { Id = "cursor", Name = "Better Mouse", BaseCost = 15, ClickAdd = 1, CPS = 0, ClickMult = 0 });
+        Register(new StoreDefinition { Id = "auto_clicker", Name = "Auto Clicker", BaseCost = 100, ClickAdd = 0, CPS = 1.0f, ClickMult = 0 });
+        Register(new StoreDefinition { Id = "super_mouse", Name = "Super Mouse", BaseCost = 500, ClickAdd = 5, CPS = 0, ClickMult = 0 });
+        Register(new StoreDefinition { Id = "click_farm", Name = "Click Farm", BaseCost = 1100, ClickAdd = 0, CPS = 8.0f, ClickMult = 0 });
+        Register(new StoreDefinition { Id = "click_mine", Name = "Click Mine", BaseCost = 12000, ClickAdd = 0, CPS = 47.0f, ClickMult = 0 });
+        Register(new StoreDefinition { Id = "bank", Name = "Bank", BaseCost = 130000, ClickAdd = 0, CPS = 260.0f, ClickMult = 0 });
+        Register(new StoreDefinition { Id = "temple", Name = "Temple", BaseCost = 1400000, ClickAdd = 0, CPS = 1400.0f, ClickMult = 0 });
+        
+        Register(new StoreDefinition { Id = "iron_cursor", Name = "Iron Cursor", BaseCost = 5000, ClickAdd = 0, CPS = 0, ClickMult = 0.5f });
     }
 
 }

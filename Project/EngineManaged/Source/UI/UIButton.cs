@@ -300,4 +300,14 @@ public class UIButton : UIElement
     }
 
     private static float Lerp(float a, float b, float t) => a + (b - a) * t;
+
+    public void SetClipRect(float x, float y, float w, float h)
+    {
+        Background.SetClipRect(x, y, w, h);
+        Label.SetClipRect(x, y, w, h);
+        if (Icon.HasValue)
+        {
+            Icon.Value.SetClipRect(x, y, w, h);
+        }
+    }
 }

@@ -62,6 +62,13 @@ public:
     static void DrawString(const std::string& text, Font* font, const glm::vec3& position, float scale, const glm::vec4& color, float wrapWidth = 0.0f);
 
     // ==============================================================================================
+    // Scissor / Clipping
+    // ==============================================================================================
+    
+    static void EnableScissor(float x, float y, float w, float h);
+    static void DisableScissor();
+
+    // ==============================================================================================
     // 3D Rendering (Forward)
     // ==============================================================================================
 

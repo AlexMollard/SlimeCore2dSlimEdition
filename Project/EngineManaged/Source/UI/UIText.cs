@@ -42,6 +42,7 @@ public readonly struct UIText
 
     public void WrapWidth(float width) => NativeMethods.UI_SetWrapWidth(Id, width);
 
+    public void SetClipRect(float x, float y, float w, float h) => NativeMethods.UI_SetClipRect(Id, x, y, w, h);
 
     /// <summary>
     /// Gets the width and height of the text in world units.

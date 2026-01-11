@@ -194,6 +194,16 @@ SLIME_EXPORT void __cdecl UI_SetWrapWidth(EntityId id, float wrapWidth)
 	}
 }
 
+SLIME_EXPORT void __cdecl UI_SetClipRect(EntityId id, float x, float y, float w, float h)
+{
+	if (!Scene::GetActiveScene() || id == 0)
+		return;
+	if (PersistentUIElement* el = Scene::GetActiveScene()->GetUIElement((ObjectId) id))
+	{
+		el->ClipRect = { x, y, w, h };
+	}
+}
+
 SLIME_EXPORT void __cdecl UI_GetTextSize(EntityId id, float* outWidth, float* outHeight)
 {
 	if (!Scene::GetActiveScene() || id == 0 || (!outWidth && !outHeight))

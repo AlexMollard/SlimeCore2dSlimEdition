@@ -211,6 +211,13 @@ void Scene::RenderUI(float uiHeight)
 	{
 		auto& element = *elementPtr;
 
+		bool clipped = false;
+		if (element.ClipRect.z > 0.0f && element.ClipRect.w > 0.0f)
+		{
+			Renderer::EnableScissor(element.ClipRect.x, element.ClipRect.y, element.ClipRect.z, element.ClipRect.w);
+			clipped = true;
+		}
+
 		glm::vec2 position = element.Position;
 		glm::vec2 size = element.Scale;
 
@@ -275,6 +282,11 @@ void Scene::RenderUI(float uiHeight)
 			{
 				Renderer::DrawQuad(finalPos, size, element.Color);
 			}
+		}
+
+		if (clipped)
+		{
+			Renderer::DisableScissor();
 		}
 	}
 }

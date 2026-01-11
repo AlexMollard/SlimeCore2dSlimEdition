@@ -22,6 +22,8 @@ public class UIScrollPanel : UIElement
 
     private UIImage? _border;
 
+    private float _scrollTarget;
+
     private UIScrollPanel(UIImage bg, float x, float y, float w, float h, int layer, bool useScreenSpace)
     {
         Background = bg;
@@ -138,9 +140,17 @@ public class UIScrollPanel : UIElement
             // We can just rely on child.UpdateLayout() because it calls Parent.GetContentOrigin()
             child.UpdateLayout();
             
-            // Now check bounds
+            // Culling Logic: Treat Child as Box, not Point.
+            // Child bounds: WorldY +/- Height/2
+            float childH = child.Height;
             float childY = child.WorldY;
-            bool isVisible = (childY > bottomY + margin && childY < topY - margin);
+            float childTop = childY + childH / 2.0f;
+            float childBottom = childY - childH / 2.0f;
+            
+            // Check intersection (AABB overlap)
+            // Visible if: ChildBottom < TopY AND ChildTop > BottomY
+            // Add a small margin to be safe
+            bool isVisible = (childBottom < topY - margin) && (childTop > bottomY + margin);
 
             // Override visibility for culling
             // But we must respect the child's own "IsVisible" property (e.g. if I manually hid a button)
@@ -158,12 +168,101 @@ public class UIScrollPanel : UIElement
             if (IsVisible) // Only show children if panel is visible
             {
                child.SetVisible(isVisible);
+               
+               // Apply Clip Rect (Only needs to happen if visible, but safe to call)
+               if (isVisible) ApplyClipRect(child);
             }
             else
             {
                child.SetVisible(false);
             }
         }
+    }
+
+    private float GetUIHeight()
+    {
+        float uiHeight = 30.0f; // Default if no camera found
+        foreach (var entity in Scene.Scene.Enumerate())
+        {
+            if (entity.HasComponent<CameraComponent>())
+            {
+                var cam = entity.GetComponent<CameraComponent>();
+                if (cam.IsPrimary)
+                {
+                    uiHeight = cam.Size;
+                    break;
+                }
+            }
+        }
+        return uiHeight;
+    }
+
+    private void ApplyClipRect(UIElement child)
+    {
+        // Calculate Screen Rect of this panel
+        float sx, sy, sw, sh;
+
+        if (UseScreenSpace)
+        {
+             // WorldX, WorldY are in Pixels (Center)
+             sx = WorldX - Width / 2.0f;
+             sy = WorldY - Height / 2.0f;
+             sw = Width;
+             sh = Height;
+        }
+        else
+        {
+             // Convert UI World -> Screen Pixels
+             // We need Viewport Size
+             NativeMethods.Input_GetViewportRect(out int vx, out int vy, out int vw, out int vh);
+             float vpW = vw > 0 ? vw : 1920.0f;
+             float vpH = vh > 0 ? vh : 1080.0f;
+             
+             // We need UI Height (Camera Size)
+             float uiHeight = GetUIHeight();
+             
+             // Aspect
+             float aspect = vpH > 0 ? vpW / vpH : 16.0f/9.0f;
+             float uiWidth = uiHeight * aspect;
+             
+             // Conversion logic (Horizontal):
+             // uiX = (screenX / vpW) * uiWidth - (uiWidth * 0.5f);
+             // screenX = (uiX + uiWidth * 0.5f) / uiWidth * vpW;
+             
+             float uiX = WorldX; // Center
+             float uiY = WorldY; // Center
+             
+             float centerX = (uiX + uiWidth * 0.5f) / uiWidth * vpW;
+             
+             // Conversion logic (Vertical):
+             // uiY = (uiHeight * 0.5f) - (screenY / vpH) * uiHeight;
+             // screenY = ((uiHeight * 0.5f) - uiY) / uiHeight * vpH;
+             
+             float centerY = ((uiHeight * 0.5f) - uiY) / uiHeight * vpH;
+             
+             // Size
+             // uiW -> screenW
+             // screenW = uiW / uiWidth * vpW
+             float screenW = Width / uiWidth * vpW;
+             float screenH = Height / uiHeight * vpH;
+
+             sx = centerX - screenW / 2.0f;
+             sy = centerY - screenH / 2.0f;
+             sw = screenW;
+             sh = screenH;
+        }
+
+        if (child is UIButton btn) btn.SetClipRect(sx, sy, sw, sh);
+        else if (child is UILabel lbl) lbl.SetClipRect(sx, sy, sw, sh);
+        else if (child is UIScrollPanel pnl) pnl.SetClipRect(sx, sy, sw, sh); // Nested?
+    }
+    
+    // Add SetClipRect for nested scroll panels if needed, though they manage their own children
+    public void SetClipRect(float x, float y, float w, float h)
+    {
+         // UIScrollPanel itself doesn't render much except bg/border
+         Background.SetClipRect(x, y, w, h);
+         if (_border.HasValue) _border.Value.SetClipRect(x, y, w, h);
     }
 
     public void EnableButtons(bool enabled)
@@ -237,20 +336,8 @@ public class UIScrollPanel : UIElement
 
         if (!UseScreenSpace)
         {
-             // Simplified lookup similar to before
-             float uiHeight = 30.0f; // Default
-             foreach (var entity in Scene.Scene.Enumerate())
-             {
-                if (entity.HasComponent<CameraComponent>())
-                {
-                    var cam = entity.GetComponent<CameraComponent>();
-                    if (cam.IsPrimary)
-                    {
-                        uiHeight = cam.Size;
-                        break;
-                    }
-                }
-             }
+             // Use robust camera height detection
+             float uiHeight = GetUIHeight();
              
              var (uix, uiy) = UIInputHelper.ScreenToUIWorld(mxScreen, myScreen, uiHeight);
              mx = uix;
@@ -264,11 +351,29 @@ public class UIScrollPanel : UIElement
             float scroll = Input.GetScroll();
             if (scroll != 0)
             {
-                ScrollOffset -= scroll * 2.0f;
+                // Scroll Speed Tuning:
+                // Use a multiplier that feels good for both mouse wheels and trackpads.
+                // Removed the minimum step clamping to allow for smooth, small adjustments.
+                
+                float step = scroll * 5.0f; // Adjusted multiplier for smoother control
+
+                // For normal scroll (Wheel Down -> Negative), we want to increase Target to scroll DOWN (move content UP)
+                _scrollTarget -= step; 
+                
                 float maxScroll = Math.Max(0, ContentHeight - Height);
-                ScrollOffset = Math.Clamp(ScrollOffset, 0, maxScroll);
-                UpdateLayout();
+                _scrollTarget = Math.Clamp(_scrollTarget, 0, maxScroll);
             }
+        }
+
+        // Smoothly interpolate ScrollOffset towards _scrollTarget
+        if (Math.Abs(ScrollOffset - _scrollTarget) > 0.01f)
+        {
+            ScrollOffset = ScrollOffset + (_scrollTarget - ScrollOffset) * 0.2f; 
+            
+            // Snap when close
+            if (Math.Abs(ScrollOffset - _scrollTarget) < 0.01f) ScrollOffset = _scrollTarget;
+            
+            UpdateLayout();
         }
     }
     
@@ -286,6 +391,7 @@ public class UIScrollPanel : UIElement
         foreach(var child in _children) child.Destroy();
         _children.Clear();
         ScrollOffset = 0;
+        _scrollTarget = 0;
     }
 }
 

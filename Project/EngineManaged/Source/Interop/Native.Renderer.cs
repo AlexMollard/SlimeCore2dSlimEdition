@@ -20,4 +20,10 @@ internal static partial class NativeMethods
 
     [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
     internal static extern void Renderer_EndScene();
+
+    [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+    internal static extern void Renderer_EnableScissor(float x, float y, float w, float h);
+
+    [DllImport("SlimeCore2D.exe", CallingConvention = CallingConvention.Cdecl)]
+    internal static extern void Renderer_DisableScissor();
 }

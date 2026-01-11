@@ -42,4 +42,6 @@ public readonly struct UIImage
     public void SetTexture(IntPtr texturePtr) => NativeMethods.UI_SetTexture(Id, texturePtr);
 
     public void UseScreenSpace(bool val) => NativeMethods.UI_SetUseScreenSpace(Id, val);
+
+    public void SetClipRect(float x, float y, float w, float h) => NativeMethods.UI_SetClipRect(Id, x, y, w, h);
 }

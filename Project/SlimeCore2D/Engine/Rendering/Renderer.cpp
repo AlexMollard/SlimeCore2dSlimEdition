@@ -509,6 +509,38 @@ void Renderer::Flush()
     s_Data.Stats.DrawCalls++;
 }
 
+void Renderer::EnableScissor(float x, float y, float w, float h)
+{
+    Flush();
+    
+    auto context = Window::GetContext();
+    
+    Rect scissor;
+    scissor.left = (Int32)x;
+    scissor.top = (Int32)y;
+    scissor.right = (Int32)(x + w);
+    scissor.bottom = (Int32)(y + h);
+    
+    context->SetScissorRects(1, &scissor, 0, 0);
+}
+
+void Renderer::DisableScissor()
+{
+    Flush();
+    
+    auto context = Window::GetContext();
+    auto swapChain = Window::GetSwapChain();
+    const auto& SCDesc = swapChain->GetDesc();
+    
+    Rect scissor;
+    scissor.left = 0;
+    scissor.top = 0;
+    scissor.right = SCDesc.Width;
+    scissor.bottom = SCDesc.Height;
+    
+    context->SetScissorRects(1, &scissor, 0, 0);
+}
+
 // ==============================================================================================
 // 2D Implementation
 // ==============================================================================================

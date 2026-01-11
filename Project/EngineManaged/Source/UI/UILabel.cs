@@ -68,4 +68,9 @@ public class UILabel : UIElement
         base.SetVisible(visible);
         TextComponent.IsVisible(visible);
     }
+
+    public void SetClipRect(float x, float y, float w, float h)
+    {
+        TextComponent.SetClipRect(x, y, w, h);
+    }
 }
